@@ -1,0 +1,29 @@
+# ===== Gradle =====
+.gradle/
+build/
+**/build/
+
+# ===== 本地配置 =====
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ===== Kotlin =====
+.kotlin/
+
+# ===== 签名密钥（已三重备份，绝不进 git）=====
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# ===== 系统文件 =====
+.DS_Store
+*.log
+
+# ===== iOS Xcode 用户数据 =====
+xcuserdata/
+*.xcuserstate

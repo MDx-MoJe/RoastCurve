@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 烤豆 启动图标：咖啡豆 + 曲线意象（V1 占位，后续替换为正式设计） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 背景圆：暖米色 -->
+    <path
+        android:fillColor="#FAF5EB"
+        android:pathData="M54,54m-46,0a46,46 0,1 1,92 0a46,46 0,1 1,-92 0" />
+    <!-- 咖啡豆轮廓：咖啡棕 -->
+    <path
+        android:fillColor="#8B5E3C"
+        android:pathData="M54,26c-14,0 -24,12 -24,28s10,28 24,28s24,-12 24,-28s-10,-28 -24,-28zM54,32c4,8 4,16 0,22c-4,6 -4,14 0,22c-4,-8 -4,-16 0,-22c4,-6 4,-14 0,-22z" />
+</vector>
