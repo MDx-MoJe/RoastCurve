@@ -89,5 +89,6 @@ class TcpByteTransport(
     }
 }
 
-/** 平台创建 BLE 透传传输（Android 实现；iOS 待接入） */
-expect fun createBleTransport(deviceAddress: String): ByteTransport
+/** 平台创建 BLE 透传传输（Android 实现；iOS 待接入）
+ * @param subscribeNotifications 是否订阅通知（透传需要；配网只需写凭据可关闭，避开部分手机 CCCD 订阅后写入的兼容问题） */
+expect fun createBleTransport(deviceAddress: String, subscribeNotifications: Boolean = true): ByteTransport

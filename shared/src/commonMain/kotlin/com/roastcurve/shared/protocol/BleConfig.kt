@@ -13,10 +13,16 @@ expect suspend fun bleScanConfigDevices(timeoutMs: Long): List<BleConfigDevice>
 
 /** 通过 BLE 发送 WiFi 凭据（SSID\n密码），板子收到后保存并重启连接 */
 suspend fun bleConfigure(address: String, ssid: String, pass: String): Boolean {
-    val transport = createBleTransport(address)
+    // 配网只需写凭据，不订阅通知（subscribeNotifications=false），
+    // 避开部分手机「CCCD 订阅后紧跟写入」的 GATT 兼容问题
+    val transport = createBleTransport(address, subscribeNotifications = false)
     return try {
         transport.open()
+        // 连接后稍等，让 GATT 连接稳定后再写（有响应写对时序更敏感）
+        kotlinx.coroutines.delay(500L)
         transport.write("$ssid\n$pass".encodeToByteArray())
+        // 有响应写会等板子确认；留足时间让板子处理凭据并重启，避免 close 太早丢数据
+        kotlinx.coroutines.delay(1200L)
         transport.close()
         true
     } catch (_: Exception) {

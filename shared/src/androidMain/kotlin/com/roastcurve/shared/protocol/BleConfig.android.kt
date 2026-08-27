@@ -4,6 +4,7 @@ import android.Manifest
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -58,7 +59,12 @@ actual suspend fun bleScanConfigDevices(timeoutMs: Long): List<BleConfigDevice> 
         }
 
         try {
-            scanner.startScan(callback)
+            // 主动扫描（SCAN_MODE_LOW_LATENCY）：ESP32 的广播名/服务 UUID 在
+            // Scan Response 里，被动扫描收不到，必须主动扫描才能拿到设备信息
+            val settings = ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .build()
+            scanner.startScan(null, settings, callback)
         } catch (_: Exception) {
             return@withContext emptyList()
         }

@@ -38,4 +38,31 @@ object SignalProbe {
             }
         }
     }
+
+    /**
+     * 重置桥接器 WiFi：访问 /reset 端点，固件会清除凭据并重启进配网模式。
+     * 用于换 WiFi 时一键重新配网（烘豆机里按不到 BOOT 键）。
+     * @return 是否成功发出重置命令（固件会在收到后重启，连接随即断开）
+     */
+    suspend fun resetWifi(host: String): Boolean = withContext(Dispatchers.IO) {
+        val t = TcpByteTransport(host = host, port = 8898, readTimeoutMs = 1500L)
+        withTimeoutOrNull(2500L) {
+            try {
+                t.open()
+                t.write("GET /reset HTTP/1.0\r\nHost: $host\r\n\r\n".encodeToByteArray())
+                // 读响应确认（固件返回 "resetting" 后即重启，连接会断开）
+                val buf = StringBuilder()
+                while (true) {
+                    val one = t.readExact(1) ?: break
+                    buf.append(one[0].toInt().toChar())
+                    if (buf.length > 128) break
+                }
+                buf.toString().contains("resetting")
+            } catch (_: Exception) {
+                false
+            } finally {
+                try { t.close() } catch (_: Exception) {}
+            }
+        } ?: false
+    }
 }

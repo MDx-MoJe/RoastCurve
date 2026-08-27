@@ -10,7 +10,13 @@ import androidx.compose.ui.unit.dp
 import com.roastcurve.shared.protocol.BleConfigDevice
 import com.roastcurve.shared.protocol.bleConfigure
 import com.roastcurve.shared.protocol.bleScanConfigDevices
+import com.roastcurve.shared.protocol.discoverBridge
+import com.roastcurve.shared.protocol.SignalProbe
+import com.roastcurve.shared.storage.SettingsStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * 蓝牙配网：扫描桥接器 BLE 设备，填入 WiFi 凭据，通过 BLE 发送。
@@ -25,6 +31,7 @@ fun BleConfigScreen(onBack: () -> Unit) {
     var ssid by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var configuring by remember { mutableStateOf(false) }
+    var resetting by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
 
     Column(
@@ -45,6 +52,36 @@ fun BleConfigScreen(onBack: () -> Unit) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        // 换 WiFi 一键重置：桥接器正常联网时，连上它发 /reset，让它清凭据重启进配网
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = {
+                resetting = true
+                message = null
+                scope.launch {
+                    // 读上次连过的桥接器 IP（若没连过则提示先连接）
+                    val host = withContext(Dispatchers.IO) {
+                        runCatching { SettingsStore().load().lastBridgeHost }.getOrNull() ?: ""
+                    }
+                    if (host.isBlank()) {
+                        message = "还没有记录桥接器 IP，先到主界面连一次，或直接按 BOOT 键进配网。"
+                    } else {
+                        val ok = SignalProbe.resetWifi(host)
+                        message = if (ok) {
+                            "已重置，桥接器正在重启进入配网模式（约 5 秒后紫灯闪烁），稍后点「扫描桥接器」。"
+                        } else {
+                            "重置失败：连不上桥接器 $host，确认它在线（同一 WiFi）。"
+                        }
+                    }
+                    resetting = false
+                }
+            },
+            enabled = !resetting,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(if (resetting) "重置中…" else "🔄 重置桥接器 WiFi（换 WiFi 用）")
+        }
 
         Spacer(Modifier.height(8.dp))
         Button(
@@ -123,10 +160,23 @@ fun BleConfigScreen(onBack: () -> Unit) {
                 scope.launch {
                     val ok = bleConfigure(dev.address, ssid.trim(), pass)
                     configuring = false
-                    message = if (ok) {
-                        "已发送，桥接器正在连接 $ssid，稍后自动重启。"
+                    if (ok) {
+                        // 桥接器收到凭据后重启并连 WiFi（需几秒），用 mDNS 自动发现 IP
+                        message = "已发送，桥接器正在连接 $ssid…"
+                        val bridge = discoverBridge(20000)
+                        if (bridge != null) {
+                            withContext(Dispatchers.IO) {
+                                runCatching {
+                                    val s = SettingsStore()
+                                    s.save(s.load().copy(lastBridgeHost = bridge.host))
+                                }
+                            }
+                            message = "配网成功！桥接器 IP：${bridge.host}（已自动记录，返回后可直接连接）"
+                        } else {
+                            message = "已发送，但未自动发现桥接器。等它连上 WiFi 后，到主界面手动填 IP。"
+                        }
                     } else {
-                        "配网失败，请重试（确认桥接器在配网模式）"
+                        message = "配网失败，请重试（确认桥接器在配网模式）"
                     }
                 }
             },

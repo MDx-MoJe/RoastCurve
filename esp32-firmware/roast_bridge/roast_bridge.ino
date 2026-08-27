@@ -71,10 +71,11 @@ volatile bool bleCredReady = false;
 class BLEConfigCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic* ch) {
     String val = ch->getValue();
+    // 只累积字节（含 \n），不在此解析；凭据可能因 MTU 限制被分包，
+    // 由主循环等拼齐（\n 后 pass 长度 >= 8）后再解析
     for (unsigned int i = 0; i < val.length(); i++) {
       char c = val[i];
-      if (c == '\n') { bleCredReady = true; }
-      else if (c != '\r') { bleCredBuffer += c; }
+      if (c != '\r') bleCredBuffer += c;
     }
   }
 };
@@ -191,43 +192,49 @@ void startBleConfig() {
   // 注意：不要 WiFi.mode(WIFI_OFF)！ESP32 的 BLE 与 WiFi 共享射频 PHY，
   // 关闭 WiFi 会同时关掉 PHY 时钟，导致 BLE 初始化失败/卡死。
   WiFi.mode(WIFI_STA);  // 保持 STA 模式（PHY 开启，但不连接）
+  Serial.println("[配网] WiFi.mode(WIFI_STA) 完成");
   delay(200);
 
   BLEDevice::init("RoastBridge");
+  Serial.println("[配网] BLEDevice::init 完成");
   BLEServer* pServer = BLEDevice::createServer();
+  Serial.println("[配网] createServer 完成");
   BLEService* pService = pServer->createService(NUS_SERVICE_UUID);
+  Serial.println("[配网] createService 完成");
   BLECharacteristic* txChar = pService->createCharacteristic(
     NUS_TX_UUID, BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
   txChar->setCallbacks(new BLEConfigCallbacks());
   BLECharacteristic* rxChar = pService->createCharacteristic(NUS_RX_UUID, BLECharacteristic::PROPERTY_NOTIFY);
   rxChar->addDescriptor(new BLE2902());
   pService->start();
+  Serial.println("[配网] pService->start 完成");
   BLEAdvertising* adv = BLEDevice::getAdvertising();
   adv->addServiceUUID(NUS_SERVICE_UUID);
   adv->start();
+  Serial.println("[配网] adv->start 完成，进入等待循环");
 
   bleCredBuffer = "";
   bleCredReady = false;
   while (true) {
-    if (bleCredReady) {
-      int nl = bleCredBuffer.indexOf('\n');
-      if (nl > 0 && nl < (int)bleCredBuffer.length() - 1) {
-        String ssid = bleCredBuffer.substring(0, nl);
-        String pass = bleCredBuffer.substring(nl + 1);
-        ssid.trim();
-        if (ssid.length() > 0 && pass.length() >= 8) {
-          nvs.putString("ssid", ssid);
-          nvs.putString("pass", pass);
-          storedSsid = ssid; storedPass = pass;
-          Serial.printf("[配网] 已收到 %s，重启连接\n", ssid.c_str());
-          delay(500);
-          ESP.restart();
-        } else {
-          Serial.println("[配网] 凭据格式无效，请重发");
-        }
+    // 等凭据拼齐：buffer 里有 \n，且 \n 后的密码长度 >= 8（密码最低 8 位）
+    // 这样即使凭据被 BLE MTU 拆成多包，也能等所有包到齐后再解析
+    int nl = bleCredBuffer.indexOf('\n');
+    if (nl > 0 && (int)bleCredBuffer.length() - nl - 1 >= 8) {
+      String ssid = bleCredBuffer.substring(0, nl);
+      String pass = bleCredBuffer.substring(nl + 1);
+      ssid.trim();
+      pass.trim();
+      if (ssid.length() > 0 && pass.length() >= 8) {
+        nvs.putString("ssid", ssid);
+        nvs.putString("pass", pass);
+        storedSsid = ssid; storedPass = pass;
+        Serial.printf("[配网] 已收到 SSID=%s (密码 %d 位)，重启连接\n", ssid.c_str(), (int)pass.length());
+        delay(500);
+        ESP.restart();
+      } else {
+        Serial.println("[配网] 凭据格式无效，请重发");
+        bleCredBuffer = "";
       }
-      bleCredBuffer = "";
-      bleCredReady = false;
     }
     setStatusLed(90, 0, 90, true);  // 紫闪
     delay(10);
@@ -314,15 +321,36 @@ uint32_t bootMs = 0;                    // 上电时刻，算运行时长用
 uint32_t statReqCount = 0, statRspOk = 0;   // 粗粒度通信统计
 uint8_t wifiFailCount = 0;              // WiFi 连续失败计数（达到阈值进配网模式）
 
-// ---------- HTTP /status：返回 WiFi 信号强度与链路健康（JSON） ----------
+// ---------- HTTP 状态口（8898）：/status 返回信号强度；/reset 清除 WiFi 重新配网 ----------
 void handleStatus() {
   WiFiClient sc = statusServer.available();
   if (!sc) return;
-  // 读掉请求头（最多 512 字节或 100ms）
+  // 读请求首行（最多 256 字节，够解析 GET /xxx HTTP/1.x）
+  String reqLine = "";
   uint32_t t0 = millis(); size_t n = 0;
-  while (sc.connected() && millis() - t0 < 100 && n < 512) {
-    if (sc.available()) { sc.read(); n++; } else delay(1);
+  while (sc.connected() && millis() - t0 < 300 && n < 256 && reqLine.indexOf('\n') < 0) {
+    if (sc.available()) { char c = sc.read(); reqLine += c; n++; } else delay(1);
   }
+  // 读掉剩余请求头（浏览器/客户端会带 Host 等），避免脏数据
+  while (sc.connected() && millis() - t0 < 300 && n < 512) {
+    if (sc.available()) { sc.read(); n++; } else break;
+  }
+  statReqCount++;
+
+  // /reset：清除 WiFi 凭据，重启进配网模式（换 WiFi 时 App 一键重置，无需碰硬件）
+  if (reqLine.indexOf("/reset") >= 0) {
+    sc.print("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n");
+    sc.print("resetting");
+    sc.flush();
+    delay(10);
+    sc.stop();
+    Serial.println("[重置] 收到 /reset，清除 WiFi 凭据并重启进配网");
+    nvs.clear();
+    delay(200);
+    ESP.restart();
+    return;
+  }
+
   int32_t rssi = WiFi.RSSI();
   uint32_t upS = (millis() - bootMs) / 1000;
   char body[192];
@@ -395,8 +423,9 @@ void loop() {
       lastTry = millis();
       ensureWifi();
       server.begin();
-      // 连续 20 次（约 100 秒）连不上，自动进入手机配网模式（换 WiFi 不用插电脑）
-      if (++wifiFailCount >= 20) {
+      // 连续 3 次（每次约 15 秒连接尝试，共约 45 秒）连不上，自动进入手机配网模式
+      // （换 WiFi / 密码错时不用插电脑，蓝牙配网重设）
+      if (++wifiFailCount >= 3) {
         Serial.println("[配网] 连续连接失败，进入蓝牙配网模式");
         wifiFailCount = 0;
         startBleConfig();
