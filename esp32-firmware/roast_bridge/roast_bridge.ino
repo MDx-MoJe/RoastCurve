@@ -188,7 +188,9 @@ void rtuToMbap(WiFiClient& out, const uint8_t* reqHeader, uint16_t waitMs) {
 void startBleConfig() {
   Serial.println("\n[配网] 进入蓝牙配网模式（BLE）");
   Serial.println("[配网] App 里扫描蓝牙 RoastBridge，填入 WiFi 即可");
-  WiFi.mode(WIFI_OFF);  // 关闭 WiFi，避免与 BLE 射频冲突
+  // 注意：不要 WiFi.mode(WIFI_OFF)！ESP32 的 BLE 与 WiFi 共享射频 PHY，
+  // 关闭 WiFi 会同时关掉 PHY 时钟，导致 BLE 初始化失败/卡死。
+  WiFi.mode(WIFI_STA);  // 保持 STA 模式（PHY 开启，但不连接）
   delay(200);
 
   BLEDevice::init("RoastBridge");
