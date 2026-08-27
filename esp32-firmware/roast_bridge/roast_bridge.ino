@@ -27,8 +27,10 @@
 #include <HardwareSerial.h>
 #include <Preferences.h>
 #include <ArduinoOTA.h>
-#include <WebServer.h>
-#include <DNSServer.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
 
 // OTA 升级口令：同一局域网才可达。开源自用请改成你自己的密码，留默认值也无妨（仅防误刷）。
 constexpr const char* OTA_PASSWORD = "roastota";
@@ -44,6 +46,9 @@ constexpr int      PIN_485_TX   = 17;
 constexpr int      PIN_485_RX   = 18;
 constexpr uint32_t MODBUS_BAUD  = 9600;
 
+// BOOT 键（GPIO0，按下为低电平）：长按 3 秒强制进入配网模式（配网写错时的重置开关）
+constexpr int      PIN_BOOT      = 0;
+
 // 时序参数
 constexpr uint32_t RSP_FIRST_TIMEOUT_MS = 800;  // 等待温控器应答首字节
 constexpr uint32_t RSP_GAP_TIMEOUT_MS   = 30;   // 字节间静默视为帧结束
@@ -55,8 +60,24 @@ WiFiServer server(TCP_PORT);
 WiFiClient client;
 Preferences nvs;
 String storedSsid, storedPass;
-WebServer web(80);
-DNSServer dns;
+
+// BLE 配网：复用 Nordic UART Service（与 App 现有 BLE 透传对齐）
+static const BLEUUID NUS_SERVICE_UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
+static const BLEUUID NUS_TX_UUID("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");  // 手机写 → 板子
+static const BLEUUID NUS_RX_UUID("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");  // 板子通知 → 手机
+String bleCredBuffer;
+volatile bool bleCredReady = false;
+
+class BLEConfigCallbacks : public BLECharacteristicCallbacks {
+  void onWrite(BLECharacteristic* ch) {
+    String val = ch->getValue();
+    for (unsigned int i = 0; i < val.length(); i++) {
+      char c = val[i];
+      if (c == '\n') { bleCredReady = true; }
+      else if (c != '\r') { bleCredBuffer += c; }
+    }
+  }
+};
 
 // ---------- WS2812 状态灯 ----------
 constexpr int PIN_LED = 48;
@@ -163,53 +184,50 @@ void rtuToMbap(WiFiClient& out, const uint8_t* reqHeader, uint16_t waitMs) {
   out.write(rsp + 1, n - 3);
 }
 
-// ---------- 手机 AP 配网（无凭据或换 WiFi 时，手机连板子热点，浏览器填凭据） ----------
-const char CONFIG_HTML[] PROGMEM = R"rawliteral(
-<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RoastBridge 配网</title></head>
-<body style="font-family:sans-serif;padding:20px;max-width:420px;margin:auto">
-<h2>☕ RoastBridge 配网</h2>
-<p>填入要连接的 WiFi 名称和密码，板子保存后自动重启并连接。</p>
-<form action="/save" method="post">
-<p>WiFi 名称：<input type="text" name="ssid" style="width:100%;padding:8px"></p>
-<p>WiFi 密码：<input type="password" name="pass" style="width:100%;padding:8px"></p>
-<p><input type="submit" value="连接" style="width:100%;padding:10px;font-size:16px"></p>
-</form>
-</body></html>
-)rawliteral";
+// ---------- 手机蓝牙配网（App 连 BLE 发 WiFi 凭据，无需切 WiFi） ----------
+void startBleConfig() {
+  Serial.println("\n[配网] 进入蓝牙配网模式（BLE）");
+  Serial.println("[配网] App 里扫描蓝牙 RoastBridge，填入 WiFi 即可");
+  WiFi.mode(WIFI_OFF);  // 关闭 WiFi，避免与 BLE 射频冲突
+  delay(200);
 
-void startConfigPortal() {
-  Serial.println("\n[配网] 进入手机配网模式（AP）");
-  Serial.println("[配网] 手机连 WiFi：RoastBridge，浏览器打开 http://192.168.4.1");
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP("RoastBridge");
-  dns.start(53, "*", WiFi.softAPIP());
+  BLEDevice::init("RoastBridge");
+  BLEServer* pServer = BLEDevice::createServer();
+  BLEService* pService = pServer->createService(NUS_SERVICE_UUID);
+  BLECharacteristic* txChar = pService->createCharacteristic(
+    NUS_TX_UUID, BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
+  txChar->setCallbacks(new BLEConfigCallbacks());
+  BLECharacteristic* rxChar = pService->createCharacteristic(NUS_RX_UUID, BLECharacteristic::PROPERTY_NOTIFY);
+  rxChar->addDescriptor(new BLE2902());
+  pService->start();
+  BLEAdvertising* adv = BLEDevice::getAdvertising();
+  adv->addServiceUUID(NUS_SERVICE_UUID);
+  adv->start();
 
-  web.on("/", HTTP_GET, []() { web.send(200, "text/html", CONFIG_HTML); });
-  web.on("/save", HTTP_POST, []() {
-    String ssid = web.arg("ssid");
-    String pass = web.arg("pass");
-    ssid.trim();
-    if (ssid.length() == 0 || pass.length() < 8) {
-      web.send(400, "text/html", "输入无效：WiFi 名不能为空，密码至少 8 位");
-      return;
-    }
-    nvs.putString("ssid", ssid);
-    nvs.putString("pass", pass);
-    storedSsid = ssid; storedPass = pass;
-    web.send(200, "text/html", "已保存，正在连接 <b>" + ssid + "</b> …");
-    delay(800);
-    ESP.restart();
-  });
-  web.onNotFound([]() { web.sendHeader("Location", "/", true); web.send(302, "text/plain", ""); });
-  web.begin();
-
-  // 阻塞循环处理配网请求，直到保存凭据重启；紫闪提示配网中
+  bleCredBuffer = "";
+  bleCredReady = false;
   while (true) {
-    web.handleClient();
-    dns.processNextRequest();
-    setStatusLed(90, 0, 90, true);
+    if (bleCredReady) {
+      int nl = bleCredBuffer.indexOf('\n');
+      if (nl > 0 && nl < (int)bleCredBuffer.length() - 1) {
+        String ssid = bleCredBuffer.substring(0, nl);
+        String pass = bleCredBuffer.substring(nl + 1);
+        ssid.trim();
+        if (ssid.length() > 0 && pass.length() >= 8) {
+          nvs.putString("ssid", ssid);
+          nvs.putString("pass", pass);
+          storedSsid = ssid; storedPass = pass;
+          Serial.printf("[配网] 已收到 %s，重启连接\n", ssid.c_str());
+          delay(500);
+          ESP.restart();
+        } else {
+          Serial.println("[配网] 凭据格式无效，请重发");
+        }
+      }
+      bleCredBuffer = "";
+      bleCredReady = false;
+    }
+    setStatusLed(90, 0, 90, true);  // 紫闪
     delay(10);
     yield();
   }
@@ -268,7 +286,7 @@ void serialProvision() {
 // ---------- WiFi ----------
 void ensureWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
-  if (storedSsid.isEmpty()) { startConfigPortal(); }  // 无凭据 → 手机 AP 配网
+  if (storedSsid.isEmpty()) { startBleConfig(); }  // 无凭据 → 蓝牙配网
   if (storedSsid.isEmpty()) return;
   Serial.print("[WiFi] 连接中 ");
   WiFi.mode(WIFI_STA);
@@ -324,6 +342,7 @@ void handleStatus() {
 void setup() {
   Serial.begin(115200);
   pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_BOOT, INPUT_PULLUP);
   rs485.begin(MODBUS_BAUD, SERIAL_8N1, PIN_485_RX, PIN_485_TX);
   loadCreds();
   ensureWifi();
@@ -351,6 +370,21 @@ void loop() {
   ArduinoOTA.handle();                   // OTA 升级处理（无升级时零开销）
   handleStatus();                        // 状态口轮询（无连接时零开销）
 
+  // BOOT 键长按 3 秒：强制进入配网模式（配网写错/换 WiFi 的手动重置）
+  {
+    static uint32_t bootPressStart = 0;
+    if (digitalRead(PIN_BOOT) == LOW) {
+      if (bootPressStart == 0) bootPressStart = millis();
+      else if (millis() - bootPressStart > 3000) {
+        Serial.println("[配网] BOOT 键长按，进入蓝牙配网模式");
+        bootPressStart = 0;
+        startBleConfig();
+      }
+    } else {
+      bootPressStart = 0;
+    }
+  }
+
   // WiFi 守护
   if (WiFi.status() != WL_CONNECTED) {
     setStatusLed(80, 0, 0, true);  // 红闪
@@ -361,9 +395,9 @@ void loop() {
       server.begin();
       // 连续 20 次（约 100 秒）连不上，自动进入手机配网模式（换 WiFi 不用插电脑）
       if (++wifiFailCount >= 20) {
-        Serial.println("[配网] 连续连接失败，进入手机配网模式");
+        Serial.println("[配网] 连续连接失败，进入蓝牙配网模式");
         wifiFailCount = 0;
-        startConfigPortal();
+        startBleConfig();
       }
     }
     return;

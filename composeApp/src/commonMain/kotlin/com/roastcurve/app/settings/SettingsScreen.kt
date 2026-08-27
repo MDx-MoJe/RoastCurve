@@ -31,6 +31,7 @@ fun SettingsScreen(
     onUpdate: (Settings) -> Unit,
     onBack: () -> Unit,
     onOpenManual: () -> Unit = {},
+    onOpenBleConfig: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -295,7 +296,22 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(8.dp))
-        
+        // 蓝牙配网入口
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 2.dp,
+            onClick = onOpenBleConfig,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Text("🔵 蓝牙配网", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    "给桥接器设置 WiFi（无需电脑），配网模式下手机蓝牙直连",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
 
         Spacer(Modifier.height(16.dp))
 
