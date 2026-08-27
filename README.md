@@ -41,6 +41,13 @@ RoastCurve/
 └── iosApp/            # iOS 入口（Xcode 工程，见其 README）
 ```
 
+## 下载
+
+不想自己构建？直接到 [Releases](https://github.com/MDx-MoJe/RoastCurve/releases) 下载现成的：
+
+- **APK**：Android 直接安装
+- **固件 .bin**：ESP32 桥接器刷写文件（配合 esp32-firmware/ 使用）
+
 ## 构建
 
 ```bash
@@ -102,5 +109,9 @@ RoastCurve/
 ## 开源协议
 
 本项目（App + ESP32 固件）采用 [Apache License 2.0](LICENSE) 协议开源。
+
+## 支持开发者
+
+烤豆永久免费、开源、无广告。如果你喜欢它，欢迎通过 [爱发电](https://afdian.com/a/RoastCurve) 支持，或给仓库点个 Star ⭐。详见 [SPONSOR.md](SPONSOR.md)。
 
 Copyright © 2026 MDx

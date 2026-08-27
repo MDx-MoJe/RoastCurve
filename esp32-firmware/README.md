@@ -34,6 +34,26 @@ ESP32-S3 DevKitC-1          TTL转RS485模块（自动收发款）
 
 注意：测试 ESP32 时请给原设备断电。总线上两个主站同时说话会冲突。
 
+## 刷写方式二：直接刷 .bin（无需 Arduino IDE）
+
+到 [Releases](https://github.com/MDx-MoJe/RoastCurve/releases) 下载编译好的固件 `.bin`，任选一种方式：
+
+### A. 网页刷写（推荐，零安装）
+
+1. 浏览器打开 Espressif 官方网页刷写器：https://espressif.github.io/esptool-js/
+2. 串口选择板子（COM 口），芯片选 ESP32-S3，波特率 115200
+3. 偏移填 `0x0`，文件选下载的 `roastbridge-*.merged.bin`
+4. 点 Program 刷入，完成后按 RST 重启
+
+### B. esptool 命令行
+
+```bash
+pip install esptool
+esptool.py --chip esp32s3 --port /dev/cu.usbmodemXXXX write_flash 0x0 roastbridge-*.merged.bin
+```
+
+`merged.bin` 是合并镜像（含 bootloader + 分区表 + App），单文件刷 `0x0` 即可。
+
 ## 烧录步骤（Arduino IDE）
 
 1. 装 Arduino IDE 2.x（arduino.cc 下载）

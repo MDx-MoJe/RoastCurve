@@ -9,10 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.roastcurve.shared.model.Settings
 import com.roastcurve.app.history.exportBackupToDownloads
-import com.roastcurve.app.history.exportBackupToDownloads
 import com.roastcurve.app.history.packBackupZip
 import com.roastcurve.app.history.shareText
 import com.roastcurve.app.history.unpackBackupZip
+import com.roastcurve.app.platform.openUrl
 import com.roastcurve.shared.BackupBridge
 import com.roastcurve.shared.model.BackupBundle
 import com.roastcurve.shared.storage.ProfileStore
@@ -333,6 +333,26 @@ fun SettingsScreen(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        Spacer(Modifier.height(16.dp))
+        Text("支持开发者", style = MaterialTheme.typography.labelMedium,
+             color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(4.dp))
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 2.dp,
+            onClick = { openUrl("https://afdian.com/a/RoastCurve") },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Text("☕ 支持开发者", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    "烤豆永久免费、开源、无广告。如果你觉得它帮到了你，欢迎到爱发电支持。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 
