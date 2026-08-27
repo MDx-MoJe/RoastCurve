@@ -1,8 +1,6 @@
 package com.roastcurve.app.settings
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -73,8 +71,8 @@ fun BleConfigScreen(onBack: () -> Unit) {
         if (devices.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             Text("找到的设备（点选）：", style = MaterialTheme.typography.labelMedium)
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                items(devices, key = { it.address }) { d ->
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                devices.forEach { d ->
                     Surface(
                         shape = MaterialTheme.shapes.medium,
                         tonalElevation = if (selected == d) 4.dp else 1.dp,
