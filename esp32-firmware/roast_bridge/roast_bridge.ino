@@ -27,6 +27,8 @@
 #include <HardwareSerial.h>
 #include <Preferences.h>
 #include <ArduinoOTA.h>
+#include <WebServer.h>
+#include <DNSServer.h>
 
 // OTA 升级口令：同一局域网才可达。开源自用请改成你自己的密码，留默认值也无妨（仅防误刷）。
 constexpr const char* OTA_PASSWORD = "roastota";
@@ -53,6 +55,8 @@ WiFiServer server(TCP_PORT);
 WiFiClient client;
 Preferences nvs;
 String storedSsid, storedPass;
+WebServer web(80);
+DNSServer dns;
 
 // ---------- WS2812 状态灯 ----------
 constexpr int PIN_LED = 48;
@@ -159,6 +163,58 @@ void rtuToMbap(WiFiClient& out, const uint8_t* reqHeader, uint16_t waitMs) {
   out.write(rsp + 1, n - 3);
 }
 
+// ---------- 手机 AP 配网（无凭据或换 WiFi 时，手机连板子热点，浏览器填凭据） ----------
+const char CONFIG_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RoastBridge 配网</title></head>
+<body style="font-family:sans-serif;padding:20px;max-width:420px;margin:auto">
+<h2>☕ RoastBridge 配网</h2>
+<p>填入要连接的 WiFi 名称和密码，板子保存后自动重启并连接。</p>
+<form action="/save" method="post">
+<p>WiFi 名称：<input type="text" name="ssid" style="width:100%;padding:8px"></p>
+<p>WiFi 密码：<input type="password" name="pass" style="width:100%;padding:8px"></p>
+<p><input type="submit" value="连接" style="width:100%;padding:10px;font-size:16px"></p>
+</form>
+</body></html>
+)rawliteral";
+
+void startConfigPortal() {
+  Serial.println("\n[配网] 进入手机配网模式（AP）");
+  Serial.println("[配网] 手机连 WiFi：RoastBridge，浏览器打开 http://192.168.4.1");
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("RoastBridge");
+  dns.start(53, "*", WiFi.softAPIP());
+
+  web.on("/", HTTP_GET, []() { web.send(200, "text/html", CONFIG_HTML); });
+  web.on("/save", HTTP_POST, []() {
+    String ssid = web.arg("ssid");
+    String pass = web.arg("pass");
+    ssid.trim();
+    if (ssid.length() == 0 || pass.length() < 8) {
+      web.send(400, "text/html", "输入无效：WiFi 名不能为空，密码至少 8 位");
+      return;
+    }
+    nvs.putString("ssid", ssid);
+    nvs.putString("pass", pass);
+    storedSsid = ssid; storedPass = pass;
+    web.send(200, "text/html", "已保存，正在连接 <b>" + ssid + "</b> …");
+    delay(800);
+    ESP.restart();
+  });
+  web.onNotFound([]() { web.sendHeader("Location", "/", true); web.send(302, "text/plain", ""); });
+  web.begin();
+
+  // 阻塞循环处理配网请求，直到保存凭据重启；紫闪提示配网中
+  while (true) {
+    web.handleClient();
+    dns.processNextRequest();
+    setStatusLed(90, 0, 90, true);
+    delay(10);
+    yield();
+  }
+}
+
 // ---------- 串口配网：无凭据时阻塞等待输入 SSID\n密码 ----------
 String readLine(uint32_t timeoutMs) {
   String s; uint32_t t0 = millis();
@@ -212,7 +268,7 @@ void serialProvision() {
 // ---------- WiFi ----------
 void ensureWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
-  if (storedSsid.isEmpty()) { serialProvision(); }
+  if (storedSsid.isEmpty()) { startConfigPortal(); }  // 无凭据 → 手机 AP 配网
   if (storedSsid.isEmpty()) return;
   Serial.print("[WiFi] 连接中 ");
   WiFi.mode(WIFI_STA);
@@ -236,6 +292,7 @@ size_t   tcpLen = 0;
 WiFiServer statusServer(8898);          // 轻量 HTTP 状态口
 uint32_t bootMs = 0;                    // 上电时刻，算运行时长用
 uint32_t statReqCount = 0, statRspOk = 0;   // 粗粒度通信统计
+uint8_t wifiFailCount = 0;              // WiFi 连续失败计数（达到阈值进配网模式）
 
 // ---------- HTTP /status：返回 WiFi 信号强度与链路健康（JSON） ----------
 void handleStatus() {
@@ -298,9 +355,20 @@ void loop() {
   if (WiFi.status() != WL_CONNECTED) {
     setStatusLed(80, 0, 0, true);  // 红闪
     static uint32_t lastTry = 0;
-    if (millis() - lastTry > 5000) { lastTry = millis(); ensureWifi(); server.begin(); }
+    if (millis() - lastTry > 5000) {
+      lastTry = millis();
+      ensureWifi();
+      server.begin();
+      // 连续 20 次（约 100 秒）连不上，自动进入手机配网模式（换 WiFi 不用插电脑）
+      if (++wifiFailCount >= 20) {
+        Serial.println("[配网] 连续连接失败，进入手机配网模式");
+        wifiFailCount = 0;
+        startConfigPortal();
+      }
+    }
     return;
   }
+  wifiFailCount = 0;  // WiFi 正常，清零失败计数
 
   // 客户端管理：只服务一个连接，新连接顶替旧连接。
   // 关键：无论旧连接状态如何都检查新连接。半开连接（对端断电/切 WiFi 未发 FIN）
