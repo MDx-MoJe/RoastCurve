@@ -37,6 +37,37 @@ fun RoastDetailScreen(
     val store = remember { RoastStore() }
     val scope = rememberCoroutineScope()
     var confirmDelete by remember { mutableStateOf(false) }
+    // 本地可变副本：重命名/补录后即时刷新显示（record 参数不可变）
+    var currentRecord by remember { mutableStateOf(record) }
+    var showRename by remember { mutableStateOf(false) }
+    var renameText by remember { mutableStateOf(record.beanName) }
+
+    if (showRename) {
+        AlertDialog(
+            onDismissRequest = { showRename = false },
+            title = { Text("重命名记录") },
+            text = {
+                OutlinedTextField(
+                    value = renameText,
+                    onValueChange = { renameText = it },
+                    label = { Text("豆子名称（如：耶加雪菲 水洗）") },
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val newName = renameText.trim()
+                    scope.launch {
+                        val updated = currentRecord.copy(beanName = newName)
+                        store.save(updated)
+                        currentRecord = updated
+                    }
+                    showRename = false
+                }) { Text("保存") }
+            },
+            dismissButton = { TextButton(onClick = { showRename = false }) { Text("取消") } },
+        )
+    }
 
     if (confirmDelete) {
         AlertDialog(
@@ -67,6 +98,10 @@ fun RoastDetailScreen(
                 OutlinedButton(onClick = onBack) { Text("← 返回") }
                 Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     var savedMsg by remember { mutableStateOf(false) }
+                    TextButton(onClick = {
+                        renameText = currentRecord.beanName
+                        showRename = true
+                    }) { Text("重命名") }
                     TextButton(onClick = {
                         scope.launch {
                             val dropT = record.events.find { it.event == RoastEvent.DROP }?.timeSeconds
@@ -103,7 +138,7 @@ fun RoastDetailScreen(
                     Text(dateText, style = MaterialTheme.typography.titleMedium,
                          maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        "${record.beanName.ifEmpty { "未命名" }} · ${record.curveData.size}个采样点",
+                        "${currentRecord.beanName.ifEmpty { "未命名" }} · ${currentRecord.curveData.size}个采样点",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -113,7 +148,7 @@ fun RoastDetailScreen(
                         currentElapsedSec = record.totalTimeSeconds,
                     )
                     Spacer(Modifier.height(8.dp))
-                    WeightLossCard(record)
+                    WeightLossCard(currentRecord)
                     Spacer(Modifier.height(8.dp))
                     Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
                         RoastChart(
@@ -140,7 +175,7 @@ fun RoastDetailScreen(
                     val dateText = if (record.id.length >= 15) {
                         "${record.id.substring(0,4)}-${record.id.substring(4,6)}-${record.id.substring(6,8)} ${record.id.substring(9)}"
                     } else record.id
-                    Text("${dateText} · ${record.beanName.ifEmpty { "未命名" }}",
+                    Text("${dateText} · ${currentRecord.beanName.ifEmpty { "未命名" }}",
                          style = MaterialTheme.typography.titleMedium,
                          maxLines = 1, overflow = TextOverflow.Ellipsis)
 
@@ -176,7 +211,7 @@ fun RoastDetailScreen(
                                 events = record.events,
                                 currentElapsedSec = record.totalTimeSeconds,
                             )
-                            WeightLossCard(record)
+                            WeightLossCard(currentRecord)
                         }
                     }
                 }

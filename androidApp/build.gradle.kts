@@ -2,8 +2,8 @@ import java.util.Properties
 
 // 版本号手动维护（公开仓库不宜用 commit 数自动版本，避免历史重建后号回退）
 // 每次发布：versionCode 自增 1，versionName 按语义版本升级
-val appVersionCode = 100
-val appVersionName = "1.0.0"
+val appVersionCode = 101
+val appVersionName = "1.0.1"
 
 // 读取签名与指纹配置（keystore.properties 本地文件，不进 git；开源用户用 example 模板）
 val keystoreProperties = Properties().apply {
