@@ -302,15 +302,15 @@ void loop() {
     return;
   }
 
-  // 客户端管理：只服务一个连接（App 单客户端足够），新连接顶替旧连接
-  if (!client || !client.connected()) {
-    WiFiClient fresh = server.available();
-    if (fresh) {
-      if (client) client.stop();
-      client = fresh;
-      tcpLen = 0;
-      Serial.printf("[TCP] 客户端接入 %s\n", client.remoteIP().toString().c_str());
-    }
+  // 客户端管理：只服务一个连接，新连接顶替旧连接。
+  // 关键：无论旧连接状态如何都检查新连接。半开连接（对端断电/切 WiFi 未发 FIN）
+  // 会让 client.connected() 长期返回 true，若只在「断开」时才 accept，半开连接会堵死新连接。
+  WiFiClient fresh = server.available();
+  if (fresh) {
+    if (client) client.stop();
+    client = fresh;
+    tcpLen = 0;
+    Serial.printf("[TCP] 客户端接入 %s\n", client.remoteIP().toString().c_str());
   }
 
   bool active = client && client.connected();
