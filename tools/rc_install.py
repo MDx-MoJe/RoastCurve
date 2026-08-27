@@ -15,11 +15,39 @@
 import subprocess
 import re
 import sys
+import os
 import time
 import threading
+import shutil
 import xml.etree.ElementTree as ET
 
-ADB = 'adb'
+
+def _find_adb():
+    """智能定位 adb：不硬编码个人路径，开源友好"""
+    from pathlib import Path
+    # 1. 环境变量 ANDROID_HOME / ANDROID_SDK_ROOT
+    for var in ('ANDROID_HOME', 'ANDROID_SDK_ROOT'):
+        v = os.environ.get(var)
+        if v:
+            p = Path(v) / 'platform-tools' / 'adb'
+            if p.exists():
+                return str(p)
+    # 2. 仓库根目录 local.properties 的 sdk.dir
+    local = Path(__file__).resolve().parent.parent / 'local.properties'
+    if local.exists():
+        for line in local.read_text().splitlines():
+            if line.startswith('sdk.dir='):
+                p = Path(line.split('=', 1)[1].strip()) / 'platform-tools' / 'adb'
+                if p.exists():
+                    return str(p)
+    # 3. PATH 里的 adb
+    which = shutil.which('adb')
+    if which:
+        return which
+    return 'adb'
+
+
+ADB = _find_adb()
 PKG = 'com.roastcurve.android'
 BTN_WORDS = ['继续安装', '仍要安装', '本次允许', '安装', '允许', '确定', '好']
 SERIAL = None
