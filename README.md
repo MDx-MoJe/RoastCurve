@@ -1,10 +1,13 @@
 # 烤豆 RoastCurve
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS-brightgreen)](#)
+[![Platform](https://img.shields.io/badge/platform-Android-brightgreen)](#)
+[![iOS](https://img.shields.io/badge/iOS-开发中-yellow)](#)
 [![Kotlin](https://img.shields.io/badge/Kotlin%20Multiplatform-Compose-orange)](#)
 
-移动端咖啡烘焙实时监控与曲线设计 App（Android + iOS），面向 DIY 热风烘豆机，兼容 Artisan 生态。
+移动端咖啡烘焙实时监控与曲线设计 App，面向 DIY 热风烘豆机，兼容 Artisan 生态。
+
+> **Android 已可用，iOS 正在进行中，敬请期待。**
 
 CoffeeBeanTracker 的姊妹应用：
 
@@ -38,7 +41,7 @@ RoastCurve/
 │   ├── monitor/       # 实时监控面板（跟随曲线、事件标记、阶段统计）
 │   └── util/          # 跨平台格式化工具
 ├── androidApp/        # Android 入口
-└── iosApp/            # iOS 入口（Xcode 工程，见其 README）
+├── iosApp/            # iOS 入口（Xcode 工程，开发中，见其 README）
 ```
 
 ## 下载
@@ -74,7 +77,7 @@ RoastCurve/
 - [x] 折叠屏双栏仪表盘、内置使用手册、前台服务保活 + 会话恢复
 - [x] 桥接器信号强度实时显示、上次 IP 记忆
 - [x] Apache 2.0 开源（签名密码分离、开源自构建免校验）
-- [ ] iOS 备份导入（待完善）
+- [ ] iOS 端（开发中，敬请期待）
 - [ ] lookahead 前瞻量实机调参
 
 ## 自制 ESP32 桥接固件（esp32-firmware/）
