@@ -99,6 +99,13 @@ fun MonitorScreen(
     var bleAddress by remember { mutableStateOf("") }
     var useRealDevice by remember { mutableStateOf(false) }
     var connectionError by remember { mutableStateOf<String?>(null) }
+    // 错误提示自动消失：避免「设定失败/连接失败」一直挂着，让人误以为持续有问题
+    LaunchedEffect(connectionError) {
+        if (connectionError != null) {
+            delay(6000)
+            connectionError = null
+        }
+    }
     var channel by remember { mutableStateOf<DeviceChannel?>(null) }
     var currentSv by remember { mutableStateOf<Float?>(null) }
     var writingSv by remember { mutableStateOf(false) }
@@ -575,11 +582,18 @@ fun MonitorScreen(
             }
         }
         if (connectionError != null) {
-            Text(
-                connectionError!!,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.labelSmall,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    connectionError!!,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(
+                    onClick = { connectionError = null },
+                    contentPadding = PaddingValues(horizontal = 4.dp),
+                ) { Text("知道了", style = MaterialTheme.typography.labelSmall) }
+            }
         }
         if (useRealDevice) {
             Text(
