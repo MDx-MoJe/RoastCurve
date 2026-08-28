@@ -371,6 +371,24 @@ fun SettingsScreen(
                 )
             }
         }
+
+        // 姐妹应用入口（点击打开豆袋 GitHub 仓库）
+        Spacer(Modifier.height(6.dp))
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 2.dp,
+            onClick = { openUrl("https://github.com/MDx-MoJe/CoffeeBeanTracker") },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Text("🫘 姐妹应用：豆袋 CoffeeBeanTracker", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    "生豆熟豆库存、做一杯扣账、烘焙消耗联动。烘完的豆子它来管。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 

@@ -224,6 +224,7 @@ fun RoastDetailScreen(
                                 currentElapsedSec = record.totalTimeSeconds,
                             )
                             WeightLossCard(currentRecord)
+                            BeanBagSyncCard(currentRecord)
                         }
                     }
                 }

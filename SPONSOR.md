@@ -8,12 +8,13 @@
 
 **[在爱发电支持 RoastCurve →](https://afdian.com/a/RoastCurve)**
 
-爱发电是一个面向创作者的赞助平台，你可以选择一次性打赏或按月赞助。
+爱发电是一个面向创作者的赞助平台，你可以选择一次性打赏或按月赞助。（烤豆与姐妹应用豆袋共用此赞助渠道）
 
 ## 其他方式
 
 - **GitHub**：给仓库点个 Star ⭐，把项目推荐给身边玩烘焙的朋友，就是很好的支持
 - **贡献代码 / 反馈问题**：欢迎提交 Issue 或 Pull Request，详见 [CONTRIBUTING.md](CONTRIBUTING.md)
+- 试试姐妹应用 [豆袋 CoffeeBeanTracker](https://github.com/MDx-MoJe/CoffeeBeanTracker)：库存、记录、杯测，烘好的豆子交给它
 
 ---
 
