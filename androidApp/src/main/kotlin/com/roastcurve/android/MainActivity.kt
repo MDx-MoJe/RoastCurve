@@ -23,6 +23,7 @@ class MainActivity : ComponentActivity() {
         AppDirs.appVersion = try {
             packageManager.getPackageInfo(packageName, 0).versionName ?: "?"
         } catch (_: Exception) { "?" }
+        AppDirs.buildIdentityLabel = SignatureGuard.identify(this).label   // 社区构建在设置页标注身份
 
         // 签名校验：防二次打包/换壳重签，不通过则阻断并退出
         if (!SignatureGuard.verify(this)) {

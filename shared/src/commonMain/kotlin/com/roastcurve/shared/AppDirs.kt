@@ -13,6 +13,13 @@ object AppDirs {
     var androidContext: Any? = null
     var appVersion: String = "?"
 
+    /**
+     * 构建身份标注（官方发布为空串，社区构建显示「社区构建」）。
+     * 由 androidApp 启动时通过 SignatureGuard.identify() 注入；
+     * iOS 等未注入平台默认空串不显示。
+     */
+    var buildIdentityLabel: String = ""
+
     fun init(filesDir: String, androidContext: Any? = null) {
         this.filesDir = filesDir
         this.androidContext = androidContext

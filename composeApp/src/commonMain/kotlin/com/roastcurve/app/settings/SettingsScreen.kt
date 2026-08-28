@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.roastcurve.shared.AppDirs
 import com.roastcurve.shared.model.Settings
 import com.roastcurve.app.history.exportBackupToDownloads
 import com.roastcurve.app.history.packBackupZip
@@ -113,7 +114,8 @@ fun SettingsScreen(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "当前版本：${com.roastcurve.shared.AppDirs.appVersion}",
+                    "当前版本：${AppDirs.appVersion}" +
+                        AppDirs.buildIdentityLabel.let { if (it.isNotBlank()) "（$it）" else "" },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

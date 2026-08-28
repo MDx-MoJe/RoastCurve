@@ -18,10 +18,58 @@ import java.security.MessageDigest
  *    与后续的混淆/加固/Native 化叠加才能形成有效防线。
  * 2. debug 构建（FLAG_DEBUGGABLE）自动跳过校验，因为 debug 用调试证书。
  */
+/**
+ * 构建身份分级：官方发布 / 社区构建
+ *
+ * 社区构建不锁任何功能，仅在关于处标注身份：
+ * - 让自构建用户心里有底（功能完整、不受限）；
+ * - 让改名换签上架的二道贩版本自带「非官方」水印。
+ */
+enum class BuildIdentity(val label: String) {
+    OFFICIAL(""),                 // 官方发布：无任何额外标注
+    COMMUNITY("社区构建");        // 非官方签名：显示身份标识
+}
+
 object SignatureGuard {
 
     /** 官方 release 证书 SHA-256 指纹（构建时从 keystore.properties 注入；开源用户自构建为空则跳过校验） */
     private val officialSha256 = BuildConfig.OFFICIAL_SHA256
+
+    /**
+     * 构建身份判定（verify 通过后调用）。
+     * debug 构建（开发者本人）与官方签名 → OFFICIAL；其余 → COMMUNITY。
+     */
+    fun identify(context: Context): BuildIdentity {
+        if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+            return BuildIdentity.OFFICIAL
+        }
+        if (officialSha256.isBlank()) {
+            return BuildIdentity.COMMUNITY   // 开源用户自构建 release
+        }
+        return if (readSignatureSha256s(context).any { it == officialSha256 }) {
+            BuildIdentity.OFFICIAL
+        } else {
+            BuildIdentity.COMMUNITY
+        }
+    }
+
+    private fun readSignatureSha256s(context: Context): List<String> {
+        return try {
+            val pm = context.packageManager
+            val pkg = context.packageName
+            val certs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val info = pm.getPackageInfo(pkg, PackageManager.GET_SIGNING_CERTIFICATES)
+                info.signingInfo?.apkContentsSigners?.toList() ?: emptyList()
+            } else {
+                @Suppress("DEPRECATION")
+                val info = pm.getPackageInfo(pkg, PackageManager.GET_SIGNATURES)
+                info.signatures?.toList() ?: emptyList()
+            }
+            certs.map { cert -> sha256(cert.toByteArray()) }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
 
     /**
      * @return true=签名合法（或 debug 构建 / 未注入官方指纹）；false=被重签/篡改
@@ -36,17 +84,7 @@ object SignatureGuard {
             return true
         }
         return try {
-            val pm = context.packageManager
-            val pkg = context.packageName
-            val certs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                val info = pm.getPackageInfo(pkg, PackageManager.GET_SIGNING_CERTIFICATES)
-                info.signingInfo?.apkContentsSigners?.toList() ?: emptyList()
-            } else {
-                @Suppress("DEPRECATION")
-                val info = pm.getPackageInfo(pkg, PackageManager.GET_SIGNATURES)
-                info.signatures?.toList() ?: emptyList()
-            }
-            certs.any { cert -> sha256(cert.toByteArray()) == officialSha256 }
+            readSignatureSha256s(context).any { it == officialSha256 }
         } catch (_: Exception) {
             false   // 读取失败按不通过处理（宁可误伤不可放过）
         }

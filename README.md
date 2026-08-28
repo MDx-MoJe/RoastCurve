@@ -1,6 +1,6 @@
 # 烤豆 RoastCurve
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+[![License](https://img.shields.io/badge/code%20license-Apache%202.0-blue)](LICENSE) [![Trademark](https://img.shields.io/badge/name%20%26%20logo-%E4%B8%8D%E5%9C%A8%E6%8E%88%E6%9D%83%E8%8C%83%E5%9B%B4-important)](NOTICE.txt)
 [![Platform](https://img.shields.io/badge/platform-Android-brightgreen)](#)
 [![iOS](https://img.shields.io/badge/iOS-开发中-yellow)](#)
 [![Kotlin](https://img.shields.io/badge/Kotlin%20Multiplatform-Compose-orange)](#)
@@ -109,9 +109,15 @@ RoastCurve/
 
 工具：`tools/probe_tc4s.py <IP>` 可独立探测连通性。
 
-## 开源协议
+## 开源协议与版权
 
-本项目（App + ESP32 固件）采用 [Apache License 2.0](LICENSE) 协议开源。
+**代码授权**：本项目（App + ESP32 固件）采用 [Apache License 2.0](LICENSE) 协议开源，可自由使用、学习、修改与再分发。
+
+**不在授权范围**：应用名称「烤豆 / RoastCurve」、应用图标、官方签名证书不受许可证保护，其权利归 MDx 所有。任何 fork（分叉再发布）必须改名换图标，并在显著位置注明来源；以原名称或原图标分发、上架即构成侵权。详见 [NOTICE.txt](NOTICE.txt)。
+
+**自构建说明**：开源用户自构建的版本功能完整、不受任何限制，应用内会标注「社区构建」以示与官方发布的区别；这不影响任何使用。
+
+**辨识官方版**：官方安装包的签名指纹为 `A9:2E:...:64:7D`（完整值见 [NOTICE.txt](NOTICE.txt)），可通过包名 `com.roastcurve.*` 与签名指纹核对真伪。
 
 ## 支持开发者
 
