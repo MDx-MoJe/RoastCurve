@@ -198,6 +198,13 @@ fun SettingsScreen(
             )
         }
 
+        // ===== 语言 =====
+        Text("语言 / Language", style = MaterialTheme.typography.labelMedium,
+             color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(4.dp))
+        LanguageCard()
+        Spacer(Modifier.height(16.dp))
+
         // ===== 跟随控制 =====
         Text("跟随控制", style = MaterialTheme.typography.labelMedium,
              color = MaterialTheme.colorScheme.onSurfaceVariant)

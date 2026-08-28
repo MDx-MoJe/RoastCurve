@@ -75,7 +75,7 @@ class MainActivity : ComponentActivity() {
         super.onBackPressed()
     }
 
-    /** 文件选择器结果：读出字节与文件名交给调用方（备份导入 / Artisan 导入） */
+    /** 文件选择器结果：读出字节与文件名交给调用方（备份导入 / Artisan 导入 / 语言包导入） */
     @Deprecated(
         "Deprecated in Java",
         ReplaceWith("super.onActivityResult(requestCode, resultCode, data)")
@@ -103,6 +103,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
             BackupBridge.onPicked?.invoke(bytes, nameHint)
+        } else if (requestCode == com.roastcurve.app.settings.REQ_PICK_LANG) {
+            var langBytes: ByteArray? = null
+            if (resultCode == RESULT_OK) {
+                val uri = data?.data
+                if (uri != null) {
+                    try {
+                        langBytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    } catch (_: Exception) {}
+                }
+            }
+            com.roastcurve.app.settings.handleLangPickResult(langBytes)
         }
     }
 

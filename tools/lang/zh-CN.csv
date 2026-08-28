@@ -1,0 +1,286 @@
+﻿key,zh,en,file,line
+anchor.s1,编辑模板,,AnchorEditorScreen.kt,84
+anchor.s2,新建模板,,AnchorEditorScreen.kt,84
+anchor.s3,模板名称,,AnchorEditorScreen.kt,94
+anchor.s4,目标曲线,,AnchorEditorScreen.kt,127
+anchor.s5,锚点,,AnchorEditorScreen.kt,132
+anchor.s6,锚点 · 预览图上点空白加锚点、长按拖动调位置,,AnchorEditorScreen.kt,141
+anchor.s7,时间单位为秒：9分30秒 填 570,,AnchorEditorScreen.kt,154
+anchor.s8,+ 添加锚点,,AnchorEditorScreen.kt,166
+anchor.s9,保存修改,,AnchorEditorScreen.kt,189
+anchor.s10,保存模板,,AnchorEditorScreen.kt,189
+anchor.s11,已保存 ✓,,AnchorEditorScreen.kt,193
+anchor.s12,名称,,AnchorEditorScreen.kt,224
+anchor.s13,秒,,AnchorEditorScreen.kt,237
+anchor.s14,删,,AnchorEditorScreen.kt,257
+anchor.s15,自定义模板 {monthNumber}{dayOfMonth}-{hour}{minute},,AnchorEditorScreen.kt,426
+app.s9,烘焙记录仪,,ArtisanAlog.kt,30
+ble.s1,蓝牙配网,,BleConfigScreen.kt,45
+ble.s2,返回,,BleConfigScreen.kt,46
+ble.s3,先让桥接器进入配网模式（紫灯闪烁），再扫描连接。,,BleConfigScreen.kt,51
+ble.s4,还没有记录桥接器 IP，先到主界面连一次，或直接按 BOOT 键进配网。,,BleConfigScreen.kt,68
+ble.s5,已重置，桥接器正在重启进入配网模式（约 5 秒后紫灯闪烁），稍后点「扫描桥接器」。,,BleConfigScreen.kt,72
+ble.s6,重置失败：连不上桥接器 {host}，确认它在线（同一 WiFi）。,,BleConfigScreen.kt,74
+ble.s7,重置中…,,BleConfigScreen.kt,83
+ble.s8,🔄 重置桥接器 WiFi（换 WiFi 用）,,BleConfigScreen.kt,83
+ble.s9,未找到桥接器，确认它紫灯闪烁（配网模式）且手机蓝牙已开,,BleConfigScreen.kt,98
+ble.s10,扫描中…（约 8 秒）,,BleConfigScreen.kt,105
+ble.s11,扫描桥接器,,BleConfigScreen.kt,105
+ble.s12,找到的设备（点选）：,,BleConfigScreen.kt,110
+ble.s13,WiFi 名称,,BleConfigScreen.kt,133
+ble.s14,WiFi 密码,,BleConfigScreen.kt,141
+ble.s15,请先扫描并选择一个设备,,BleConfigScreen.kt,151
+ble.s16,WiFi 名不能为空，密码至少 8 位,,BleConfigScreen.kt,155
+ble.s17,已发送，桥接器正在连接 {ssid}…,,BleConfigScreen.kt,165
+ble.s18,配网成功！桥接器 IP：{host}（已自动记录，返回后可直接连接）,,BleConfigScreen.kt,174
+ble.s19,已发送，但未自动发现桥接器。等它连上 WiFi 后，到主界面手动填 IP。,,BleConfigScreen.kt,176
+ble.s20,配网失败，请重试（确认桥接器在配网模式）,,BleConfigScreen.kt,179
+ble.s21,配网中…,,BleConfigScreen.kt,186
+ble.s22,配网,,BleConfigScreen.kt,186
+consent.s1,欢迎使用烤豆 RoastCurve,,ConsentDialog.kt,48
+consent.s2,在线完整版（外部渠道）：{externalUrl}\n,,ConsentDialog.kt,72
+consent.s3,在线完整版（国内渠道）：{cnUrl},,ConsentDialog.kt,73
+consent.s4,不同意,,ConsentDialog.kt,87
+consent.s5,同意并继续,,ConsentDialog.kt,92
+consent.s6,点击「不同意」将无法继续使用本应用,,ConsentDialog.kt,96
+consent.s7,提示,,ConsentDialog.kt,108
+consent.s8,需要同意《隐私政策》才能使用本应用。确定退出吗？,,ConsentDialog.kt,109
+consent.s9,退出应用,,ConsentDialog.kt,111
+consent.s10,再看看,,ConsentDialog.kt,114
+history.s1,删除这条记录？,,HistoryScreen.kt,42
+history.s2,{id}\n删除后无法恢复,,HistoryScreen.kt,43
+history.s3,烘焙记录,,HistoryScreen.kt,65
+history.s4,还没有烘焙记录\n连接温控器烘一炉试试,,HistoryScreen.kt,77
+history.s5,未命名,,HistoryScreen.kt,113
+history.s6,{toInt}分{toInt}秒 · ,,HistoryScreen.kt,114
+history.s7,{size}点,,HistoryScreen.kt,115
+history.s8, · 失重{loss}%,,HistoryScreen.kt,118
+app.s2,烘焙会话,,KeepAlive.android.kt,91
+app.s3,烘豆进行期间的常驻提醒,,KeepAlive.android.kt,92
+app.s4,曲线记录中,,KeepAlive.android.kt,103
+app.s5,已进行 {minutes} 分钟 · 曲线记录中,,KeepAlive.android.kt,103
+app.s6,烘焙进行中,,KeepAlive.android.kt,108
+manual.s1,一、两种烘焙模式,,ManualScreen.kt,48
+manual.s2,手动：你控制 SV（设定温度），±5 按钮随时手调火力，传统用法。,,ManualScreen.kt,49
+manual.s3,跟随曲线：自动模式，每 2 秒按模板覆盖 SV，温控器自己跟着目标曲线跑。,,ManualScreen.kt,50
+manual.s4,跟随时 SV 是「只读」的，控制器持续覆盖它。,,ManualScreen.kt,51
+manual.s5,±5 按钮在跟随时只有一个作用：一键接管——按下即退出跟随、切回手动。,,ManualScreen.kt,52
+manual.s6,二、连接与记录状态,,ManualScreen.kt,55
+manual.s7,未连接：只能看设置和历史，没有开始/停止按钮。,,ManualScreen.kt,56
+manual.s8,已连接 · 待命：实时豆温照常显示，但不画曲线、不走计时。,,ManualScreen.kt,57
+manual.s9,已连接 · 记录中：曲线绘制、计时走动。,,ManualScreen.kt,58
+manual.s10,「开始」= 连上后手动起表；「停止」= 断开并把曲线定稿保存。开启「入豆自动开始跟随」则投豆瞬间点「入豆」隐式起表。,,ManualScreen.kt,59
+manual.s11,信号强度：连接后顶部显示彩色圆点 + dBm 值（绿强/黄中/橙弱/红极弱）。烘前若为橙/红，先调整桥接器位置或天线再开烘，避免中途掉线。,,ManualScreen.kt,60
+manual.s12,三、完整烘焙流程,,ManualScreen.kt,63
+manual.s13,准备,,ManualScreen.kt,64
+manual.s14,给温控器和 Wi-Fi 转 RS485 设备通电，打开 App 连接（可在设置开启自动连接）。需预热时用 ±5 把 SV 设到预热温度。,,ManualScreen.kt,64
+manual.s15,入豆（计时起点）,,ManualScreen.kt,65
+manual.s16,投豆瞬间点「入豆」：清空预热段、计时归零、记录入豆时刻豆温。若在待命态，入豆会自动开始正式记录。,,ManualScreen.kt,65
+manual.s17,选模板跟随（可选）,,ManualScreen.kt,66
+manual.s18,点「跟随曲线」→ 选一炉（仅选中不立刻跟随）。入豆时若开着「入豆自动开始跟随」则自动进入跟随。图表上米灰虚线=目标曲线，橙色实线=实际豆温。,,ManualScreen.kt,66
+manual.s19,烘焙过程,,ManualScreen.kt,67
+manual.s20,点事件标记即可，全程不用碰 SV：黄点（转黄）、一爆、一爆止。阶段卡自动算脱水/美拉德/发展三段时长与占比。,,ManualScreen.kt,67
+manual.s21,出豆与收尾,,ManualScreen.kt,68
+manual.s22,点「出豆」：SV 自动降到 25°C 进入冷却并立即存快照。冷却完成后点「停止」最终定稿。,,ManualScreen.kt,68
+manual.s23,四、记录保存机制,,ManualScreen.kt,71
+manual.s24,连接期间每 30 秒自动存草稿。,,ManualScreen.kt,72
+manual.s25,点「出豆」立即存一版快照。,,ManualScreen.kt,73
+manual.s26,停止/断开时最终定稿。,,ManualScreen.kt,74
+manual.s27,同一炉所有保存都是同一条记录的覆盖更新。App 崩溃或意外断连最多丢最近 30 秒数据；进程被杀后重开会自动恢复未完成的会话。,,ManualScreen.kt,75
+manual.s28,五、创建烘焙模板,,ManualScreen.kt,78
+manual.s29,方式一：从历史记录提取,,ManualScreen.kt,79
+manual.s30,记录 → 选一炉满意的记录 → 右上角「存为模板」。该炉曲线（出豆处截断）即成为可回放模板。,,ManualScreen.kt,80
+manual.s31,方式二：导入 Artisan 曲线,,ManualScreen.kt,81
+manual.s32,监控页 →「跟随曲线」→「导入」→ 选择 Artisan 导出的 .alog 文件。自动解析豆温曲线，若文件自带 computed 事件（入豆/脱水/一爆/出豆的时间与温度）会直接读取为锚点。,,ManualScreen.kt,82
+manual.s33,方式三：自定义锚点绘制,,ManualScreen.kt,83
+manual.s34,「+ 新建自定义模板」，点空白加锚点、长按拖动调位置，列表里可精确改时间/温度。,,ManualScreen.kt,84
+manual.s35,六、设置项说明,,ManualScreen.kt,87
+manual.s36,入豆瞬间若已选模板，自动进入跟随模式,,ManualScreen.kt,88
+manual.s37,打开 App 自动连上次的桥接器 IP,,ManualScreen.kt,89
+manual.s38,事件条增加二爆/二爆止两键，意式深烘用,,ManualScreen.kt,91
+manual.s39,七、事件术语速查,,ManualScreen.kt,94
+manual.s40,入豆 CHARGE,,ManualScreen.kt,95
+manual.s41,生豆下锅，计时起点,,ManualScreen.kt,95
+manual.s42,黄点 DRY,,ManualScreen.kt,96
+manual.s43,豆色转黄，脱水阶段结束,,ManualScreen.kt,96
+manual.s44,一爆 FCs,,ManualScreen.kt,97
+manual.s45,第一声爆裂，发展期开始,,ManualScreen.kt,97
+manual.s46,一爆止 FCe,,ManualScreen.kt,98
+manual.s47,一爆爆裂声结束,,ManualScreen.kt,98
+manual.s48,二爆 SCs,,ManualScreen.kt,99
+manual.s49,第二爆开始（深烘区间）,,ManualScreen.kt,99
+manual.s50,二爆止 SCe,,ManualScreen.kt,100
+manual.s51,第二爆结束（深度烘焙极限区）,,ManualScreen.kt,100
+manual.s52,出豆 DROP,,ManualScreen.kt,101
+manual.s53,下豆，记录终点,,ManualScreen.kt,101
+manual.s54,八、注意事项,,ManualScreen.kt,104
+manual.s55,空载测试：空锅跟随带豆模板，BT 会升得比模板快、偏高，属正常物理差异。,,ManualScreen.kt,105
+manual.s56,总线上单主站：接自制桥接器时原 Wi-Fi 转 RS485 设备需断电，两个主站不能同时说话。,,ManualScreen.kt,106
+manual.s57,SV 上限 260°C：适配特殊豆种，超出会被硬限幅。,,ManualScreen.kt,107
+manual.s58,返回键：浮层页面（记录/详情/设置/手册）按返回=关闭浮层；烘焙会话进行中返回键被屏蔽防误触退出。,,ManualScreen.kt,108
+manual.s59,失重率：典型 12%~18%，超出 8%~25% 区间会提示复查克重。,,ManualScreen.kt,109
+manual.s60,九、开源协议,,ManualScreen.kt,112
+manual.s61,本项目（App + ESP32 固件）以 Apache License 2.0 开源，源码见 GitHub 仓库。,,ManualScreen.kt,113
+app.s12,桥接器持续无响应：可能已被其他程序占用，或设备刚重启尚未就绪,,ModbusTcpChannel.kt,69
+monitor.s1,设定失败: {message},,MonitorScreen.kt,154
+monitor.s2,无法识别的 .alog 文件,,MonitorScreen.kt,289
+monitor.s3,Artisan 曲线,,MonitorScreen.kt,295
+monitor.s4,已导入模板：{nm}（{size} 点，含 {size} 个事件锚点）,,MonitorScreen.kt,309
+monitor.s5,已导入模板：{nm}（{size} 点）；脱水/一爆等锚点可在编辑器中补充标注,,MonitorScreen.kt,311
+monitor.s6,温控器,,MonitorScreen.kt,333
+monitor.s7,占用,,MonitorScreen.kt,404
+monitor.s8,连接不上桥接器：请确认设备已上电、手机与它在同一 WiFi（多次重试均失败）,,MonitorScreen.kt,407
+monitor.s9,连接失败: {simpleName}},,MonitorScreen.kt,408
+monitor.s10,模板曲线已走完，已切回手动,,MonitorScreen.kt,441
+monitor.s11,偏差超过 15°C 持续 30 秒，已自动切回手动,,MonitorScreen.kt,455
+monitor.s12,检测到上次未完成的烘焙会话，已恢复；请重新连接设备继续,,MonitorScreen.kt,495
+monitor.s13,烤豆 · 监控,,MonitorScreen.kt,541
+monitor.s14,记录,,MonitorScreen.kt,543
+monitor.s15,开始,,MonitorScreen.kt,555
+monitor.s16,停止,,MonitorScreen.kt,558
+monitor.s17,串口透传,,MonitorScreen.kt,573
+monitor.s18,蓝牙,,MonitorScreen.kt,574
+monitor.s19,蓝牙地址 (MAC),,MonitorScreen.kt,591
+monitor.s20,桥接器 IP,,MonitorScreen.kt,591
+monitor.s21,断开,,MonitorScreen.kt,603
+monitor.s22,连接,,MonitorScreen.kt,603
+monitor.s23,知道了,,MonitorScreen.kt,622
+monitor.s24,已连接温控器（实时）,,MonitorScreen.kt,627
+monitor.s25,强,,MonitorScreen.kt,635
+monitor.s26,中,,MonitorScreen.kt,636
+monitor.s27,弱,,MonitorScreen.kt,637
+monitor.s28,极弱,,MonitorScreen.kt,638
+monitor.s29,信号{sigLabel} {rssi} dBm,,MonitorScreen.kt,646
+monitor.s30,烘焙模式,,MonitorScreen.kt,668
+monitor.s31,手动,,MonitorScreen.kt,674
+monitor.s32,跟随曲线,,MonitorScreen.kt,685
+monitor.s33,模板：{name},,MonitorScreen.kt,699
+monitor.s34,更换,,MonitorScreen.kt,707
+monitor.s35,参照中,,MonitorScreen.kt,715
+monitor.s36,未选模板：点「跟随曲线」选择一炉历史记录作为目标,,MonitorScreen.kt,730
+monitor.s37,SV 设定温度,,MonitorScreen.kt,784
+monitor.s38,已切回手动模式,,MonitorScreen.kt,796
+monitor.s39,BT 豆温,,MonitorScreen.kt,821
+monitor.s40,脱水,,MonitorScreen.kt,861
+monitor.s41,美拉德,,MonitorScreen.kt,862
+monitor.s42,发展,,MonitorScreen.kt,863
+monitor.s43,模板,,MonitorScreen.kt,865
+monitor.s44,导入 Artisan 曲线,,MonitorScreen.kt,932
+monitor.s45,将从 .alog 文件读取温度曲线，生成可跟随的模板。,,MonitorScreen.kt,935
+monitor.s46,✓ 会导入,,MonitorScreen.kt,938
+monitor.s47,· 温度曲线（时间 + 豆温）\n· 入豆 / 出豆 时间锚点,,MonitorScreen.kt,940
+monitor.s48,✓ 自动识别事件节点,,MonitorScreen.kt,944
+monitor.s49,若 .alog 自带 computed 事件（入豆/脱水/一爆/出豆的时间与温度），导入时直接读取为锚点；缺失时回退为温度阈值推导。,,MonitorScreen.kt,946
+monitor.s50,选择文件,,MonitorScreen.kt,955
+monitor.s51,选择烘焙模板,,MonitorScreen.kt,969
+monitor.s52,读取中…,,MonitorScreen.kt,972
+monitor.s53,还没有模板。可点「+ 新建自定义模板」「导入 Artisan 曲线」，或到历史详情页「存为模板」。,,MonitorScreen.kt,975
+monitor.s54,+ 新建自定义模板,,MonitorScreen.kt,980
+monitor.s55,导入 Artisan 曲线 (.alog),,MonitorScreen.kt,985
+monitor.s56,{size} 个采样点,,MonitorScreen.kt,1010
+monitor.s57,编辑,,MonitorScreen.kt,1021
+monitor.s58,删除,,MonitorScreen.kt,1031
+monitor.s59,+ 新建,,MonitorScreen.kt,1047
+monitor.s60,同步到豆袋,,MonitorScreen.kt,1087
+monitor.s61,读取豆袋生豆批次…,,MonitorScreen.kt,1090
+monitor.s62,未读到豆袋生豆批次。请确认：,,MonitorScreen.kt,1092
+monitor.s63,· 豆袋已安装且为 3.0.13 或以上版本\n· 豆袋里有生豆批次记录,,MonitorScreen.kt,1094
+monitor.s64,选批次扣生豆，同时按熟豆名入库熟豆（同名累加）。重复推送不会重复扣/入。,,MonitorScreen.kt,1099
+monitor.s65,剩余 {remainingGrams}g,,MonitorScreen.kt,1118
+monitor.s66,生豆消耗克重（入豆重）,,MonitorScreen.kt,1129
+monitor.s67,熟豆名称（同名累加库存）,,MonitorScreen.kt,1138
+monitor.s68,熟豆克重（出豆重，入库量）,,MonitorScreen.kt,1147
+monitor.s69,完成,,MonitorScreen.kt,1165
+monitor.s70,\n⚠ 熟豆入库失败：{message}（可用历史页补录）,,MonitorScreen.kt,1191
+monitor.s71,扣减失败：{message},,MonitorScreen.kt,1195
+monitor.s72,推送中…,,MonitorScreen.kt,1199
+monitor.s73,确认扣减,,MonitorScreen.kt,1199
+monitor.s74,跳过,,MonitorScreen.kt,1203
+monitor.s75,入豆,,MonitorScreen.kt,1234
+monitor.s76,黄点,,MonitorScreen.kt,1234
+monitor.s77,一爆,,MonitorScreen.kt,1235
+monitor.s78,一爆止,,MonitorScreen.kt,1235
+monitor.s79,二爆,,MonitorScreen.kt,1236
+monitor.s80,二爆止,,MonitorScreen.kt,1236
+monitor.s81,出豆,,MonitorScreen.kt,1236
+monitor.s82,已入豆，未选模板，当前手动模式；可点「跟随曲线」选择模板开始自动跟随,,MonitorScreen.kt,1279
+app.s1,数据不出设备,,PrivacyPolicy.kt,13
+detail.s1,重命名记录,,RoastDetailScreen.kt,58
+detail.s2,豆子名称（如：耶加雪菲 水洗）,,RoastDetailScreen.kt,63
+detail.s3,保存,,RoastDetailScreen.kt,76
+detail.s4,删除后无法恢复,,RoastDetailScreen.kt,86
+detail.s5,← 返回,,RoastDetailScreen.kt,108
+detail.s6,重命名,,RoastDetailScreen.kt,114
+detail.s7,模板 {id},,RoastDetailScreen.kt,123
+detail.s8,已保存✓,,RoastDetailScreen.kt,130
+detail.s9,存为模板,,RoastDetailScreen.kt,130
+detail.s10,导出CSV,,RoastDetailScreen.kt,134
+detail.s11,重量与失重率,,RoastDetailScreen.kt,272
+detail.s12,生豆重 g,,RoastDetailScreen.kt,285
+detail.s13,熟豆重 g,,RoastDetailScreen.kt,297
+detail.s14,失重率,,RoastDetailScreen.kt,310
+detail.s15,已存✓,,RoastDetailScreen.kt,330
+detail.s16,⚠ 失重率超出常见区间（8%~25%），确认克重是否输错,,RoastDetailScreen.kt,333
+detail.s17,豆袋同步,,RoastDetailScreen.kt,363
+detail.s18,把本炉补录到豆袋：扣生豆/入熟豆。已同步过的炉会幂等跳过，重复点不会重复入账,,RoastDetailScreen.kt,366
+detail.s19,补录,,RoastDetailScreen.kt,371
+detail.s20,补录到豆袋,,RoastDetailScreen.kt,406
+detail.s21,生豆已扣过，只补熟豆,,RoastDetailScreen.kt,411
+detail.s22,未读到豆袋生豆批次（需豆袋 3.0.14+）,,RoastDetailScreen.kt,416
+detail.s23,{name}（剩 {remainingGrams}g）,,RoastDetailScreen.kt,431
+detail.s24,熟豆克重（出豆重）,,RoastDetailScreen.kt,459
+detail.s25,请选择生豆批次并填克重,,RoastDetailScreen.kt,489
+detail.s26,生豆扣减失败：{message},,RoastDetailScreen.kt,496
+detail.s27,⚠ 熟豆入库失败：{message},,RoastDetailScreen.kt,514
+detail.s28,无操作,,RoastDetailScreen.kt,518
+detail.s29,确认补录,,RoastDetailScreen.kt,524
+detail.s30,关闭,,RoastDetailScreen.kt,527
+stats.s1,烘焙阶段,,RoastPhaseStats.kt,94
+stats.s2,发展 {fcsT} · {totalEnd},,RoastPhaseStats.kt,99
+stats.s3,全程 {totalEnd},,RoastPhaseStats.kt,104
+settings.s1,设置,,SettingsScreen.kt,42
+settings.s2,使用手册,,SettingsScreen.kt,44
+settings.s3,已取消导入,,SettingsScreen.kt,60
+settings.s4,无法识别的备份格式,,SettingsScreen.kt,64
+settings.s5,解析失败：{take},,SettingsScreen.kt,67
+settings.s6,数据备份,,SettingsScreen.kt,74
+settings.s7,备份全部记录、模板与设置。「存到下载目录」生成 .zip；「导出到文件」分享 .json。导入时两种格式通用，按 ID 合并（同 ID 覆盖、不删除现有数据）,,SettingsScreen.kt,80
+settings.s8,已调起分享：{size} 条记录 / {size} 个模板,,SettingsScreen.kt,102
+settings.s9,导出失败：{take},,SettingsScreen.kt,104
+settings.s10,导出 .json,,SettingsScreen.kt,109
+settings.s11,从文件导入,,SettingsScreen.kt,113
+settings.s12,当前版本：{appVersion},,SettingsScreen.kt,117
+settings.s13,此系统不支持直存，请用「导出到文件」分享保存,,SettingsScreen.kt,141
+settings.s14,已保存到 {where},,SettingsScreen.kt,147
+settings.s15,存到下载目录（同局域网迁移推荐）,,SettingsScreen.kt,156
+settings.s16,确认导入？,,SettingsScreen.kt,169
+settings.s17,将合并导入 {size} 条记录、{size} 个模板,,SettingsScreen.kt,171
+settings.s18,及设置项,,SettingsScreen.kt,172
+settings.s19,。同 ID 覆盖、现有数据保留。,,SettingsScreen.kt,173
+settings.s20,✅ 导入完成：{size} 条记录 / {size} 个模板,,SettingsScreen.kt,188
+settings.s21,导入失败：{take},,SettingsScreen.kt,190
+settings.s22,导入,,SettingsScreen.kt,193
+settings.s23,取消,,SettingsScreen.kt,196
+settings.s24,跟随控制,,SettingsScreen.kt,202
+settings.s25,入豆自动开始跟随,,SettingsScreen.kt,211
+settings.s26,点「入豆」时若已选模板，自动进入跟随曲线模式,,SettingsScreen.kt,213
+settings.s27,跟随前瞻,,SettingsScreen.kt,239
+settings.s28,SV 提前参考 N 秒后的目标值，补偿炉子热惯性（0=关闭）,,SettingsScreen.kt,241
+settings.s29,设备连接,,SettingsScreen.kt,273
+settings.s30,启动时自动连接,,SettingsScreen.kt,282
+settings.s31,启动应用后自动连接上次的桥接器 IP,,SettingsScreen.kt,284
+settings.s32,🔵 蓝牙配网,,SettingsScreen.kt,309
+settings.s33,给桥接器设置 WiFi（无需电脑），配网模式下手机蓝牙直连,,SettingsScreen.kt,311
+settings.s34,烘焙事件,,SettingsScreen.kt,321
+settings.s35,深烘模式（显示二爆）,,SettingsScreen.kt,330
+settings.s36,底部事件条增加 二爆/二爆止，意式深烘用,,SettingsScreen.kt,332
+settings.s37,提示：建议烘焙前先在监控页选好模板（选模板不会立刻开始跟随），投豆瞬间点「入豆」即自动跟随。,,SettingsScreen.kt,350
+settings.s38,支持开发者,,SettingsScreen.kt,356
+settings.s39,☕ 支持开发者,,SettingsScreen.kt,366
+settings.s40,烤豆永久免费、开源、无广告。如果你觉得它帮到了你，欢迎到爱发电支持。,,SettingsScreen.kt,368
+settings.s41,🫘 姐妹应用：豆袋 CoffeeBeanTracker,,SettingsScreen.kt,384
+settings.s42,生豆熟豆库存、做一杯扣账、烘焙消耗联动。烘完的豆子它来管。,,SettingsScreen.kt,386
+app.s7,分享 {filename},,ShareText.android.kt,19
+app.s8,app外部分区/{name},,ShareText.android.kt,42
+app.s10,透传设备持续无响应：可能已被其他程序占用，或设备刚重启尚未就绪,,TransparentChannel.kt,66
+app.s11,SV 写入失败（设备无响应）,,TransparentChannel.kt,142
