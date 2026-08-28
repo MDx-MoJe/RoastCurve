@@ -53,6 +53,20 @@ class MainActivity : ComponentActivity() {
             requestPermissions(blePerms.toTypedArray(), 1002)
         }
 
+        // 恢复语言选择（在 UI 组合前应用，避免首帧语言闪变）
+        runCatching {
+            val st = kotlinx.coroutines.runBlocking { com.roastcurve.shared.storage.SettingsStore().load() }
+            if (st.langPackFile.isNotBlank()) {
+                val f = java.io.File(filesDir, "langpacks/" + st.langPackFile + ".json")
+                if (f.exists()) {
+                    com.roastcurve.shared.l10n.L10n.parsePack(f.readText())
+                        .onSuccess { com.roastcurve.shared.l10n.L10n.applyPack(it) }
+                }
+            } else if (st.langBuiltin == "en") {
+                com.roastcurve.shared.l10n.L10n.selectBuiltin(com.roastcurve.shared.l10n.L10n.BuiltinLang.EN)
+            }
+        }
+
         setContent {
             App()
         }

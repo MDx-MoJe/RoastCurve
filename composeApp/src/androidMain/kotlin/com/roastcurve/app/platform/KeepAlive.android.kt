@@ -1,5 +1,6 @@
 package com.roastcurve.app.platform
 
+import com.roastcurve.shared.l10n.L10n
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -88,8 +89,8 @@ class RoastKeepService : Service() {
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= 26) {
             nm.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "烘焙会话", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "烘豆进行期间的常驻提醒"
+                NotificationChannel(CHANNEL_ID, L10n.get("app.s2"), NotificationManager.IMPORTANCE_LOW).apply {
+                    description = L10n.get("app.s3")
                     setShowBadge(false)
                 }
             )
@@ -100,12 +101,12 @@ class RoastKeepService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val minutes = (System.currentTimeMillis() - startedAtMs) / 60_000
-        val text = if (minutes <= 0) "曲线记录中" else "已进行 $minutes 分钟 · 曲线记录中"
+        val text = if (minutes <= 0) L10n.get("app.s4") else L10n.get("app.s5")
         val builder = if (Build.VERSION.SDK_INT >= 26)
             Notification.Builder(this, CHANNEL_ID) else @Suppress("DEPRECATION") Notification.Builder(this)
         val n: Notification = builder
             .setSmallIcon(android.R.drawable.ic_menu_myplaces)
-            .setContentTitle("烘焙进行中")
+            .setContentTitle(L10n.get("app.s6"))
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

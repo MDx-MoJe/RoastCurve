@@ -1,5 +1,6 @@
 package com.roastcurve.app.history
 
+import com.roastcurve.shared.l10n.L10n
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -39,8 +40,8 @@ fun HistoryScreen(
     pendingDelete?.let { target ->
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
-            title = { Text("删除这条记录？") },
-            text = { Text("${target.id}\n删除后无法恢复") },
+            title = { Text(L10n.get("history.s1")) },
+            text = { Text(L10n.get("history.s2")) },
             confirmButton = {
                 TextButton(onClick = {
                     scope.launch {
@@ -62,7 +63,7 @@ fun HistoryScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("烘焙记录", style = MaterialTheme.typography.headlineMedium)
+            Text(L10n.get("history.s3"), style = MaterialTheme.typography.headlineMedium)
             OutlinedButton(onClick = onBack) { Text("返回") }
         }
 
@@ -74,7 +75,7 @@ fun HistoryScreen(
             }
             records.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    "还没有烘焙记录\n连接温控器烘一炉试试",
+                    L10n.get("history.s4"),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -110,12 +111,12 @@ private fun RecordCard(record: RoastRecord, onClick: () -> Unit, onDelete: () ->
                 Spacer(Modifier.height(2.dp))
                 Text(
                     buildString {
-                        append("${record.beanName.ifEmpty { "未命名" }} · ")
-                        append("${(record.totalTimeSeconds / 60).toInt()}分${(record.totalTimeSeconds % 60).toInt()}秒 · ")
-                        append("${record.curveData.size}点")
+                        append("${record.beanName.ifEmpty { L10n.get("history.s5") }} · ")
+                        append(L10n.get("history.s6"))
+                        append(L10n.get("history.s7"))
                         if (record.beanWeight > 0f && record.dropWeight > 0f) {
                             val loss = ((record.beanWeight - record.dropWeight) / record.beanWeight * 1000f).toInt() / 10f
-                            append(" · 失重$loss%")
+                            append(L10n.get("history.s8"))
                         }
                     },
                     style = MaterialTheme.typography.bodySmall,

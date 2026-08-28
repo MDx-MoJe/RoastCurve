@@ -16,13 +16,18 @@ import kotlinx.coroutines.launch
  * 导入用 zip/json，回退链：语言包 → 内置 EN → 中文源
  */
 @Composable
-internal fun LanguageCard() {
+internal fun LanguageCard(
+    onApply: () -> Unit = {},
+) {
     val scope = rememberCoroutineScope()
     val io: LangPackIO = remember { langPackIO() }
     val state by L10n.state.collectAsState()
     var status by remember { mutableStateOf<String?>(null) }
     var savedPacks by remember { mutableStateOf<List<String>>(emptyList()) }
     var filePick by remember { mutableStateOf(false) }
+    // 待应用的选择（点了 chip 先记着，点「应用」才真正切换）
+    var pendingBuiltin by remember { mutableStateOf<L10n.BuiltinLang?>(null) }
+    var pendingPackFile by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) { savedPacks = io.listSaved() }
 
@@ -37,15 +42,14 @@ internal fun LanguageCard() {
             Spacer(Modifier.height(10.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // 内置切换
                 FilterChip(
-                    selected = state.pack == null && state.builtin == L10n.BuiltinLang.ZH,
-                    onClick = { L10n.selectBuiltin(L10n.BuiltinLang.ZH); status = null },
+                    selected = pendingBuiltin?.let { it == L10n.BuiltinLang.ZH } ?: (state.pack == null && state.builtin == L10n.BuiltinLang.ZH),
+                    onClick = { pendingBuiltin = L10n.BuiltinLang.ZH; pendingPackFile = null; status = null },
                     label = { Text("中文") },
                 )
                 FilterChip(
-                    selected = state.pack == null && state.builtin == L10n.BuiltinLang.EN,
-                    onClick = { L10n.selectBuiltin(L10n.BuiltinLang.EN); status = null },
+                    selected = pendingBuiltin?.let { it == L10n.BuiltinLang.EN } ?: (state.pack == null && state.builtin == L10n.BuiltinLang.EN),
+                    onClick = { pendingBuiltin = L10n.BuiltinLang.EN; pendingPackFile = null; status = null },
                     label = { Text("English") },
                 )
             }
@@ -61,6 +65,36 @@ internal fun LanguageCard() {
                         status = if (zip != null) "✅ 语言包已生成（见导出分享）" else "导出失败"
                     }
                 }) { Text("导出当前") }
+                // 应用：写状态 + 通知上层重建 UI
+                Button(
+                    enabled = pendingBuiltin != null || pendingPackFile != null,
+                    onClick = {
+                        pendingPackFile?.let { pf ->
+                            scope.launch {
+                                io.loadSaved(pf).onSuccess { name ->
+                                    status = "✅ $name"
+                                    // 持久化语言包选择
+                                    val store = com.roastcurve.shared.storage.SettingsStore()
+                                    val cur = store.load()
+                                    store.save(cur.copy(langPackFile = pf, langBuiltin = "zh-CN"))
+                                    onApply()
+                                }
+                                pendingPackFile = null
+                            }
+                        } ?: pendingBuiltin?.let { lang ->
+                            L10n.selectBuiltin(lang)
+                            // 持久化内置语言选择
+                            scope.launch {
+                                val store = com.roastcurve.shared.storage.SettingsStore()
+                                val cur = store.load()
+                                store.save(cur.copy(langBuiltin = lang.code, langPackFile = ""))
+                            }
+                            status = null
+                            pendingBuiltin = null
+                            onApply()
+                        }
+                    },
+                ) { Text("应用") }
             }
 
             // 已保存语言包
@@ -70,12 +104,7 @@ internal fun LanguageCard() {
                      color = MaterialTheme.colorScheme.onSurfaceVariant)
                 savedPacks.forEach { name ->
                     TextButton(onClick = {
-                        scope.launch {
-                            io.loadSaved(name).fold(
-                                onSuccess = { status = "✅ 已切换到 $it" },
-                                onFailure = { status = "❌ ${it.message?.take(30)}" },
-                            )
-                        }
+                        pendingPackFile = name; pendingBuiltin = null; status = null
                     }) { Text(name, style = MaterialTheme.typography.bodySmall) }
                 }
             }

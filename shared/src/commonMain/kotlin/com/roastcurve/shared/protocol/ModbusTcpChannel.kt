@@ -1,5 +1,6 @@
 package com.roastcurve.shared.protocol
 
+import com.roastcurve.shared.l10n.L10n
 import com.roastcurve.shared.model.CurvePoint
 import com.roastcurve.shared.model.EventMarker
 import com.roastcurve.shared.model.RoastEvent
@@ -66,7 +67,7 @@ class ModbusTcpChannel(
             runCatching { socket?.close() }
             socket = null; input = null; output = null
             throw ModbusConnectionException(
-                "桥接器持续无响应：可能已被其他程序占用，或设备刚重启尚未就绪"
+                L10n.get("app.s12")
             )
         }
 

@@ -1,5 +1,6 @@
 package com.roastcurve.app.monitor
 
+import com.roastcurve.shared.l10n.L10n
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -151,7 +152,7 @@ fun MonitorScreen(
             try {
                 ch.sendCommand(DeviceCommand(CommandType.PID_SETPOINT, target))
             } catch (e: Exception) {
-                connectionError = "设定失败: ${e.message}"
+                connectionError = L10n.get("monitor.s1")
             } finally {
                 writingSv = false
             }
@@ -270,7 +271,7 @@ fun MonitorScreen(
                 ch.sendCommand(DeviceCommand(CommandType.PID_SETPOINT, target))
                 // 写入成功，下一轮询周期回读刷新 currentSv
             } catch (e: Exception) {
-                connectionError = "设定失败: ${e.message}"
+                connectionError = L10n.get("monitor.s1")
             } finally {
                 writingSv = false
             }
@@ -286,13 +287,13 @@ fun MonitorScreen(
                     try {
                         val text = data.decodeToString()
                         val curve = com.roastcurve.shared.io.ArtisanAlog.parseBt(text)
-                            ?: run { followAlert = "无法识别的 .alog 文件"; return@launch }
+                            ?: run { followAlert = L10n.get("monitor.s2"); return@launch }
                         val pts = com.roastcurve.shared.io.ArtisanAlog.toPoints(curve)
                         val computedEvents = com.roastcurve.shared.io.ArtisanAlog.parseComputedEvents(text)
                         val anchors = com.roastcurve.shared.io.ArtisanAlog.deriveAnchors(pts, curve.phases, computedEvents)
                         val nm = nameHint?.removeSuffix(".alog")?.removeSuffix(".ALOG")
                             ?.ifBlank { null }
-                            ?: curve.title ?: "Artisan 曲线"
+                            ?: curve.title ?: L10n.get("monitor.s3")
                         // 同名同源的旧模板覆盖更新（重导不重复堆积）
                         val existId = ProfileStore().listAll()
                             .find { it.sourceRecordId == "artisan-alog" && it.name == nm }?.id
@@ -306,13 +307,13 @@ fun MonitorScreen(
                             )
                         )
                         followAlert = if (computedEvents.isNotEmpty())
-                            "已导入模板：$nm（${pts.size} 点，含 ${computedEvents.size} 个事件锚点）"
+                            L10n.get("monitor.s4")
                         else
-                            "已导入模板：$nm（${pts.size} 点）；脱水/一爆等锚点可在编辑器中补充标注"
+                            L10n.get("monitor.s5")
                         activeProfile = ProfileStore().listAll().find { it.id.startsWith("2026") && it.name == nm } ?: activeProfile
                         showProfilePicker = true   // 重开选择器展示结果
                     } catch (e: Exception) {
-                        followAlert = "导入失败：${e.message?.take(40)}"
+                        followAlert = L10n.get("monitor.import_failed", "msg" to (e.message?.take(40) ?: ""))
                     }
                 }
             }
@@ -330,13 +331,13 @@ fun MonitorScreen(
                 for (attempt in 1..3) {
                     try {
                         ch = when (linkType) {
-                            LinkType.MODBUS_TCP -> ModbusTcpChannel(name = "温控器", host = host)
+                            LinkType.MODBUS_TCP -> ModbusTcpChannel(name = L10n.get("monitor.s6"), host = host)
                             LinkType.TCP_TRANSPARENT -> TransparentChannel(
-                                name = "温控器",
+                                name = L10n.get("monitor.s6"),
                                 transport = TcpByteTransport(host = host, port = 8899),
                             )
                             LinkType.BLE_TRANSPARENT -> TransparentChannel(
-                                name = "温控器",
+                                name = L10n.get("monitor.s6"),
                                 transport = createBleTransport(bleAddress.trim()),
                             )
                         }
@@ -401,11 +402,11 @@ fun MonitorScreen(
             } catch (e: Exception) {
                 val msg = e.message ?: ""
                     connectionError = when {
-                        "占用" in msg || "Artisan" in msg -> msg
+                        L10n.get("monitor.s7") in msg || "Artisan" in msg -> msg
                         // 瞬时网络错误：3 次重试后仍失败多半是设备不在线，不要照搬系统层原文误导用户
                         "route to host" in msg || "EHOSTUNREACH" in msg || "ENETUNREACH" in msg ->
-                            "连接不上桥接器：请确认设备已上电、手机与它在同一 WiFi（多次重试均失败）"
-                        else -> "连接失败: ${msg.ifEmpty { e::class.simpleName }}"
+                            L10n.get("monitor.s8")
+                        else -> L10n.get("monitor.s9")
                     }
             }
         }
@@ -438,7 +439,7 @@ fun MonitorScreen(
             val rawLa = if (laSec > 0f) RoastMath.profileTargetAt(profile.points, tEff + laSec) else null
             val raw = rawLa ?: rawAtT
             if (raw == null || rawAtT == null) {
-                exitFollow("模板曲线已走完，已切回手动")
+                exitFollow(L10n.get("monitor.s10"))
                 break
             }
             followTarget = raw
@@ -452,7 +453,7 @@ fun MonitorScreen(
             if (chargeT != null && bt != null && kotlin.math.abs(bt - raw) > 15f) {
                 fuseBadSec += 2
                 if (fuseBadSec >= 30) {
-                    exitFollow("偏差超过 15°C 持续 30 秒，已自动切回手动")
+                    exitFollow(L10n.get("monitor.s11"))
                     break
                 }
             } else {
@@ -492,7 +493,7 @@ fun MonitorScreen(
             if (pid != null) {
                 activeProfile = ProfileStore().listAll().find { it.id == pid }
             }
-            followAlert = "检测到上次未完成的烘焙会话，已恢复；请重新连接设备继续"
+            followAlert = L10n.get("monitor.s12")
         }
     }
 
@@ -538,10 +539,10 @@ fun MonitorScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("烤豆 · 监控", style = MaterialTheme.typography.headlineMedium)
+            Text(L10n.get("monitor.s13"), style = MaterialTheme.typography.headlineMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedButton(onClick = onOpenHistory) { Text("记录") }
-                OutlinedButton(onClick = onOpenSettings) { Text("设置") }
+                OutlinedButton(onClick = onOpenHistory) { Text(L10n.get("monitor.s14")) }
+                OutlinedButton(onClick = onOpenSettings) { Text(L10n.get("common.settings")) }
                 // 已连接未记录：手动起表；采集中：停止=断开并定稿保存
                 if (useRealDevice && !recording) {
                     Button(onClick = {
@@ -552,10 +553,10 @@ fun MonitorScreen(
                         displayTimeSec = 0f
                         recording = true
                         saveSessionState()
-                    }) { Text("开始") }
+                    }) { Text(L10n.get("monitor.s15")) }
                 }
                 if (useRealDevice && recording) {
-                    Button(onClick = { stopRecording() }) { Text("停止") }
+                    Button(onClick = { stopRecording() }) { Text(L10n.get("monitor.s16")) }
                 }
             }
         }
@@ -570,8 +571,8 @@ fun MonitorScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf(
                 LinkType.MODBUS_TCP to "Modbus TCP",
-                LinkType.TCP_TRANSPARENT to "串口透传",
-                LinkType.BLE_TRANSPARENT to "蓝牙",
+                LinkType.TCP_TRANSPARENT to L10n.get("monitor.s17"),
+                LinkType.BLE_TRANSPARENT to L10n.get("monitor.s18"),
             ).forEach { (t, label) ->
                 FilterChip(
                     selected = linkType == t,
@@ -588,7 +589,7 @@ fun MonitorScreen(
                 onValueChange = { v ->
                     if (linkType == LinkType.BLE_TRANSPARENT) bleAddress = v else hostInput = v
                 },
-                label = { Text(if (linkType == LinkType.BLE_TRANSPARENT) "蓝牙地址 (MAC)" else "桥接器 IP") },
+                label = { Text(if (linkType == LinkType.BLE_TRANSPARENT) L10n.get("monitor.s19") else L10n.get("monitor.s20")) },
                 enabled = !useRealDevice,
                 singleLine = true,
                 modifier = Modifier.weight(1f).height(56.dp),
@@ -600,7 +601,7 @@ fun MonitorScreen(
                     if (useRealDevice) disconnect() else connect(addr)
                 },
             ) {
-                Text(if (useRealDevice) "断开" else "连接")
+                Text(if (useRealDevice) L10n.get("monitor.s21") else L10n.get("monitor.s22"))
             }
         }
         // 动画显隐：淡入淡出+高度展开/收起，避免「弹出/顶下去」的布局跳动（计时闪烁的根治）
@@ -619,12 +620,12 @@ fun MonitorScreen(
                 TextButton(
                     onClick = { connectionError = null },
                     contentPadding = PaddingValues(horizontal = 4.dp),
-                ) { Text("知道了", style = MaterialTheme.typography.labelSmall) }
+                ) { Text(L10n.get("monitor.s23"), style = MaterialTheme.typography.labelSmall) }
             }
         }
         if (useRealDevice) {
             Text(
-                "已连接温控器（实时）",
+                L10n.get("monitor.s24"),
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.labelSmall,
             )
@@ -632,10 +633,10 @@ fun MonitorScreen(
             bridgeRssi?.let { rssi ->
                 Spacer(Modifier.width(8.dp))
                 val (sigColor, sigLabel) = when {
-                    rssi >= -60 -> MaterialTheme.colorScheme.primary to "强"
-                    rssi >= -70 -> Color(0xFFC08A00) to "中"
-                    rssi >= -80 -> Color(0xFFC05A2E) to "弱"
-                    else -> MaterialTheme.colorScheme.error to "极弱"
+                    rssi >= -60 -> MaterialTheme.colorScheme.primary to L10n.get("monitor.s25")
+                    rssi >= -70 -> Color(0xFFC08A00) to L10n.get("monitor.s26")
+                    rssi >= -80 -> Color(0xFFC05A2E) to L10n.get("monitor.s27")
+                    else -> MaterialTheme.colorScheme.error to L10n.get("monitor.s28")
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
@@ -643,7 +644,7 @@ fun MonitorScreen(
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        "信号${sigLabel} $rssi dBm",
+                        L10n.get("monitor.s29"),
                         color = sigColor,
                         style = MaterialTheme.typography.labelSmall,
                     )
@@ -665,13 +666,13 @@ fun MonitorScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("烘焙模式", style = MaterialTheme.typography.labelMedium,
+                        Text(L10n.get("monitor.s30"), style = MaterialTheme.typography.labelMedium,
                              color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             FilterChip(
                                 selected = !followMode,
                                 onClick = { if (followMode) exitFollow() },
-                                label = { Text("手动") },
+                                label = { Text(L10n.get("monitor.s31")) },
                             )
                             FilterChip(
                                 selected = followMode,
@@ -682,7 +683,7 @@ fun MonitorScreen(
                                         else -> { svHistory.clear(); fuseBadSec = 0; followMode = true; followAlert = null }
                                     }
                                 },
-                                label = { Text("跟随曲线") },
+                                label = { Text(L10n.get("monitor.s32")) },
                             )
                         }
                     }
@@ -696,7 +697,7 @@ fun MonitorScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                "模板：${prof.name}",
+                                L10n.get("monitor.s33"),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
@@ -704,7 +705,7 @@ fun MonitorScreen(
                                 modifier = Modifier.weight(1f, fill = false),
                             )
                             TextButton(onClick = { showProfilePicker = true }) {
-                                Text("更换", style = MaterialTheme.typography.labelSmall)
+                                Text(L10n.get("monitor.s34"), style = MaterialTheme.typography.labelSmall)
                             }
                             // 实时偏差（跟随中显示数字，手动时提示参照）
                             val dev = fullCurve.lastOrNull()?.bt?.let { bt ->
@@ -712,7 +713,7 @@ fun MonitorScreen(
                             }
                             Text(
                                 when {
-                                    !followMode -> "参照中"
+                                    !followMode -> L10n.get("monitor.s35")
                                     dev != null -> "Δ ${if (dev >= 0) "+" else ""}${dev.toFixed1()}°"
                                     else -> "Δ --"
                                 },
@@ -727,14 +728,14 @@ fun MonitorScreen(
                         }
                     } else {
                         Spacer(Modifier.height(4.dp))
-                        Text("未选模板：点「跟随曲线」选择一炉历史记录作为目标",
+                        Text(L10n.get("monitor.s36"),
                              style = MaterialTheme.typography.labelSmall,
                              color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (followMode) {
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            "诊断：目标 ${followTarget?.toInt()?.toString() ?: "--"}° · 回读SV ${followLastSv?.toInt()?.toString() ?: "--"}° · 模板时钟 ${followClock.toInt()}s",
+                            L10n.get("monitor.diag", "tgt" to (followTarget?.toInt()?.toString() ?: "--"), "sv" to (followLastSv?.toInt()?.toString() ?: "--"), "clk" to followClock.toInt()),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -761,7 +762,7 @@ fun MonitorScreen(
                             modifier = Modifier.weight(1f),
                         )
                         TextButton(onClick = { followAlert = null }, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
-                            Text("知道了", style = MaterialTheme.typography.labelSmall)
+                            Text(L10n.get("monitor.s23"), style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
@@ -781,7 +782,7 @@ fun MonitorScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column {
-                        Text("SV 设定温度", style = MaterialTheme.typography.labelMedium,
+                        Text(L10n.get("monitor.s37"), style = MaterialTheme.typography.labelMedium,
                              color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             currentSv?.let { "${it.toInt()}°C" } ?: "--",
@@ -793,14 +794,14 @@ fun MonitorScreen(
                         OutlinedButton(
                             onClick = {
                                 // 手动介入：跟随模式立即退出
-                                if (followMode) exitFollow("已切回手动模式")
+                                if (followMode) exitFollow(L10n.get("monitor.s38"))
                                 adjustSv(-5f)
                             },
                             enabled = !writingSv && currentSv != null,
                         ) { Text("-5", fontWeight = FontWeight.Bold) }
                         OutlinedButton(
                             onClick = {
-                                if (followMode) exitFollow("已切回手动模式")
+                                if (followMode) exitFollow(L10n.get("monitor.s38"))
                                 adjustSv(+5f)
                             },
                             enabled = !writingSv && currentSv != null,
@@ -818,7 +819,7 @@ fun MonitorScreen(
         val last = fullCurve.lastOrNull()
         val palette = if (isSystemInDarkTheme()) DarkRoast else WarmBeige
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            LcdCard("BT 豆温", liveBt ?: last?.bt, palette.CurveBT, Modifier.weight(1f))
+            LcdCard(L10n.get("monitor.s39"), liveBt ?: last?.bt, palette.CurveBT, Modifier.weight(1f))
             TimeCard(displayTimeSec, palette.OnSurface, Modifier.weight(1f))
             LcdCard("RoR", last?.ror, palette.CurveRoR, Modifier.weight(1f), suffix = "°/m")
         }
@@ -858,11 +859,11 @@ fun MonitorScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                 ) {
-                    LegendDot(palette.PhaseDrying, "脱水")
-                    LegendDot(palette.PhaseMaillard, "美拉德")
-                    LegendDot(palette.PhaseDevelopment, "发展")
+                    LegendDot(palette.PhaseDrying, L10n.get("monitor.s40"))
+                    LegendDot(palette.PhaseMaillard, L10n.get("monitor.s41"))
+                    LegendDot(palette.PhaseDevelopment, L10n.get("monitor.s42"))
                     if (activeProfile != null) {
-                        LegendDot(palette.CurveBackground, "模板")
+                        LegendDot(palette.CurveBackground, L10n.get("monitor.s43"))
                     }
                 }
             }
@@ -929,21 +930,21 @@ fun MonitorScreen(
         if (showAlogHint) {
             AlertDialog(
                 onDismissRequest = { showAlogHint = false },
-                title = { Text("导入 Artisan 曲线") },
+                title = { Text(L10n.get("monitor.s44")) },
                 text = {
                     Column {
-                        Text("将从 .alog 文件读取温度曲线，生成可跟随的模板。",
+                        Text(L10n.get("monitor.s45"),
                              style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.height(8.dp))
-                        Text("✓ 会导入", style = MaterialTheme.typography.labelMedium,
+                        Text(L10n.get("monitor.s46"), style = MaterialTheme.typography.labelMedium,
                              fontWeight = FontWeight.Bold)
-                        Text("· 温度曲线（时间 + 豆温）\n· 入豆 / 出豆 时间锚点",
+                        Text(L10n.get("monitor.s47"),
                              style = MaterialTheme.typography.bodySmall,
                              color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(6.dp))
-                        Text("✓ 自动识别事件节点", style = MaterialTheme.typography.labelMedium,
+                        Text(L10n.get("monitor.s48"), style = MaterialTheme.typography.labelMedium,
                              fontWeight = FontWeight.Bold)
-                        Text("若 .alog 自带 computed 事件（入豆/脱水/一爆/出豆的时间与温度），导入时直接读取为锚点；缺失时回退为温度阈值推导。",
+                        Text(L10n.get("monitor.s49"),
                              style = MaterialTheme.typography.bodySmall,
                              color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -952,10 +953,10 @@ fun MonitorScreen(
                     TextButton(onClick = {
                         showAlogHint = false
                         startArtisanImport()
-                    }) { Text("选择文件") }
+                    }) { Text(L10n.get("monitor.s50")) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showAlogHint = false }) { Text("取消") }
+                    TextButton(onClick = { showAlogHint = false }) { Text(L10n.get("common.cancel")) }
                 },
             )
         }
@@ -966,23 +967,23 @@ fun MonitorScreen(
             LaunchedEffect(Unit) { profiles = ProfileStore().listAll() }
             AlertDialog(
                 onDismissRequest = { showProfilePicker = false },
-                title = { Text("选择烘焙模板") },
+                title = { Text(L10n.get("monitor.s51")) },
                 text = {
                     when (val ps = profiles) {
-                        null -> Text("读取中…")
+                        null -> Text(L10n.get("monitor.s52"))
                         else -> if (ps.isEmpty()) {
                             Column {
-                                Text("还没有模板。可点「+ 新建自定义模板」「导入 Artisan 曲线」，或到历史详情页「存为模板」。")
+                                Text(L10n.get("monitor.s53"))
                                 Spacer(Modifier.height(8.dp))
                                 OutlinedButton(onClick = {
                                     showProfilePicker = false
                                     onCreateProfile()
-                                }, modifier = Modifier.fillMaxWidth()) { Text("+ 新建自定义模板") }
+                                }, modifier = Modifier.fillMaxWidth()) { Text(L10n.get("monitor.s54")) }
                                 Spacer(Modifier.height(6.dp))
                                 OutlinedButton(onClick = {
                                     showProfilePicker = false
                                     showAlogHint = true
-                                }, modifier = Modifier.fillMaxWidth()) { Text("导入 Artisan 曲线 (.alog)") }
+                                }, modifier = Modifier.fillMaxWidth()) { Text(L10n.get("monitor.s55")) }
                             }
                         } else {
                             LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
@@ -1007,7 +1008,7 @@ fun MonitorScreen(
                                         ) {
                                             Text(p.name, fontWeight = FontWeight.Bold)
                                             Text(
-                                                "${p.points.size} 个采样点",
+                                                L10n.get("monitor.s56"),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
@@ -1018,7 +1019,7 @@ fun MonitorScreen(
                                                 showProfilePicker = false
                                                 onEditProfile(p)
                                             }) {
-                                                Text("编辑", style = MaterialTheme.typography.labelSmall)
+                                                Text(L10n.get("monitor.s57"), style = MaterialTheme.typography.labelSmall)
                                             }
                                         }
                                         // 删除模板：仅从列表移除，不影响历史记录
@@ -1028,7 +1029,7 @@ fun MonitorScreen(
                                                 profiles = ProfileStore().listAll()
                                             }
                                         }) {
-                                            Text("删除", color = MaterialTheme.colorScheme.error,
+                                            Text(L10n.get("monitor.s58"), color = MaterialTheme.colorScheme.error,
                                                  style = MaterialTheme.typography.labelSmall)
                                         }
                                     }
@@ -1044,15 +1045,15 @@ fun MonitorScreen(
                             OutlinedButton(onClick = {
                                 showProfilePicker = false
                                 onCreateProfile()
-                            }) { Text("+ 新建") }
+                            }) { Text(L10n.get("monitor.s59")) }
                             Spacer(Modifier.width(6.dp))
                         }
                         OutlinedButton(onClick = {
                             showProfilePicker = false
                             showAlogHint = true
-                        }) { Text("导入") }
+                        }) { Text(L10n.get("common.import")) }
                         Spacer(Modifier.width(6.dp))
-                        TextButton(onClick = { showProfilePicker = false }) { Text("取消") }
+                        TextButton(onClick = { showProfilePicker = false }) { Text(L10n.get("common.cancel")) }
                     }
                 },
             )
@@ -1084,19 +1085,19 @@ fun MonitorScreen(
 
             AlertDialog(
                 onDismissRequest = { if (!pushing) showBeanBagSync = false },
-                title = { Text("同步到豆袋") },
+                title = { Text(L10n.get("monitor.s60")) },
                 text = {
                     when {
-                        beans == null -> Text("读取豆袋生豆批次…")
+                        beans == null -> Text(L10n.get("monitor.s61"))
                         beans!!.isEmpty() -> Column {
-                            Text("未读到豆袋生豆批次。请确认：")
+                            Text(L10n.get("monitor.s62"))
                             Spacer(Modifier.height(6.dp))
-                            Text("· 豆袋已安装且为 3.0.13 或以上版本\n· 豆袋里有生豆批次记录",
+                            Text(L10n.get("monitor.s63"),
                                  style = MaterialTheme.typography.bodySmall,
                                  color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         else -> Column {
-                            Text("选批次扣生豆，同时按熟豆名入库熟豆（同名累加）。重复推送不会重复扣/入。",
+                            Text(L10n.get("monitor.s64"),
                                  style = MaterialTheme.typography.bodySmall,
                                  color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(8.dp))
@@ -1115,7 +1116,7 @@ fun MonitorScreen(
                                         )
                                         Column(Modifier.weight(1f)) {
                                             Text(b.name, fontWeight = FontWeight.Bold)
-                                            Text("剩余 ${b.remainingGrams}g",
+                                            Text(L10n.get("monitor.s65"),
                                                  style = MaterialTheme.typography.labelSmall,
                                                  color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
@@ -1126,7 +1127,7 @@ fun MonitorScreen(
                             OutlinedTextField(
                                 value = gramsText,
                                 onValueChange = { gramsText = it.filter { ch -> ch.isDigit() || ch == '.' } },
-                                label = { Text("生豆消耗克重（入豆重）") },
+                                label = { Text(L10n.get("monitor.s66")) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 enabled = !success,
@@ -1135,7 +1136,7 @@ fun MonitorScreen(
                             OutlinedTextField(
                                 value = roastedNameText,
                                 onValueChange = { roastedNameText = it },
-                                label = { Text("熟豆名称（同名累加库存）") },
+                                label = { Text(L10n.get("monitor.s67")) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 enabled = !success,
@@ -1144,7 +1145,7 @@ fun MonitorScreen(
                             OutlinedTextField(
                                 value = roastedGramsText,
                                 onValueChange = { roastedGramsText = it.filter { ch -> ch.isDigit() || ch == '.' } },
-                                label = { Text("熟豆克重（出豆重，入库量）") },
+                                label = { Text(L10n.get("monitor.s68")) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 enabled = !success,
@@ -1162,7 +1163,7 @@ fun MonitorScreen(
                 },
                 confirmButton = {
                     when {
-                        success -> TextButton(onClick = { showBeanBagSync = false }) { Text("完成") }
+                        success -> TextButton(onClick = { showBeanBagSync = false }) { Text(L10n.get("monitor.s69")) }
                         else -> TextButton(
                             enabled = selectedId != null && gramsText.toDoubleOrNull()?.let { it > 0 } == true && !pushing && pendingRoastId != null,
                             onClick = {
@@ -1188,19 +1189,19 @@ fun MonitorScreen(
                                                     roastDateEpochMs = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                                                 )) {
                                                     is BridgeResult.Ok -> resultMsg = "✓ ${res.message}\n✓ ${r2.message}"
-                                                    is BridgeResult.Err -> resultMsg += "\n⚠ 熟豆入库失败：${r2.message}（可用历史页补录）"
+                                                    is BridgeResult.Err -> resultMsg += L10n.get("monitor.s70")
                                                 }
                                             }
                                         }
-                                        is BridgeResult.Err -> resultMsg = "扣减失败：${res.message}"
+                                        is BridgeResult.Err -> resultMsg = L10n.get("monitor.s71")
                                     }
                                 }
                             },
-                        ) { Text(if (pushing) "推送中…" else "确认扣减") }
+                        ) { Text(if (pushing) L10n.get("monitor.s72") else L10n.get("monitor.s73")) }
                     }
                 },
                 dismissButton = {
-                    if (!success) TextButton(onClick = { showBeanBagSync = false }) { Text("跳过") }
+                    if (!success) TextButton(onClick = { showBeanBagSync = false }) { Text(L10n.get("monitor.s74")) }
                 },
             )
         }
@@ -1231,12 +1232,12 @@ fun MonitorScreen(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 val rows: List<List<Pair<RoastEvent, String>>> =
                     if (settings.showSecondCrack) listOf(
-                        listOf(RoastEvent.CHARGE to "入豆", RoastEvent.DRY to "黄点",
-                               RoastEvent.FCs to "一爆", RoastEvent.FCe to "一爆止"),
-                        listOf(RoastEvent.SCs to "二爆", RoastEvent.SCe to "二爆止", RoastEvent.DROP to "出豆"),
+                        listOf(RoastEvent.CHARGE to L10n.get("monitor.s75"), RoastEvent.DRY to L10n.get("monitor.s76"),
+                               RoastEvent.FCs to L10n.get("monitor.s77"), RoastEvent.FCe to L10n.get("monitor.s78")),
+                        listOf(RoastEvent.SCs to L10n.get("monitor.s79"), RoastEvent.SCe to L10n.get("monitor.s80"), RoastEvent.DROP to L10n.get("monitor.s81")),
                     ) else listOf(
-                        listOf(RoastEvent.CHARGE to "入豆", RoastEvent.DRY to "黄点", RoastEvent.FCs to "一爆",
-                               RoastEvent.FCe to "一爆止", RoastEvent.DROP to "出豆"),
+                        listOf(RoastEvent.CHARGE to L10n.get("monitor.s75"), RoastEvent.DRY to L10n.get("monitor.s76"), RoastEvent.FCs to L10n.get("monitor.s77"),
+                               RoastEvent.FCe to L10n.get("monitor.s78"), RoastEvent.DROP to L10n.get("monitor.s81")),
                     )
                 rows.forEach { rowEvents ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1276,7 +1277,7 @@ fun MonitorScreen(
                                         followAlert = null
                                         followMode = true
                                     } else {
-                                        followAlert = "已入豆，未选模板，当前手动模式；可点「跟随曲线」选择模板开始自动跟随"
+                                        followAlert = L10n.get("monitor.s82")
                                     }
                                 }
                             }

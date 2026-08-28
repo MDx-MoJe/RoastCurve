@@ -1,5 +1,6 @@
 package com.roastcurve.app.settings
 
+import com.roastcurve.shared.l10n.L10n
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -42,13 +43,13 @@ fun BleConfigScreen(onBack: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
-            Text("蓝牙配网", style = MaterialTheme.typography.headlineMedium)
-            OutlinedButton(onClick = onBack) { Text("返回") }
+            Text(L10n.get("ble.s1"), style = MaterialTheme.typography.headlineMedium)
+            OutlinedButton(onClick = onBack) { Text(L10n.get("ble.s2")) }
         }
 
         Spacer(Modifier.height(8.dp))
         Text(
-            "先让桥接器进入配网模式（紫灯闪烁），再扫描连接。",
+            L10n.get("ble.s3"),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -65,13 +66,13 @@ fun BleConfigScreen(onBack: () -> Unit) {
                         runCatching { SettingsStore().load().lastBridgeHost }.getOrNull() ?: ""
                     }
                     if (host.isBlank()) {
-                        message = "还没有记录桥接器 IP，先到主界面连一次，或直接按 BOOT 键进配网。"
+                        message = L10n.get("ble.s4")
                     } else {
                         val ok = SignalProbe.resetWifi(host)
                         message = if (ok) {
-                            "已重置，桥接器正在重启进入配网模式（约 5 秒后紫灯闪烁），稍后点「扫描桥接器」。"
+                            L10n.get("ble.s5")
                         } else {
-                            "重置失败：连不上桥接器 $host，确认它在线（同一 WiFi）。"
+                            L10n.get("ble.s6")
                         }
                     }
                     resetting = false
@@ -80,7 +81,7 @@ fun BleConfigScreen(onBack: () -> Unit) {
             enabled = !resetting,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(if (resetting) "重置中…" else "🔄 重置桥接器 WiFi（换 WiFi 用）")
+            Text(if (resetting) L10n.get("ble.s7") else L10n.get("ble.s8"))
         }
 
         Spacer(Modifier.height(8.dp))
@@ -95,19 +96,19 @@ fun BleConfigScreen(onBack: () -> Unit) {
                     devices = found
                     scanning = false
                     if (found.isEmpty()) {
-                        message = "未找到桥接器，确认它紫灯闪烁（配网模式）且手机蓝牙已开"
+                        message = L10n.get("ble.s9")
                     }
                 }
             },
             enabled = !scanning,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(if (scanning) "扫描中…（约 8 秒）" else "扫描桥接器")
+            Text(if (scanning) L10n.get("ble.s10") else L10n.get("ble.s11"))
         }
 
         if (devices.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
-            Text("找到的设备（点选）：", style = MaterialTheme.typography.labelMedium)
+            Text(L10n.get("ble.s12"), style = MaterialTheme.typography.labelMedium)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 devices.forEach { d ->
                     Surface(
@@ -130,7 +131,7 @@ fun BleConfigScreen(onBack: () -> Unit) {
         OutlinedTextField(
             value = ssid,
             onValueChange = { ssid = it },
-            label = { Text("WiFi 名称") },
+            label = { Text(L10n.get("ble.s13")) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -138,7 +139,7 @@ fun BleConfigScreen(onBack: () -> Unit) {
         OutlinedTextField(
             value = pass,
             onValueChange = { pass = it },
-            label = { Text("WiFi 密码") },
+            label = { Text(L10n.get("ble.s14")) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -148,11 +149,11 @@ fun BleConfigScreen(onBack: () -> Unit) {
             onClick = {
                 val dev = selected
                 if (dev == null) {
-                    message = "请先扫描并选择一个设备"
+                    message = L10n.get("ble.s15")
                     return@Button
                 }
                 if (ssid.isBlank() || pass.length < 8) {
-                    message = "WiFi 名不能为空，密码至少 8 位"
+                    message = L10n.get("ble.s16")
                     return@Button
                 }
                 configuring = true
@@ -162,7 +163,7 @@ fun BleConfigScreen(onBack: () -> Unit) {
                     configuring = false
                     if (ok) {
                         // 桥接器收到凭据后重启并连 WiFi（需几秒），用 mDNS 自动发现 IP
-                        message = "已发送，桥接器正在连接 $ssid…"
+                        message = L10n.get("ble.s17")
                         val bridge = discoverBridge(20000)
                         if (bridge != null) {
                             withContext(Dispatchers.IO) {
@@ -171,19 +172,19 @@ fun BleConfigScreen(onBack: () -> Unit) {
                                     s.save(s.load().copy(lastBridgeHost = bridge.host))
                                 }
                             }
-                            message = "配网成功！桥接器 IP：${bridge.host}（已自动记录，返回后可直接连接）"
+                            message = L10n.get("ble.s18")
                         } else {
-                            message = "已发送，但未自动发现桥接器。等它连上 WiFi 后，到主界面手动填 IP。"
+                            message = L10n.get("ble.s19")
                         }
                     } else {
-                        message = "配网失败，请重试（确认桥接器在配网模式）"
+                        message = L10n.get("ble.s20")
                     }
                 }
             },
             enabled = !configuring && !scanning,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(if (configuring) "配网中…" else "配网")
+            Text(if (configuring) L10n.get("ble.s21") else L10n.get("ble.s22"))
         }
 
         message?.let {

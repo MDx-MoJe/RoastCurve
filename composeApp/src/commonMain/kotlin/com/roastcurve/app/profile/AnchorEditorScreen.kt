@@ -1,5 +1,6 @@
 package com.roastcurve.app.profile
 
+import com.roastcurve.shared.l10n.L10n
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.layout.onSizeChanged
@@ -81,7 +82,7 @@ fun AnchorEditorScreen(
             .padding(12.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(if (isEdit) "编辑模板" else "新建模板", style = MaterialTheme.typography.headlineMedium)
+            Text(if (isEdit) L10n.get("anchor.s1") else L10n.get("anchor.s2"), style = MaterialTheme.typography.headlineMedium)
             OutlinedButton(onClick = onBack) { Text("返回") }
         }
 
@@ -91,7 +92,7 @@ fun AnchorEditorScreen(
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("模板名称") },
+            label = { Text(L10n.get("anchor.s3")) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -124,12 +125,12 @@ fun AnchorEditorScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(10.dp).background(Color(0xFFC05A2E), RoundedCornerShape(3.dp)))
                     Spacer(Modifier.width(4.dp))
-                    Text("目标曲线", style = MaterialTheme.typography.labelSmall,
+                    Text(L10n.get("anchor.s4"), style = MaterialTheme.typography.labelSmall,
                          color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(12.dp))
                     Box(Modifier.size(10.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50)))
                     Spacer(Modifier.width(4.dp))
-                    Text("锚点", style = MaterialTheme.typography.labelSmall,
+                    Text(L10n.get("anchor.s5"), style = MaterialTheme.typography.labelSmall,
                          color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -138,7 +139,7 @@ fun AnchorEditorScreen(
         Spacer(Modifier.height(12.dp))
 
         // ===== 锚点列表 =====
-        Text("锚点 · 预览图上点空白加锚点、长按拖动调位置", style = MaterialTheme.typography.labelMedium,
+        Text(L10n.get("anchor.s6"), style = MaterialTheme.typography.labelMedium,
              color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
 
@@ -151,7 +152,7 @@ fun AnchorEditorScreen(
             )
             Spacer(Modifier.height(6.dp))
         }
-        Text("时间单位为秒：9分30秒 填 570", style = MaterialTheme.typography.labelSmall,
+        Text(L10n.get("anchor.s7"), style = MaterialTheme.typography.labelSmall,
              color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         Spacer(Modifier.height(8.dp))
@@ -163,7 +164,7 @@ fun AnchorEditorScreen(
                 anchors.add(AnchorPoint(timeSeconds = t, bt = bt, label = guessStage(bt)))
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("+ 添加锚点") }
+        ) { Text(L10n.get("anchor.s8")) }
 
         Spacer(Modifier.height(16.dp))
 
@@ -186,11 +187,11 @@ fun AnchorEditorScreen(
                 }
             },
             modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text(if (isEdit) "保存修改" else "保存模板", fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) }
+        ) { Text(if (isEdit) L10n.get("anchor.s9") else L10n.get("anchor.s10"), fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) }
 
         if (saveMsg) {
             Spacer(Modifier.height(6.dp))
-            Text("已保存 ✓", color = MaterialTheme.colorScheme.primary,
+            Text(L10n.get("anchor.s11"), color = MaterialTheme.colorScheme.primary,
                  style = MaterialTheme.typography.labelSmall)
         }
         Spacer(Modifier.height(120.dp))   // 给底部手势条留白
@@ -221,7 +222,7 @@ private fun AnchorRow(
                     lText = s
                     onUpdate(point.copy(label = s.take(6)))
                 },
-                label = { Text("名称") },
+                label = { Text(L10n.get("anchor.s12")) },
                 placeholder = { Text(guessStage(point.bt), style = MaterialTheme.typography.labelSmall) },
                 singleLine = true,
                 modifier = Modifier.weight(1f).heightIn(min = 56.dp),
@@ -234,7 +235,7 @@ private fun AnchorRow(
                     tText = s
                     parseNum(s)?.let { v -> onUpdate(point.copy(timeSeconds = v)) }
                 },
-                label = { Text("秒") },
+                label = { Text(L10n.get("anchor.s13")) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f).heightIn(min = 56.dp),
@@ -254,7 +255,7 @@ private fun AnchorRow(
                 textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
             )
             TextButton(onClick = onDelete, enabled = true) {
-                Text("删", color = MaterialTheme.colorScheme.error,
+                Text(L10n.get("anchor.s14"), color = MaterialTheme.colorScheme.error,
                      style = MaterialTheme.typography.labelSmall)
             }
         }
@@ -264,8 +265,8 @@ private fun AnchorRow(
 /** 按温度猜阶段名，作新锚点的默认名 */
 private fun guessStage(bt: Float): String = when {
     bt < 60f -> "入豆"
-    bt < 160f -> "脱水"
-    bt < 190f -> "美拉德"
+    bt < 160f -> L10n.get("phase.drying")
+    bt < 190f -> L10n.get("phase.maillard")
     bt < 205f -> "一爆"
     else -> "发展"
 }
@@ -423,5 +424,5 @@ private fun defaultName(): String {
     val d = kotlinx.datetime.Clock.System.now()
         .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
     fun p2(v: Int) = v.toString().padStart(2, '0')
-    return "自定义模板 ${p2(d.monthNumber)}${p2(d.dayOfMonth)}-${p2(d.hour)}${p2(d.minute)}"
+    return L10n.get("anchor.s15")
 }

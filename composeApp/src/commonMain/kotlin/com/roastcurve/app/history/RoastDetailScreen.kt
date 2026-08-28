@@ -1,5 +1,6 @@
 package com.roastcurve.app.history
 
+import com.roastcurve.shared.l10n.L10n
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
@@ -55,12 +56,12 @@ fun RoastDetailScreen(
     if (showRename) {
         AlertDialog(
             onDismissRequest = { showRename = false },
-            title = { Text("重命名记录") },
+            title = { Text(L10n.get("detail.s1")) },
             text = {
                 OutlinedTextField(
                     value = renameText,
                     onValueChange = { renameText = it },
-                    label = { Text("豆子名称（如：耶加雪菲 水洗）") },
+                    label = { Text(L10n.get("detail.s2")) },
                     singleLine = true,
                 )
             },
@@ -73,7 +74,7 @@ fun RoastDetailScreen(
                         currentRecord = updated
                     }
                     showRename = false
-                }) { Text("保存") }
+                }) { Text(L10n.get("detail.s3")) }
             },
             dismissButton = { TextButton(onClick = { showRename = false }) { Text("取消") } },
         )
@@ -83,7 +84,7 @@ fun RoastDetailScreen(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("删除这条记录？") },
-            text = { Text("删除后无法恢复") },
+            text = { Text(L10n.get("detail.s4")) },
             confirmButton = {
                 TextButton(onClick = {
                     scope.launch {
@@ -105,13 +106,13 @@ fun RoastDetailScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedButton(onClick = onBack) { Text("← 返回") }
+                OutlinedButton(onClick = onBack) { Text(L10n.get("detail.s5")) }
                 Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     var savedMsg by remember { mutableStateOf(false) }
                     TextButton(onClick = {
                         renameText = currentRecord.beanName
                         showRename = true
-                    }) { Text("重命名") }
+                    }) { Text(L10n.get("detail.s6")) }
                     TextButton(onClick = {
                         scope.launch {
                             val dropT = record.events.find { it.event == RoastEvent.DROP }?.timeSeconds
@@ -120,18 +121,18 @@ fun RoastDetailScreen(
                             ProfileStore().save(
                                 RoastProfile(
                                     id = RoastStore.newId(nowMs),
-                                    name = "模板 ${record.id}",
+                                    name = L10n.get("detail.s7"),
                                     sourceRecordId = record.id,
                                     points = pts,
                                 )
                             )
                             savedMsg = true
                         }
-                    }) { Text(if (savedMsg) "已保存✓" else "存为模板") }
+                    }) { Text(if (savedMsg) L10n.get("detail.s8") else L10n.get("detail.s9")) }
                     TextButton(onClick = {
                         val csv = RoastStore.toCsv(record)
                         shareText("roast_${record.id}.csv", csv)
-                    }) { Text("导出CSV") }
+                    }) { Text(L10n.get("detail.s10")) }
                     TextButton(onClick = { confirmDelete = true }) {
                         Text("删除", color = MaterialTheme.colorScheme.error)
                     }
@@ -235,7 +236,7 @@ fun RoastDetailScreen(
             AlertDialog(
                 onDismissRequest = { confirmDelete = false },
                 title = { Text("删除这条记录？") },
-                text = { Text("删除后无法恢复") },
+                text = { Text(L10n.get("detail.s4")) },
                 confirmButton = {
                     TextButton(onClick = {
                         scope.launch {
@@ -269,7 +270,7 @@ private fun WeightLossCard(record: RoastRecord) {
 
     Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
-            Text("重量与失重率", style = MaterialTheme.typography.labelMedium,
+            Text(L10n.get("detail.s11"), style = MaterialTheme.typography.labelMedium,
                  color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(6.dp))
             Row(
@@ -282,7 +283,7 @@ private fun WeightLossCard(record: RoastRecord) {
                         chargeText = s
                         saved = false
                     },
-                    label = { Text("生豆重 g") },
+                    label = { Text(L10n.get("detail.s12")) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
@@ -294,7 +295,7 @@ private fun WeightLossCard(record: RoastRecord) {
                         dropText = s
                         saved = false
                     },
-                    label = { Text("熟豆重 g") },
+                    label = { Text(L10n.get("detail.s13")) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
@@ -307,7 +308,7 @@ private fun WeightLossCard(record: RoastRecord) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("失重率", style = MaterialTheme.typography.labelSmall,
+                    Text(L10n.get("detail.s14"), style = MaterialTheme.typography.labelSmall,
                          color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(6.dp))
                     Text(
@@ -327,10 +328,10 @@ private fun WeightLossCard(record: RoastRecord) {
                         )
                         saved = true
                     }
-                }) { Text(if (saved) "已存✓" else "保存") }
+                }) { Text(if (saved) L10n.get("detail.s15") else L10n.get("detail.s3")) }
             }
             if (loss != null && loss !in 8f..25f) {
-                Text("⚠ 失重率超出常见区间（8%~25%），确认克重是否输错",
+                Text(L10n.get("detail.s16"),
                      style = MaterialTheme.typography.labelSmall,
                      color = MaterialTheme.colorScheme.error)
             }
@@ -360,15 +361,15 @@ private fun BeanBagSyncCard(record: RoastRecord) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("豆袋同步", style = MaterialTheme.typography.labelMedium,
+                    Text(L10n.get("detail.s17"), style = MaterialTheme.typography.labelMedium,
                          color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        "把本炉补录到豆袋：扣生豆/入熟豆。已同步过的炉会幂等跳过，重复点不会重复入账",
+                        L10n.get("detail.s18"),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                TextButton(onClick = { show = true }) { Text("补录") }
+                TextButton(onClick = { show = true }) { Text(L10n.get("detail.s19")) }
             }
         }
     }
@@ -403,17 +404,17 @@ private fun BeanBagSyncDialog(
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("补录到豆袋") },
+        title = { Text(L10n.get("detail.s20")) },
         text = {
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = onlyRoasted, onCheckedChange = { onlyRoasted = it }, enabled = !busy && !done)
-                    Text("生豆已扣过，只补熟豆", style = MaterialTheme.typography.bodyMedium)
+                    Text(L10n.get("detail.s21"), style = MaterialTheme.typography.bodyMedium)
                 }
                 if (!onlyRoasted) {
                     when {
                         beans == null -> Text("读取豆袋生豆批次…")
-                        beans!!.isEmpty() -> Text("未读到豆袋生豆批次（需豆袋 3.0.14+）")
+                        beans!!.isEmpty() -> Text(L10n.get("detail.s22"))
                         else -> {
                             LazyColumn(modifier = Modifier.heightIn(max = 160.dp)) {
                                 items(beans!!.size) { idx ->
@@ -428,7 +429,7 @@ private fun BeanBagSyncDialog(
                                             selected = greenId == b.id,
                                             onClick = { greenId = b.id },
                                         )
-                                        Text("${b.name}（剩 ${b.remainingGrams}g）")
+                                        Text(L10n.get("detail.s23"))
                                     }
                                 }
                             }
@@ -456,7 +457,7 @@ private fun BeanBagSyncDialog(
                 OutlinedTextField(
                     value = roastedGramsText,
                     onValueChange = { roastedGramsText = it.filter { ch -> ch.isDigit() || ch == '.' } },
-                    label = { Text("熟豆克重（出豆重）") },
+                    label = { Text(L10n.get("detail.s24")) },
                     singleLine = true,
                     enabled = !busy && !done,
                     modifier = Modifier.fillMaxWidth(),
@@ -486,14 +487,14 @@ private fun BeanBagSyncDialog(
                                 val gid = greenId
                                 val g = greenGramsText.toDoubleOrNull() ?: 0.0
                                 if (gid == null || g <= 0.0) {
-                                    msg = "请选择生豆批次并填克重"
+                                    msg = L10n.get("detail.s25")
                                     busy = false
                                     return@launch
                                 }
                                 when (val r = bridge.consume(record.id, gid, g)) {
                                     is BridgeResult.Ok -> parts.add("✓ ${r.message}")
                                     is BridgeResult.Err -> {
-                                        msg = "生豆扣减失败：${r.message}"
+                                        msg = L10n.get("detail.s26")
                                         busy = false
                                         return@launch
                                     }
@@ -511,20 +512,20 @@ private fun BeanBagSyncDialog(
                                         ?: kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                                 )) {
                                     is BridgeResult.Ok -> parts.add("✓ ${r2.message}")
-                                    is BridgeResult.Err -> parts.add("⚠ 熟豆入库失败：${r2.message}")
+                                    is BridgeResult.Err -> parts.add(L10n.get("detail.s27"))
                                 }
                             }
                             done = true
-                            msg = parts.joinToString("\n").ifEmpty { "无操作" }
+                            msg = parts.joinToString("\n").ifEmpty { L10n.get("detail.s28") }
                         } finally {
                             busy = false
                         }
                     }
                 },
-            ) { Text(if (busy) "推送中…" else if (done) "完成" else "确认补录") }
+            ) { Text(if (busy) "推送中…" else if (done) "完成" else L10n.get("detail.s29")) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(if (done) "关闭" else "取消") }
+            TextButton(onClick = onDismiss) { Text(if (done) L10n.get("detail.s30") else "取消") }
         },
     )
 }

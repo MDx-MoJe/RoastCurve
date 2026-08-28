@@ -1,5 +1,6 @@
 package com.roastcurve.app.consent
 
+import com.roastcurve.shared.l10n.L10n
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -45,7 +46,7 @@ fun ConsentDialog(
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
-                        "欢迎使用烤豆 RoastCurve",
+                        L10n.get("consent.s1"),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -69,8 +70,8 @@ fun ConsentDialog(
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 buildString {
-                                    if (externalUrl.isNotEmpty()) append("在线完整版（外部渠道）：$externalUrl\n")
-                                    if (cnUrl.isNotEmpty()) append("在线完整版（国内渠道）：$cnUrl")
+                                    if (externalUrl.isNotEmpty()) append(L10n.get("consent.s2"))
+                                    if (cnUrl.isNotEmpty()) append(L10n.get("consent.s3"))
                                 },
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.primary,
@@ -84,16 +85,16 @@ fun ConsentDialog(
                             onClick = { showDeclineConfirm = true },
                             modifier = Modifier.weight(1f).height(48.dp),
                             shape = RoundedCornerShape(50),
-                        ) { Text("不同意") }
+                        ) { Text(L10n.get("consent.s4")) }
                         Button(
                             onClick = onAccept,
                             modifier = Modifier.weight(1f).height(48.dp),
                             shape = RoundedCornerShape(50),
-                        ) { Text("同意并继续") }
+                        ) { Text(L10n.get("consent.s5")) }
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "点击「不同意」将无法继续使用本应用",
+                        L10n.get("consent.s6"),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -105,13 +106,13 @@ fun ConsentDialog(
             if (showDeclineConfirm) {
                 AlertDialog(
                     onDismissRequest = { showDeclineConfirm = false },
-                    title = { Text("提示") },
-                    text = { Text("需要同意《隐私政策》才能使用本应用。确定退出吗？") },
+                    title = { Text(L10n.get("consent.s7")) },
+                    text = { Text(L10n.get("consent.s8")) },
                     confirmButton = {
-                        TextButton(onClick = onDeclineForever) { Text("退出应用", color = MaterialTheme.colorScheme.error) }
+                        TextButton(onClick = onDeclineForever) { Text(L10n.get("consent.s9"), color = MaterialTheme.colorScheme.error) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showDeclineConfirm = false }) { Text("再看看") }
+                        TextButton(onClick = { showDeclineConfirm = false }) { Text(L10n.get("consent.s10")) }
                     },
                 )
             }

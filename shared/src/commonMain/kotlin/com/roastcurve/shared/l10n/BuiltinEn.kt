@@ -12,6 +12,15 @@ object BuiltinEn {
             put("common.cancel", "Cancel")
             put("common.save", "Save")
             put("common.back", "Back")
+            put("settings.language_section", "Language / 语言")
+            put("phase.drying", "Drying")
+            put("phase.maillard", "Maillard")
+            put("phase.development", "Development")
+            put("common.settings", "Settings")
+            put("common.import", "Import")
+            put("common.export", "Export")
+            put("monitor.import_failed", "Import failed: {msg}")
+            put("monitor.diag", "Diag: target {tgt}° · SV {sv}° · clock {clk}s")
         }
     }
 }

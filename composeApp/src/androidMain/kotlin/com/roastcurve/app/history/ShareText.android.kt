@@ -1,5 +1,6 @@
 package com.roastcurve.app.history
 
+import com.roastcurve.shared.l10n.L10n
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
@@ -16,7 +17,7 @@ actual fun shareText(filename: String, content: String) {
         putExtra(Intent.EXTRA_TEXT, content)
     }
     if (context is Activity) {
-        context.startActivity(Intent.createChooser(intent, "分享 $filename"))
+        context.startActivity(Intent.createChooser(intent, L10n.get("app.s7")))
     }
 }
 
@@ -39,7 +40,7 @@ actual fun exportBackupToDownloads(filename: String, data: ByteArray): String? {
             ?.apply { mkdirs() } ?: return null
         val f = java.io.File(dir, filename)
         f.writeBytes(data)
-        "app外部分区/${f.name}"
+        L10n.get("app.s8")
     } catch (_: Exception) {
         null
     }

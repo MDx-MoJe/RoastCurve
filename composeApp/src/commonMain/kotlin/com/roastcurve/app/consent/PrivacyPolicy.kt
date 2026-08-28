@@ -1,5 +1,6 @@
 package com.roastcurve.app.consent
 
+import com.roastcurve.shared.l10n.L10n
 /**
  * 《隐私政策》内置全文（Markdown 纯文本渲染为段落）
  *
@@ -10,7 +11,7 @@ internal const val PRIVACY_POLICY_TEXT = """《隐私政策》
 
 更新日期：2026-08-27　政策版本：1
 
-欢迎使用烤豆（RoastCurve）。我们深知个人信息对您的重要性，本应用在设计上即遵循"数据不出设备"原则：
+欢迎使用烤豆（RoastCurve）。我们深知个人信息对您的重要性，本应用在设计上即遵循L10n.get("app.s1")原则：
 
 一、我们收集什么
 本应用不收集、不上传、不分享您的任何个人信息。无需注册账号，不申请通讯录、位置、麦克风等敏感权限。

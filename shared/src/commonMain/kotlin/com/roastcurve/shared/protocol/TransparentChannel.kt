@@ -1,5 +1,6 @@
 package com.roastcurve.shared.protocol
 
+import com.roastcurve.shared.l10n.L10n
 import com.roastcurve.shared.model.CurvePoint
 import com.roastcurve.shared.model.EventMarker
 import com.roastcurve.shared.model.RoastEvent
@@ -63,7 +64,7 @@ class TransparentChannel(
         if (!verified) {
             runCatching { transport.close() }
             throw ModbusConnectionException(
-                "透传设备持续无响应：可能已被其他程序占用，或设备刚重启尚未就绪"
+                L10n.get("app.s10")
             )
         }
 
@@ -139,7 +140,7 @@ class TransparentChannel(
                 val ok = transactionMutex.withLock {
                     writeSingleRegister(ModbusRtu.Tc4s.SV_ADDRESS, command.value.toInt())
                 }
-                if (!ok) throw ModbusException("SV 写入失败（设备无响应）")
+                if (!ok) throw ModbusException(L10n.get("app.s11"))
             }
             else -> throw ModbusException("command ${command.type} not supported yet")
         }

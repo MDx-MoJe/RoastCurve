@@ -1,5 +1,6 @@
 package com.roastcurve.shared.io
 
+import com.roastcurve.shared.l10n.L10n
 import com.roastcurve.shared.model.CurvePoint
 
 /**
@@ -27,7 +28,7 @@ object ArtisanAlog {
         val tm = Regex("'title':\\s*'([^']*)'").find(content)
         val rawTitle = tm?.groupValues?.get(1)
         val title = rawTitle?.let { unescapeUnicode(it) }
-            ?.takeIf { it.isNotBlank() && it != "烘焙记录仪" }
+            ?.takeIf { it.isNotBlank() && it != L10n.get("app.s9") }
         return Result(title, timex, bt, phases)
     }
 

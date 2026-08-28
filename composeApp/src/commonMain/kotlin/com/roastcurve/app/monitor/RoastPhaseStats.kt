@@ -1,5 +1,6 @@
 package com.roastcurve.app.monitor
 
+import com.roastcurve.shared.l10n.L10n
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -79,9 +80,9 @@ internal fun RoastPhaseStats(
 
     val palette = if (isSystemInDarkTheme()) DarkRoast else WarmBeige
     val phases = listOf(
-        PhaseStat("脱水", chargeT, dryT, palette.PhaseDryingAccent),
-        PhaseStat("美拉德", dryT, fcsT, palette.PhaseMaillardAccent),
-        PhaseStat("发展", fcsT, dropT, palette.PhaseDevelopmentAccent),
+        PhaseStat(L10n.get("phase.drying"), chargeT, dryT, palette.PhaseDryingAccent),
+        PhaseStat(L10n.get("phase.maillard"), dryT, fcsT, palette.PhaseMaillardAccent),
+        PhaseStat(L10n.get("phase.development"), fcsT, dropT, palette.PhaseDevelopmentAccent),
     )
 
     Surface(
@@ -91,17 +92,17 @@ internal fun RoastPhaseStats(
     ) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("烘焙阶段", style = MaterialTheme.typography.labelMedium,
+                Text(L10n.get("stats.s1"), style = MaterialTheme.typography.labelMedium,
                      color = MaterialTheme.colorScheme.onSurfaceVariant)
                 // 一爆后右侧实时显示发展时间与率；平时显示全程
                 val devLive = fcsT != null && dropT == null && currentElapsedSec >= fcsT
                 if (devLive) {
-                    Text("发展 ${fmtMMSS(currentElapsedSec - fcsT!!)} · ${pct(fcsT, totalEnd)}",
+                    Text(L10n.get("stats.s2"),
                          style = MaterialTheme.typography.labelMedium,
                          fontWeight = FontWeight.Bold,
                          color = MaterialTheme.colorScheme.primary)
                 } else {
-                    Text("全程 ${fmtMMSS(totalEnd)}",
+                    Text(L10n.get("stats.s3"),
                          style = MaterialTheme.typography.labelMedium,
                          color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

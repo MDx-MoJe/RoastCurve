@@ -1,5 +1,6 @@
 package com.roastcurve.app.settings
 
+import com.roastcurve.shared.l10n.L10n
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -40,9 +41,9 @@ fun SettingsScreen(
 
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("设置", style = MaterialTheme.typography.headlineMedium)
+            Text(L10n.get("settings.s1"), style = MaterialTheme.typography.headlineMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                OutlinedButton(onClick = onOpenManual) { Text("使用手册") }
+                OutlinedButton(onClick = onOpenManual) { Text(L10n.get("settings.s2")) }
                 OutlinedButton(onClick = onBack) { Text("返回") }
             }
         }
@@ -58,27 +59,27 @@ fun SettingsScreen(
         DisposableEffect(Unit) {
             BackupBridge.onPicked = { data, _ ->
                 if (data == null) {
-                    statusText = "已取消导入"
+                    statusText = L10n.get("settings.s3")
                 } else {
                     try {
                         val json = unpackBackupZip(data)
-                            ?: throw IllegalStateException("无法识别的备份格式")
+                            ?: throw IllegalStateException(L10n.get("settings.s4"))
                         pendingImport = BackupCodec.decode(json)
                     } catch (e: Exception) {
-                        statusText = "解析失败：${e.message?.take(50)}"
+                        statusText = L10n.get("settings.s5")
                     }
                 }
             }
             onDispose { BackupBridge.onPicked = null }
         }
 
-        Text("数据备份", style = MaterialTheme.typography.labelMedium,
+        Text(L10n.get("settings.s6"), style = MaterialTheme.typography.labelMedium,
              color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
         Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
                 Text(
-                    "备份全部记录、模板与设置。「存到下载目录」生成 .zip；「导出到文件」分享 .json。导入时两种格式通用，按 ID 合并（同 ID 覆盖、不删除现有数据）",
+                    L10n.get("settings.s7"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -103,10 +104,10 @@ fun SettingsScreen(
                                     val zip = packBackupZip(fname, BackupCodec.encode(bundle))
                                     val zipName = fname.removeSuffix(".json") + ".zip"
                                     val where = if (zip != null) exportBackupToDownloads(zipName, zip) else null
-                                    statusText = where?.let { "已保存到 $where" }
+                                    statusText = where?.let { L10n.get("settings.s14") }
                                         ?: "此系统不支持直存，请用「存到下载目录」按钮"
                                 } catch (e: Exception) {
-                                    statusText = "导出失败：${e.message?.take(50)}"
+                                    statusText = L10n.get("settings.s9")
                                 } finally { busy = false }
                             }
                         },
@@ -115,11 +116,11 @@ fun SettingsScreen(
                     OutlinedButton(
                         onClick = { BackupBridge.requestPick?.invoke() },
                         enabled = !busy,
-                    ) { Text("从文件导入") }
+                    ) { Text(L10n.get("settings.s11")) }
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "当前版本：${AppDirs.appVersion}" +
+                    L10n.get("settings.s12") +
                         AppDirs.buildIdentityLabel.let { if (it.isNotBlank()) "（$it）" else "" },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -143,22 +144,22 @@ fun SettingsScreen(
                                 val json = BackupCodec.encode(bundle)
                                 val zip = packBackupZip(fname, json)
                                 if (zip == null) {
-                                    statusText = "此系统不支持直存，请用「导出到文件」分享保存"
+                                    statusText = L10n.get("settings.s13")
                                     busy = false
                                     return@launch
                                 }
                                 val zipName = fname.removeSuffix(".json") + ".zip"
                                 val where = exportBackupToDownloads(zipName, zip)
-                                statusText = where?.let { "已保存到 $where" }
-                                    ?: "此系统不支持直存，请用「导出到文件」分享保存"
+                                statusText = where?.let { L10n.get("settings.s14") }
+                                    ?: L10n.get("settings.s13")
                             } catch (e: Exception) {
-                                statusText = "导出失败：${e.message?.take(50)}"
+                                statusText = L10n.get("settings.s9")
                             } finally { busy = false }
                         }
                     },
                     enabled = !busy,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("存到下载目录（同局域网迁移推荐）") }
+                ) { Text(L10n.get("settings.s15")) }
                 statusText?.let {
                     Spacer(Modifier.height(6.dp))
                     Text(it, style = MaterialTheme.typography.labelSmall,
@@ -171,11 +172,11 @@ fun SettingsScreen(
         pendingImport?.let { b ->
             AlertDialog(
                 onDismissRequest = { pendingImport = null },
-                title = { Text("确认导入？") },
+                title = { Text(L10n.get("settings.s16")) },
                 text = {
-                    Text("将合并导入 ${b.records.size} 条记录、${b.profiles.size} 个模板" +
-                         (if (b.settings != null) "及设置项" else "") +
-                         "。同 ID 覆盖、现有数据保留。")
+                    Text(L10n.get("settings.s17") +
+                         (if (b.settings != null) L10n.get("settings.s18") else "") +
+                         L10n.get("settings.s19"))
                 },
                 confirmButton = {
                     TextButton(onClick = {
@@ -190,28 +191,31 @@ fun SettingsScreen(
                                     onUpdate(it)
                                     SettingsStore().save(it)
                                 }
-                                statusText = "✅ 导入完成：${bundle.records.size} 条记录 / ${bundle.profiles.size} 个模板"
+                                statusText = L10n.get("settings.s20")
                             } catch (e: Exception) {
-                                statusText = "导入失败：${e.message?.take(50)}"
+                                statusText = L10n.get("settings.s21")
                             } finally { busy = false }
                         }
-                    }) { Text("导入", color = MaterialTheme.colorScheme.primary) }
+                    }) { Text(L10n.get("settings.s22"), color = MaterialTheme.colorScheme.primary) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { pendingImport = null }) { Text("取消") }
+                    TextButton(onClick = { pendingImport = null }) { Text(L10n.get("settings.s23")) }
                 },
             )
         }
 
         // ===== 语言 =====
-        Text("语言 / Language", style = MaterialTheme.typography.labelMedium,
+        Text(com.roastcurve.shared.l10n.L10n.get("settings.language_section"), style = MaterialTheme.typography.labelMedium,
              color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
-        LanguageCard()
+        var langEpoch by remember { mutableStateOf(0) }
+        key(langEpoch) {
+            LanguageCard(onApply = { langEpoch++ })
+        }
         Spacer(Modifier.height(16.dp))
 
         // ===== 跟随控制 =====
-        Text("跟随控制", style = MaterialTheme.typography.labelMedium,
+        Text(L10n.get("settings.s24"), style = MaterialTheme.typography.labelMedium,
              color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
         Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
@@ -220,9 +224,9 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("入豆自动开始跟随", style = MaterialTheme.typography.bodyLarge)
+                    Text(L10n.get("settings.s25"), style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "点「入豆」时若已选模板，自动进入跟随曲线模式",
+                        L10n.get("settings.s26"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -248,9 +252,9 @@ fun SettingsScreen(
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("跟随前瞻", style = MaterialTheme.typography.bodyLarge)
+                    Text(L10n.get("settings.s27"), style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "SV 提前参考 N 秒后的目标值，补偿炉子热惯性（0=关闭）",
+                        L10n.get("settings.s28"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -310,7 +314,7 @@ fun SettingsScreen(
         Spacer(Modifier.height(12.dp))
 
         // ===== 设备连接 =====
-        Text("设备连接", style = MaterialTheme.typography.labelMedium,
+        Text(L10n.get("settings.s29"), style = MaterialTheme.typography.labelMedium,
              color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
         Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
@@ -319,9 +323,9 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("启动时自动连接", style = MaterialTheme.typography.bodyLarge)
+                    Text(L10n.get("settings.s30"), style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "启动应用后自动连接上次的桥接器 IP",
+                        L10n.get("settings.s31"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -346,9 +350,9 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-                Text("🔵 蓝牙配网", style = MaterialTheme.typography.bodyLarge)
+                Text(L10n.get("settings.s32"), style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    "给桥接器设置 WiFi（无需电脑），配网模式下手机蓝牙直连",
+                    L10n.get("settings.s33"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -358,7 +362,7 @@ fun SettingsScreen(
         Spacer(Modifier.height(16.dp))
 
         // ===== 烘焙事件 =====
-        Text("烘焙事件", style = MaterialTheme.typography.labelMedium,
+        Text(L10n.get("settings.s34"), style = MaterialTheme.typography.labelMedium,
              color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
         Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
@@ -367,9 +371,9 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("深烘模式（显示二爆）", style = MaterialTheme.typography.bodyLarge)
+                    Text(L10n.get("settings.s35"), style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "底部事件条增加 二爆/二爆止，意式深烘用",
+                        L10n.get("settings.s36"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -387,13 +391,13 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
         Text(
-            "提示：建议烘焙前先在监控页选好模板（选模板不会立刻开始跟随），投豆瞬间点「入豆」即自动跟随。",
+            L10n.get("settings.s37"),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Spacer(Modifier.height(16.dp))
-        Text("支持开发者", style = MaterialTheme.typography.labelMedium,
+        Text(L10n.get("settings.s38"), style = MaterialTheme.typography.labelMedium,
              color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
         Surface(
@@ -403,9 +407,9 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-                Text("☕ 支持开发者", style = MaterialTheme.typography.bodyLarge)
+                Text(L10n.get("settings.s39"), style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    "烤豆永久免费、开源、无广告。如果你觉得它帮到了你，欢迎到爱发电支持。",
+                    L10n.get("settings.s40"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -421,9 +425,9 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-                Text("🫘 姐妹应用：豆袋 CoffeeBeanTracker", style = MaterialTheme.typography.bodyLarge)
+                Text(L10n.get("settings.s41"), style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    "生豆熟豆库存、做一杯扣账、烘焙消耗联动。烘完的豆子它来管。",
+                    L10n.get("settings.s42"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
