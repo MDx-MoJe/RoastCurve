@@ -197,8 +197,20 @@ class ModbusTcpChannel(
     }
 
     private suspend fun writeSingleRegister(address: Int, value: Int): Boolean {
+        // 一次静默重试：1200 低波特率下自动收发模块偶发喳帧（实测约百分之几概率），
+        // 重试能吞掉毛刺；仅连续两败才报失败，避免手动 ±5 误报「设定失败」
+        repeat(2) { attempt ->
+            if (attempt == 1) delay(300)   // 让总线静默一下再重试
+            if (writeSingleRegisterOnce(address, value)) return true
+        }
+        return false
+    }
+
+    private suspend fun writeSingleRegisterOnce(address: Int, value: Int): Boolean {
         val out = output ?: return false
         val inp = input ?: return false
+        // 先清掉残留字节（上次迟到应答会毒化本次回显解析），与轮询同策略
+        drainInput(inp)
         val request = ModbusTcp.buildWriteSingleRegister(nextTransId(), slaveId, address, value)
         out.writeFully(request, 0, request.size)
         out.flush()

@@ -39,6 +39,8 @@ fun App() {
     RoastCurveTheme {
         Surface(modifier = Modifier) {
             var screen by remember { mutableStateOf<Screen>(Screen.Monitor) }
+            // 配网成功后递增：通知常驻的监控页重新读 lastBridgeHost 并自动填 IP
+            var hostRefreshKey by remember { mutableStateOf(0) }
 
             // 全局设置：启动加载，设置页改动即同步
             var settings by remember { mutableStateOf(Settings()) }
@@ -67,6 +69,7 @@ fun App() {
             androidx.compose.foundation.layout.Box(modifier = Modifier) {
                 MonitorScreen(
                     settings = settings,
+                    hostRefreshKey = hostRefreshKey,
                     onOpenHistory = { screen = Screen.History },
                     onOpenSettings = { screen = Screen.Settings },
                     onCreateProfile = { screen = Screen.Editor(null) },
@@ -108,7 +111,11 @@ fun App() {
                                 onBack = { screen = Screen.Settings },
                             )
                             is Screen.BleConfig -> BleConfigScreen(
-                                onBack = { screen = Screen.Settings },
+                                onBack = {
+                                    // 配网可能保存了新 IP，通知监控页重新读取
+                                    hostRefreshKey++
+                                    screen = Screen.Settings
+                                },
                             )
                             is Screen.Editor -> AnchorEditorScreen(
                                 initial = s.profile,

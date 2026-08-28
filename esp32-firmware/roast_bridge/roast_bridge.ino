@@ -41,10 +41,10 @@ constexpr const char* OTA_PASSWORD = "roastota";
 constexpr uint16_t TCP_PORT      = 8899;   // 与原设备一致，App无需改动
 constexpr const char* MDNS_NAME  = "roastbridge";  // 可用 roastbridge.local 访问
 
-// RS485 串口参数：与温控器一致（9600-8-无校验-1，实机实测）
+// RS485 串口参数：与温控器一致（1200-8-无校验-1，自动收发模块降速验证实验）
 constexpr int      PIN_485_TX   = 17;
 constexpr int      PIN_485_RX   = 18;
-constexpr uint32_t MODBUS_BAUD  = 9600;
+constexpr uint32_t MODBUS_BAUD  = 1200;
 
 // BOOT 键（GPIO0，按下为低电平）：长按 3 秒强制进入配网模式（配网写错时的重置开关）
 constexpr int      PIN_BOOT      = 0;
@@ -307,7 +307,12 @@ void ensureWifi() {
   }
   if (WiFi.status() == WL_CONNECTED) {
     Serial.printf("\n[WiFi] 已连接 %s\n", WiFi.localIP().toString().c_str());
-    if (MDNS.begin(MDNS_NAME)) MDNS.addService("roastbridge", "tcp", TCP_PORT);
+    // 只初始化一次：WiFi 掉线重连后重复 MDNS.begin() 会触化 mDNS 重探+堆损坏（实测崩溃循环），重连后 mDNS 会自动重绑
+    static bool mdnsStarted = false;
+    if (!mdnsStarted && MDNS.begin(MDNS_NAME)) {
+      mdnsStarted = true;
+      MDNS.addService("roastbridge", "tcp", TCP_PORT);
+    }
   } else {
     Serial.println("\n[WiFi] 连接失败，稍后重试");
   }
@@ -371,6 +376,7 @@ void handleStatus() {
 
 void setup() {
   Serial.begin(115200);
+  WiFi.setSleep(false);   // 服务器角色禁用省电：Modem 休眠在拥挤信道下会偶发掉线
   pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_BOOT, INPUT_PULLUP);
   rs485.begin(MODBUS_BAUD, SERIAL_8N1, PIN_485_RX, PIN_485_TX);
@@ -415,8 +421,8 @@ void loop() {
     }
   }
 
-  // WiFi 守护
-  if (WiFi.status() != WL_CONNECTED) {
+  // WiFi 守护（WL_IDLE_STATUS=正在连接中，此时不再叠发 WiFi.begin，避免 "sta is connecting" 错误）
+  if (WiFi.status() != WL_CONNECTED && WiFi.status() != WL_IDLE_STATUS) {
     setStatusLed(80, 0, 0, true);  // 红闪
     static uint32_t lastTry = 0;
     if (millis() - lastTry > 5000) {
@@ -453,6 +459,7 @@ void loop() {
 
   // ---- 攒齐一条完整 MBAP 帧再处理 ----
   while (client.available()) {
+    if (tcpLen >= sizeof(tcpBuf)) tcpLen = 0;   // 防御先行：畸形数据流灤满缓冲时归零，严禁越界写（越界会破坏堆，在别处爆雷）
     tcpBuf[tcpLen++] = client.read();
       if (tcpLen >= MBAP_HEADER_LEN) {
         uint16_t length = (tcpBuf[4] << 8) | tcpBuf[5];
@@ -468,8 +475,6 @@ void loop() {
       size_t consumed = total;
       memmove(tcpBuf, tcpBuf + consumed, tcpLen - consumed);
       tcpLen -= consumed;
-    } else if (tcpLen >= sizeof(tcpBuf)) {
-      tcpLen = 0;  // 溢出保护
     }
   }
 }

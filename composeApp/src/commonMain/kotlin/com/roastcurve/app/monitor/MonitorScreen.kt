@@ -5,6 +5,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.border
 import androidx.compose.ui.draw.shadow
@@ -80,6 +85,7 @@ internal fun dynTempMin(curve: List<com.roastcurve.shared.model.CurvePoint>): Fl
 @Composable
 fun MonitorScreen(
     settings: Settings = Settings(),
+    hostRefreshKey: Int = 0,
     onOpenHistory: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onCreateProfile: () -> Unit = {},
@@ -506,6 +512,22 @@ fun MonitorScreen(
         }
     }
 
+    // 配网完成返回后重新读 IP（hostRefreshKey 递增触发）：自动填写新桥接器 IP
+    LaunchedEffect(hostRefreshKey) {
+        if (hostRefreshKey > 0) {
+            val stored = SettingsStore().load()
+            val ip = stored.lastBridgeHost
+            if (ip.isNotEmpty()) {
+                hostInput = ip
+                // 若开启了自动连接，直接尝试连新 IP
+                if (stored.autoConnectOnLaunch) {
+                    delay(1000)
+                    connect(ip)
+                }
+            }
+        }
+    }
+
 
     // —— 区块组件：单列与双栏布局共用（闭包捕获本作用域状态）——
 
@@ -581,10 +603,15 @@ fun MonitorScreen(
                 Text(if (useRealDevice) "断开" else "连接")
             }
         }
-        if (connectionError != null) {
+        // 动画显隐：淡入淡出+高度展开/收起，避免「弹出/顶下去」的布局跳动（计时闪烁的根治）
+        AnimatedVisibility(
+            visible = connectionError != null,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically(),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    connectionError!!,
+                    connectionError.orEmpty(),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.weight(1f),
