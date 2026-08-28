@@ -1,0 +1,286 @@
+﻿中文,English（参考）
+编辑模板,Edit Profile
+新建模板,New Profile
+模板名称,Profile Name
+目标曲线,Target Curve
+锚点,Anchor
+锚点 · 预览图上点空白加锚点、长按拖动调位置,"Anchors · Tap blank to add, long-press to drag"
+时间单位为秒：9分30秒 填 570,Time in seconds: 9:30 = 570
++ 添加锚点,+ Add Anchor
+保存修改,Save Changes
+保存模板,Save Profile
+已保存 ✓,Saved ✓
+名称,Name
+秒,sec
+删,Del
+自定义模板 {monthNumber}{dayOfMonth}-{hour}{minute},Custom {monthNumber}{dayOfMonth}-{hour}{minute}
+烘焙记录仪,Roast logger
+蓝牙配网,BLE Setup
+返回,Back
+先让桥接器进入配网模式（紫灯闪烁），再扫描连接。,"Put the bridge in setup mode (purple blink), then scan."
+还没有记录桥接器 IP，先到主界面连一次，或直接按 BOOT 键进配网。,"No bridge IP saved. Connect once, or press BOOT for setup."
+已重置，桥接器正在重启进入配网模式（约 5 秒后紫灯闪烁），稍后点「扫描桥接器」。,"Reset. Bridge restarting (~5s, purple blink), then tap Scan Bridge."
+重置失败：连不上桥接器 {host}，确认它在线（同一 WiFi）。,Reset failed: {host} unreachable. Check same WiFi.
+重置中…,Resetting...
+🔄 重置桥接器 WiFi（换 WiFi 用）,🔄 Reset Bridge WiFi
+未找到桥接器，确认它紫灯闪烁（配网模式）且手机蓝牙已开,Bridge not found. Check purple blink & Bluetooth on.
+扫描中…（约 8 秒）,Scanning... (~8s)
+扫描桥接器,Scan Bridge
+找到的设备（点选）：,Found devices (tap to select):
+WiFi 名称,WiFi Name
+WiFi 密码,WiFi Password
+请先扫描并选择一个设备,Scan and pick a device first
+WiFi 名不能为空，密码至少 8 位,WiFi name required; password min 8 chars
+已发送，桥接器正在连接 {ssid}…,Sent. Bridge joining {ssid}...
+配网成功！桥接器 IP：{host}（已自动记录，返回后可直接连接）,Setup done! IP: {host} (saved)
+已发送，但未自动发现桥接器。等它连上 WiFi 后，到主界面手动填 IP。,"Sent but not found. After it joins WiFi, enter IP manually."
+配网失败，请重试（确认桥接器在配网模式）,Setup failed. Retry (check purple blink).
+配网中…,Setting up...
+配网,WiFi setup
+欢迎使用烤豆 RoastCurve,Welcome to RoastCurve
+在线完整版（外部渠道）：{externalUrl}\n,Full policy (intl): {externalUrl}\n
+在线完整版（国内渠道）：{cnUrl},Full policy (CN): {cnUrl}
+不同意,Decline
+同意并继续,Agree & Continue
+点击「不同意」将无法继续使用本应用,Tap Decline to exit
+提示,Hint
+需要同意《隐私政策》才能使用本应用。确定退出吗？,Privacy consent required. Exit anyway?
+退出应用,Exit App
+再看看,Stay
+删除这条记录？,Delete this record?
+{id}\n删除后无法恢复,{id}\nCannot be undone
+烘焙记录,RoastRecords
+还没有烘焙记录\n连接温控器烘一炉试试,No roasts yet\nConnect and roast!
+未命名,Unnamed
+{toInt}分{toInt}秒 · ,{a}m{b}s · 
+{size}点,{size} pts
+ · 失重{loss}%, · Loss {loss}%
+烘焙会话,Roast session
+烘豆进行期间的常驻提醒,Persistent notification during roasting
+曲线记录中,Recording
+已进行 {minutes} 分钟 · 曲线记录中,{minutes} min · recording
+烘焙进行中,Roasting in progress
+一、两种烘焙模式,1. Two Roast Modes
+手动：你控制 SV（设定温度），±5 按钮随时手调火力，传统用法。,"Manual: you control SV, ±5 for heat. Classic way."
+跟随曲线：自动模式，每 2 秒按模板覆盖 SV，温控器自己跟着目标曲线跑。,Follow: auto mode; SV set every 2s per profile.
+跟随时 SV 是「只读」的，控制器持续覆盖它。,SV is read-only while following.
+±5 按钮在跟随时只有一个作用：一键接管——按下即退出跟随、切回手动。,±5 during follow = take over & exit to manual.
+二、连接与记录状态,2. Connection & Recording
+未连接：只能看设置和历史，没有开始/停止按钮。,Not connected: Settings/History only.
+已连接 · 待命：实时豆温照常显示，但不画曲线、不走计时。,"Standby: live BT shown, no curve/timer."
+已连接 · 记录中：曲线绘制、计时走动。,"Recording: curve drawing, timer running."
+「开始」= 连上后手动起表；「停止」= 断开并把曲线定稿保存。开启「入豆自动开始跟随」则投豆瞬间点「入豆」隐式起表。,Start = record; Stop = disconnect & save. Auto-follow: Charge starts it.
+信号强度：连接后顶部显示彩色圆点 + dBm 值（绿强/黄中/橙弱/红极弱）。烘前若为橙/红，先调整桥接器位置或天线再开烘，避免中途掉线。,"Signal: dot + dBm (green/yellow/orange/red). If weak, reposition bridge first."
+三、完整烘焙流程,3. Full Workflow
+准备,Prep
+给温控器和 Wi-Fi 转 RS485 设备通电，打开 App 连接（可在设置开启自动连接）。需预热时用 ±5 把 SV 设到预热温度。,"Power the controller & RS485 gateway, connect in app (auto-connect available). Use ±5 to preheat SV."
+入豆（计时起点）,Charge (t=0)
+投豆瞬间点「入豆」：清空预热段、计时归零、记录入豆时刻豆温。若在待命态，入豆会自动开始正式记录。,"Tap Charge at drop-in: resets timer, logs BT. Auto-starts recording from standby."
+选模板跟随（可选）,Pick Profile (optional)
+点「跟随曲线」→ 选一炉（仅选中不立刻跟随）。入豆时若开着「入豆自动开始跟随」则自动进入跟随。图表上米灰虚线=目标曲线，橙色实线=实际豆温。,Follow → pick a roast (select only). Auto-follows at Charge if enabled. Dashed gray = target; solid orange = actual BT.
+烘焙过程,During Roast
+点事件标记即可，全程不用碰 SV：黄点（转黄）、一爆、一爆止。阶段卡自动算脱水/美拉德/发展三段时长与占比。,"Tap events only: Yellowing, FCs, FCe. Phases auto-computed."
+出豆与收尾,Drop & Wrap-up
+点「出豆」：SV 自动降到 25°C 进入冷却并立即存快照。冷却完成后点「停止」最终定稿。,"Tap Drop: SV to 25°C, snapshot saved. Stop finalizes after cooling."
+四、记录保存机制,4. Data Persistence
+连接期间每 30 秒自动存草稿。,Auto-draft every 30s while connected.
+点「出豆」立即存一版快照。,Drop saves a snapshot instantly.
+停止/断开时最终定稿。,Stop/disconnect finalizes.
+同一炉所有保存都是同一条记录的覆盖更新。App 崩溃或意外断连最多丢最近 30 秒数据；进程被杀后重开会自动恢复未完成的会话。,All saves overwrite the same record. A crash loses at most 30s; unfinished sessions restore on relaunch.
+五、创建烘焙模板,5. Creating Profiles
+方式一：从历史记录提取,From history
+记录 → 选一炉满意的记录 → 右上角「存为模板」。该炉曲线（出豆处截断）即成为可回放模板。,History → pick a roast → Save as Profile. Curve (to Drop) becomes the template.
+方式二：导入 Artisan 曲线,Import Artisan curve
+监控页 →「跟随曲线」→「导入」→ 选择 Artisan 导出的 .alog 文件。自动解析豆温曲线，若文件自带 computed 事件（入豆/脱水/一爆/出豆的时间与温度）会直接读取为锚点。,Monitor → Follow → Import → pick .alog. Parses the curve; computed events become anchors directly.
+方式三：自定义锚点绘制,Draw custom anchors
+「+ 新建自定义模板」，点空白加锚点、长按拖动调位置，列表里可精确改时间/温度。,"+ New Profile: tap to add anchors, long-press to drag, edit times/temps in list."
+六、设置项说明,6. Settings
+入豆瞬间若已选模板，自动进入跟随模式,"With a profile selected, Charge auto-follows."
+打开 App 自动连上次的桥接器 IP,Reconnect last IP at launch
+事件条增加二爆/二爆止两键，意式深烘用,Adds 2nd crack events for dark roasts
+七、事件术语速查,7. Event Reference
+入豆 CHARGE,Charge CHARGE
+生豆下锅，计时起点,"Beans in, timer starts"
+黄点 DRY,Yellowing DRY
+豆色转黄，脱水阶段结束,Beans turn yellow; drying ends
+一爆 FCs,First crack FCs
+第一声爆裂，发展期开始,First pop; development begins
+一爆止 FCe,First crack end FCe
+一爆爆裂声结束,First crack ends
+二爆 SCs,Second crack SCs
+第二爆开始（深烘区间）,Second crack (dark roast)
+二爆止 SCe,Second crack end SCe
+第二爆结束（深度烘焙极限区）,Second crack ends
+出豆 DROP,Drop DROP
+下豆，记录终点,"Beans out, recording ends"
+八、注意事项,8. Notes
+空载测试：空锅跟随带豆模板，BT 会升得比模板快、偏高，属正常物理差异。,Empty-roaster test: BT rises faster than profile - normal physics.
+总线上单主站：接自制桥接器时原 Wi-Fi 转 RS485 设备需断电，两个主站不能同时说话。,Single-master bus: power off the old gateway when using the DIY bridge; two masters cannot share the bus.
+SV 上限 260°C：适配特殊豆种，超出会被硬限幅。,SV capped at 260°C.
+返回键：浮层页面（记录/详情/设置/手册）按返回=关闭浮层；烘焙会话进行中返回键被屏蔽防误触退出。,Back closes overlays (history/detail/settings/manual); it is blocked during an active roast.
+失重率：典型 12%~18%，超出 8%~25% 区间会提示复查克重。,Weight loss: typically 12-18%; outside 8-25% triggers a check.
+九、开源协议,9. License
+本项目（App + ESP32 固件）以 Apache License 2.0 开源，源码见 GitHub 仓库。,Licensed under Apache 2.0 (App + ESP32 firmware). Source on GitHub.
+桥接器持续无响应：可能已被其他程序占用，或设备刚重启尚未就绪,Bridge unresponsive: busy or booting
+设定失败: {message},Set failed: {message}
+无法识别的 .alog 文件,Unrecognized .alog file
+Artisan 曲线,Artisan Curve
+已导入模板：{nm}（{size} 点，含 {size} 个事件锚点）,"Profile imported: {nm} ({size} pts, {size} events)"
+已导入模板：{nm}（{size} 点）；脱水/一爆等锚点可在编辑器中补充标注,Profile imported: {nm} ({size} pts). Add anchors in the editor.
+温控器,Controller
+占用,usage
+连接不上桥接器：请确认设备已上电、手机与它在同一 WiFi（多次重试均失败）,Bridge unreachable: check power & WiFi (retried).
+连接失败: {simpleName}},Connect failed: {simpleName}
+模板曲线已走完，已切回手动,Profile finished - back to manual
+偏差超过 15°C 持续 30 秒，已自动切回手动,15°C deviation for 30s - back to manual
+检测到上次未完成的烘焙会话，已恢复；请重新连接设备继续,Session restored. Reconnect to continue.
+烤豆 · 监控,RoastCurve · Monitor
+记录,Records
+开始,Start
+停止,Stop
+串口透传,Serial passthrough
+蓝牙,Bluetooth
+蓝牙地址 (MAC),Bluetooth address (MAC)
+桥接器 IP,Bridge IP
+断开,Disconnect
+连接,Connect
+知道了,OK
+已连接温控器（实时）,Controller connected (live)
+强,Strong
+中,Med
+弱,Weak
+极弱,V.Weak
+信号{sigLabel} {rssi} dBm,{sigLabel} {rssi} dBm
+烘焙模式,Roast mode
+手动,Manual
+跟随曲线,Follow Profile
+模板：{name},Profile: {name}
+更换,Change
+参照中,Ref
+未选模板：点「跟随曲线」选择一炉历史记录作为目标,No profile: tap Follow to pick one
+SV 设定温度,SV
+已切回手动模式,Back to manual
+BT 豆温,BT Bean temp
+脱水,Drying
+美拉德,Maillard
+发展,Development
+模板,Profile
+导入 Artisan 曲线,Import Artisan Curve
+将从 .alog 文件读取温度曲线，生成可跟随的模板。,Reads curve from .alog to create a followable profile.
+✓ 会导入,✓ Imports
+· 温度曲线（时间 + 豆温）\n· 入豆 / 出豆 时间锚点,· Temp curve (time+BT)\n· Charge/Drop anchors
+✓ 自动识别事件节点,✓ Auto-detects events
+若 .alog 自带 computed 事件（入豆/脱水/一爆/出豆的时间与温度），导入时直接读取为锚点；缺失时回退为温度阈值推导。,Computed events (charge/dry/FCs/drop) import as anchors; falls back to thresholds if absent.
+选择文件,Choose file
+选择烘焙模板,Pick profile
+读取中…,Loading...
+还没有模板。可点「+ 新建自定义模板」「导入 Artisan 曲线」，或到历史详情页「存为模板」。,"No profiles yet. Create one, import .alog, or save one from history."
++ 新建自定义模板,+ New Profile
+导入 Artisan 曲线 (.alog),Import Artisan Curve (.alog)
+{size} 个采样点,{size} samples
+编辑,Edit
+删除,Delete
++ 新建,+ New
+同步到豆袋,Sync to BeanBag
+读取豆袋生豆批次…,Loading green batches...
+未读到豆袋生豆批次。请确认：,No green beans found. Check:
+· 豆袋已安装且为 3.0.13 或以上版本\n· 豆袋里有生豆批次记录,· BeanBag 3.0.13+ installed\n· Has green batches
+选批次扣生豆，同时按熟豆名入库熟豆（同名累加）。重复推送不会重复扣/入。,Deduct green & add roasted (merges by name). Idempotent.
+剩余 {remainingGrams}g,{remainingGrams}g left
+生豆消耗克重（入豆重）,Green used (charge)
+熟豆名称（同名累加库存）,Roasted name (merges stock)
+熟豆克重（出豆重，入库量）,"Roasted g (drop, stocked)"
+完成,Done
+\n⚠ 熟豆入库失败：{message}（可用历史页补录）,\n⚠ Roasted add failed: {message}
+扣减失败：{message},Deduct failed: {message}
+推送中…,Pushing...
+确认扣减,Confirm
+跳过,Skip
+入豆,Charge
+黄点,Yellowing
+一爆,First crack
+一爆止,First crack end
+二爆,Second crack
+二爆止,Second crack end
+出豆,Drop
+已入豆，未选模板，当前手动模式；可点「跟随曲线」选择模板开始自动跟随,Charged without profile (manual). Tap Follow to auto-follow.
+数据不出设备,Data never leaves the device
+重命名记录,Rename
+豆子名称（如：耶加雪菲 水洗）,Bean name (e.g. Yirgacheffe Washed)
+保存,Save
+删除后无法恢复,Cannot be undone
+← 返回,← Back
+重命名,Rename
+模板 {id},Profile {id}
+已保存✓,Saved ✓
+存为模板,Save as Profile
+导出CSV,ExportCSV
+重量与失重率,Weight & Loss
+生豆重 g,Green g
+熟豆重 g,Roasted g
+失重率,Loss %
+已存✓,Saved ✓
+⚠ 失重率超出常见区间（8%~25%），确认克重是否输错,⚠ Loss outside 8-25%. Check weights.
+豆袋同步,BeanBag Sync
+把本炉补录到豆袋：扣生豆/入熟豆。已同步过的炉会幂等跳过，重复点不会重复入账,Backfill this roast to BeanBag. Idempotent - safe to repeat.
+补录,Backfill
+补录到豆袋,Backfill to BeanBag
+生豆已扣过，只补熟豆,Green already deducted; roasted only
+未读到豆袋生豆批次（需豆袋 3.0.14+）,No green batches (need BeanBag 3.0.14+)
+{name}（剩 {remainingGrams}g）,{name} ({remainingGrams}g left)
+熟豆克重（出豆重）,Roasted weight (drop)
+请选择生豆批次并填克重,Pick a batch & enter grams
+生豆扣减失败：{message},Green deduct failed: {message}
+⚠ 熟豆入库失败：{message},⚠ Roasted add failed: {message}
+无操作,No action
+确认补录,Backfill
+关闭,Off
+烘焙阶段,Roast Phases
+发展 {fcsT} · {totalEnd},Development {fcsT} · {totalEnd}
+全程 {totalEnd},Total {totalEnd}
+设置,Settings
+使用手册,Manual
+已取消导入,Import cancelled
+无法识别的备份格式,Unrecognized backup format
+解析失败：{take},Parse failed: {take}
+数据备份,Data Backup
+备份全部记录、模板与设置。「存到下载目录」生成 .zip；「导出到文件」分享 .json。导入时两种格式通用，按 ID 合并（同 ID 覆盖、不删除现有数据）,"Backs up records, profiles & settings. Downloads=.zip; Share=.json. Both import by ID (merge, never delete)."
+已调起分享：{size} 条记录 / {size} 个模板,Sharing: {size} records / {size} profiles
+导出失败：{take},Export failed: {take}
+导出 .json,Export .json
+从文件导入,Import from File
+当前版本：{appVersion},Version: {appVersion}
+此系统不支持直存，请用「导出到文件」分享保存,Direct save unsupported - use Share
+已保存到 {where},Saved to {where}
+存到下载目录（同局域网迁移推荐）,Save to Downloads
+确认导入？,ConfirmImport?
+将合并导入 {size} 条记录、{size} 个模板,"Merge {size} records, {size} profiles"
+及设置项, and settings
+。同 ID 覆盖、现有数据保留。,. Same-ID overwrites; nothing deleted.
+✅ 导入完成：{size} 条记录 / {size} 个模板,✅ Imported: {size} records / {size} profiles
+导入失败：{take},Import failed: {take}
+导入,Import
+取消,Cancel
+跟随控制,Follow Control
+入豆自动开始跟随,Auto-follow on charge
+点「入豆」时若已选模板，自动进入跟随曲线模式,"With a profile, tapping Charge auto-follows"
+跟随前瞻,Lookahead
+SV 提前参考 N 秒后的目标值，补偿炉子热惯性（0=关闭）,Look ahead N seconds for roaster lag (0=off)
+设备连接,Device
+启动时自动连接,Auto-connect on launch
+启动应用后自动连接上次的桥接器 IP,Auto-connect last bridge IP
+🔵 蓝牙配网,🔵 BluetoothWiFi setup
+给桥接器设置 WiFi（无需电脑），配网模式下手机蓝牙直连,Set bridge WiFi via Bluetooth - no PC needed
+烘焙事件,Roast Events
+深烘模式（显示二爆）,Dark roast mode (2nd crack)
+底部事件条增加 二爆/二爆止，意式深烘用,Adds 2nd crack buttons for dark roasts
+提示：建议烘焙前先在监控页选好模板（选模板不会立刻开始跟随），投豆瞬间点「入豆」即自动跟随。,Tip: pick a profile before charging (selecting does not start follow); Charge then auto-follows.
+支持开发者,Support the Developer
+☕ 支持开发者,☕ Support Developer
+烤豆永久免费、开源、无广告。如果你觉得它帮到了你，欢迎到爱发电支持。,"RoastCurve is free, open-source, and ad-free. Support us on Afdian if it helps."
+🫘 姐妹应用：豆袋 CoffeeBeanTracker,🫘 Sister app: BeanBag
+生豆熟豆库存、做一杯扣账、烘焙消耗联动。烘完的豆子它来管。,"Green & roasted inventory, brew deduction, roast sync. It manages your beans."
+分享 {filename},Share {filename}
+app外部分区/{name},App storage/{name}
+透传设备持续无响应：可能已被其他程序占用，或设备刚重启尚未就绪,Passthrough device unresponsive: busy or booting
+SV 写入失败（设备无响应）,SV write failed (no response)

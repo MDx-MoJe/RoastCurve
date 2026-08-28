@@ -3,9 +3,9 @@ anchor.s1,编辑模板,Edit Profile,AnchorEditorScreen.kt,84
 anchor.s2,新建模板,New Profile,AnchorEditorScreen.kt,84
 anchor.s3,模板名称,Profile Name,AnchorEditorScreen.kt,94
 anchor.s4,目标曲线,Target Curve,AnchorEditorScreen.kt,127
-anchor.s5,锚点,Anchor,AnchorEditorScreen.kt,132
-anchor.s6,锚点 · 预览图上点空白加锚点、长按拖动调位置,"Anchors · Tap blank to add, long-press to drag",AnchorEditorScreen.kt,141
-anchor.s7,时间单位为秒：9分30秒 填 570,Time in seconds: 9:30 = 570,AnchorEditorScreen.kt,154
+anchor.s5,锚点,Anchor Point,AnchorEditorScreen.kt,132
+anchor.s6,锚点 · 预览图上点空白加锚点、长按拖动调位置,"Anchors · Tap empty area to add, long-press to drag",AnchorEditorScreen.kt,141
+anchor.s7,时间单位为秒：9分30秒 填 570,Time in seconds: e.g. 9:30 → enter 570,AnchorEditorScreen.kt,154
 anchor.s8,+ 添加锚点,+ Add Anchor,AnchorEditorScreen.kt,166
 anchor.s9,保存修改,Save Changes,AnchorEditorScreen.kt,189
 anchor.s10,保存模板,Save Profile,AnchorEditorScreen.kt,189
@@ -14,198 +14,198 @@ anchor.s12,名称,Name,AnchorEditorScreen.kt,224
 anchor.s13,秒,sec,AnchorEditorScreen.kt,237
 anchor.s14,删,Del,AnchorEditorScreen.kt,257
 anchor.s15,自定义模板 {monthNumber}{dayOfMonth}-{hour}{minute},Custom {monthNumber}{dayOfMonth}-{hour}{minute},AnchorEditorScreen.kt,426
-app.s9,烘焙记录仪,Roast logger,ArtisanAlog.kt,30
-ble.s1,蓝牙配网,BLE Setup,BleConfigScreen.kt,45
+app.s9,烘焙记录仪,Roast Logger,ArtisanAlog.kt,30
+ble.s1,蓝牙配网,Bluetooth Setup,BleConfigScreen.kt,45
 ble.s2,返回,Back,BleConfigScreen.kt,46
-ble.s3,先让桥接器进入配网模式（紫灯闪烁），再扫描连接。,"Put the bridge in setup mode (purple blink), then scan.",BleConfigScreen.kt,51
-ble.s4,还没有记录桥接器 IP，先到主界面连一次，或直接按 BOOT 键进配网。,"No bridge IP saved. Connect once, or press BOOT for setup.",BleConfigScreen.kt,68
-ble.s5,已重置，桥接器正在重启进入配网模式（约 5 秒后紫灯闪烁），稍后点「扫描桥接器」。,"Reset. Bridge restarting (~5s, purple blink), then tap Scan Bridge.",BleConfigScreen.kt,72
-ble.s6,重置失败：连不上桥接器 {host}，确认它在线（同一 WiFi）。,Reset failed: {host} unreachable. Check same WiFi.,BleConfigScreen.kt,74
-ble.s7,重置中…,Resetting...,BleConfigScreen.kt,83
-ble.s8,🔄 重置桥接器 WiFi（换 WiFi 用）,🔄 Reset Bridge WiFi,BleConfigScreen.kt,83
-ble.s9,未找到桥接器，确认它紫灯闪烁（配网模式）且手机蓝牙已开,Bridge not found. Check purple blink & Bluetooth on.,BleConfigScreen.kt,98
-ble.s10,扫描中…（约 8 秒）,Scanning... (~8s),BleConfigScreen.kt,105
+ble.s3,先让桥接器进入配网模式（紫灯闪烁），再扫描连接。,"Put the bridge into setup mode (purple LED blinking), then scan to connect.",BleConfigScreen.kt,51
+ble.s4,还没有记录桥接器 IP，先到主界面连一次，或直接按 BOOT 键进配网。,"No bridge IP saved yet. Connect once from the main screen, or press BOOT to enter setup mode.",BleConfigScreen.kt,68
+ble.s5,已重置，桥接器正在重启进入配网模式（约 5 秒后紫灯闪烁），稍后点「扫描桥接器」。,Reset complete. Bridge is restarting into setup mode (purple LED blinks in ~5s). Tap Scan Bridge shortly.,BleConfigScreen.kt,72
+ble.s6,重置失败：连不上桥接器 {host}，确认它在线（同一 WiFi）。,Reset failed: cannot reach bridge {host}. Verify it is online and on the same WiFi.,BleConfigScreen.kt,74
+ble.s7,重置中…,Resetting…,BleConfigScreen.kt,83
+ble.s8,🔄 重置桥接器 WiFi（换 WiFi 用）,🔄 Reset Bridge WiFi (for switching networks),BleConfigScreen.kt,83
+ble.s9,未找到桥接器，确认它紫灯闪烁（配网模式）且手机蓝牙已开,Bridge not found. Ensure purple LED is blinking (setup mode) and phone Bluetooth is on.,BleConfigScreen.kt,98
+ble.s10,扫描中…（约 8 秒）,Scanning… (~8s),BleConfigScreen.kt,105
 ble.s11,扫描桥接器,Scan Bridge,BleConfigScreen.kt,105
 ble.s12,找到的设备（点选）：,Found devices (tap to select):,BleConfigScreen.kt,110
 ble.s13,WiFi 名称,WiFi Name,BleConfigScreen.kt,133
 ble.s14,WiFi 密码,WiFi Password,BleConfigScreen.kt,141
-ble.s15,请先扫描并选择一个设备,Scan and pick a device first,BleConfigScreen.kt,151
-ble.s16,WiFi 名不能为空，密码至少 8 位,WiFi name required; password min 8 chars,BleConfigScreen.kt,155
-ble.s17,已发送，桥接器正在连接 {ssid}…,Sent. Bridge joining {ssid}...,BleConfigScreen.kt,165
-ble.s18,配网成功！桥接器 IP：{host}（已自动记录，返回后可直接连接）,Setup done! IP: {host} (saved),BleConfigScreen.kt,174
-ble.s19,已发送，但未自动发现桥接器。等它连上 WiFi 后，到主界面手动填 IP。,"Sent but not found. After it joins WiFi, enter IP manually.",BleConfigScreen.kt,176
-ble.s20,配网失败，请重试（确认桥接器在配网模式）,Setup failed. Retry (check purple blink).,BleConfigScreen.kt,179
-ble.s21,配网中…,Setting up...,BleConfigScreen.kt,186
-ble.s22,配网,WiFi setup,BleConfigScreen.kt,186
+ble.s15,请先扫描并选择一个设备,Scan and select a device first,BleConfigScreen.kt,151
+ble.s16,WiFi 名不能为空，密码至少 8 位,WiFi name is required; password must be at least 8 characters,BleConfigScreen.kt,155
+ble.s17,已发送，桥接器正在连接 {ssid}…,Sent. Bridge is connecting to {ssid}…,BleConfigScreen.kt,165
+ble.s18,配网成功！桥接器 IP：{host}（已自动记录，返回后可直接连接）,Setup complete! Bridge IP: {host} (saved automatically — just connect on return),BleConfigScreen.kt,174
+ble.s19,已发送，但未自动发现桥接器。等它连上 WiFi 后，到主界面手动填 IP。,"Sent, but bridge was not auto-discovered. Wait for it to join WiFi, then enter the IP manually on the main screen.",BleConfigScreen.kt,176
+ble.s20,配网失败，请重试（确认桥接器在配网模式）,Setup failed. Please retry (ensure bridge is in setup mode).,BleConfigScreen.kt,179
+ble.s21,配网中…,Setting up…,BleConfigScreen.kt,186
+ble.s22,配网,WiFi Setup,BleConfigScreen.kt,186
 consent.s1,欢迎使用烤豆 RoastCurve,Welcome to RoastCurve,ConsentDialog.kt,48
 consent.s2,在线完整版（外部渠道）：{externalUrl}\n,Full policy (intl): {externalUrl}\n,ConsentDialog.kt,72
-consent.s3,在线完整版（国内渠道）：{cnUrl},Full policy (CN): {cnUrl},ConsentDialog.kt,73
+consent.s3,在线完整版（国内渠道）：{cnUrl},Full policy (China): {cnUrl},ConsentDialog.kt,73
 consent.s4,不同意,Decline,ConsentDialog.kt,87
 consent.s5,同意并继续,Agree & Continue,ConsentDialog.kt,92
-consent.s6,点击「不同意」将无法继续使用本应用,Tap Decline to exit,ConsentDialog.kt,96
-consent.s7,提示,Hint,ConsentDialog.kt,108
-consent.s8,需要同意《隐私政策》才能使用本应用。确定退出吗？,Privacy consent required. Exit anyway?,ConsentDialog.kt,109
+consent.s6,点击「不同意」将无法继续使用本应用,Tapping Decline will exit the app,ConsentDialog.kt,96
+consent.s7,提示,Notice,ConsentDialog.kt,108
+consent.s8,需要同意《隐私政策》才能使用本应用。确定退出吗？,You must accept the Privacy Policy to use this app. Exit anyway?,ConsentDialog.kt,109
 consent.s9,退出应用,Exit App,ConsentDialog.kt,111
 consent.s10,再看看,Stay,ConsentDialog.kt,114
 history.s1,删除这条记录？,Delete this record?,HistoryScreen.kt,42
 history.s2,{id}\n删除后无法恢复,{id}\nCannot be undone,HistoryScreen.kt,43
-history.s3,烘焙记录,RoastRecords,HistoryScreen.kt,65
+history.s3,烘焙记录,Roast Records,HistoryScreen.kt,65
 history.s4,还没有烘焙记录\n连接温控器烘一炉试试,No roasts yet\nConnect and roast!,HistoryScreen.kt,77
 history.s5,未命名,Unnamed,HistoryScreen.kt,113
-history.s6,{toInt}分{toInt}秒 · ,{a}m{b}s · ,HistoryScreen.kt,114
+history.s6,{toInt}分{toInt}秒 · ,{a}m{b}s ·,HistoryScreen.kt,114
 history.s7,{size}点,{size} pts,HistoryScreen.kt,115
-history.s8, · 失重{loss}%, · Loss {loss}%,HistoryScreen.kt,118
-app.s2,烘焙会话,Roast session,KeepAlive.android.kt,91
+history.s8, · 失重{loss}%,· Loss {loss}%,HistoryScreen.kt,118
+app.s2,烘焙会话,Roast Session,KeepAlive.android.kt,91
 app.s3,烘豆进行期间的常驻提醒,Persistent notification during roasting,KeepAlive.android.kt,92
-app.s4,曲线记录中,Recording,KeepAlive.android.kt,103
-app.s5,已进行 {minutes} 分钟 · 曲线记录中,{minutes} min · recording,KeepAlive.android.kt,103
-app.s6,烘焙进行中,Roasting in progress,KeepAlive.android.kt,108
+app.s4,曲线记录中,Curve Recording,KeepAlive.android.kt,103
+app.s5,已进行 {minutes} 分钟 · 曲线记录中,{minutes} min · curve recording,KeepAlive.android.kt,103
+app.s6,烘焙进行中,Roast in Progress,KeepAlive.android.kt,108
 manual.s1,一、两种烘焙模式,1. Two Roast Modes,ManualScreen.kt,48
-manual.s2,手动：你控制 SV（设定温度），±5 按钮随时手调火力，传统用法。,"Manual: you control SV, ±5 for heat. Classic way.",ManualScreen.kt,49
-manual.s3,跟随曲线：自动模式，每 2 秒按模板覆盖 SV，温控器自己跟着目标曲线跑。,Follow: auto mode; SV set every 2s per profile.,ManualScreen.kt,50
-manual.s4,跟随时 SV 是「只读」的，控制器持续覆盖它。,SV is read-only while following.,ManualScreen.kt,51
-manual.s5,±5 按钮在跟随时只有一个作用：一键接管——按下即退出跟随、切回手动。,±5 during follow = take over & exit to manual.,ManualScreen.kt,52
-manual.s6,二、连接与记录状态,2. Connection & Recording,ManualScreen.kt,55
-manual.s7,未连接：只能看设置和历史，没有开始/停止按钮。,Not connected: Settings/History only.,ManualScreen.kt,56
-manual.s8,已连接 · 待命：实时豆温照常显示，但不画曲线、不走计时。,"Standby: live BT shown, no curve/timer.",ManualScreen.kt,57
-manual.s9,已连接 · 记录中：曲线绘制、计时走动。,"Recording: curve drawing, timer running.",ManualScreen.kt,58
-manual.s10,「开始」= 连上后手动起表；「停止」= 断开并把曲线定稿保存。开启「入豆自动开始跟随」则投豆瞬间点「入豆」隐式起表。,Start = record; Stop = disconnect & save. Auto-follow: Charge starts it.,ManualScreen.kt,59
-manual.s11,信号强度：连接后顶部显示彩色圆点 + dBm 值（绿强/黄中/橙弱/红极弱）。烘前若为橙/红，先调整桥接器位置或天线再开烘，避免中途掉线。,"Signal: dot + dBm (green/yellow/orange/red). If weak, reposition bridge first.",ManualScreen.kt,60
-manual.s12,三、完整烘焙流程,3. Full Workflow,ManualScreen.kt,63
+manual.s2,手动：你控制 SV（设定温度），±5 按钮随时手调火力，传统用法。,Manual: you control SV (set temperature). Use ±5 to adjust heat on the fly — the classic approach.,ManualScreen.kt,49
+manual.s3,跟随曲线：自动模式，每 2 秒按模板覆盖 SV，温控器自己跟着目标曲线跑。,"Follow Profile: automatic mode. SV is updated every 2 seconds according to the profile, and the controller tracks the target curve.",ManualScreen.kt,50
+manual.s4,跟随时 SV 是「只读」的，控制器持续覆盖它。,SV is read-only while following — the controller continuously overwrites it.,ManualScreen.kt,51
+manual.s5,±5 按钮在跟随时只有一个作用：一键接管——按下即退出跟随、切回手动。,"During follow, the ±5 buttons have one purpose only: take over — press to exit follow and switch back to manual.",ManualScreen.kt,52
+manual.s6,二、连接与记录状态,2. Connection & Recording Status,ManualScreen.kt,55
+manual.s7,未连接：只能看设置和历史，没有开始/停止按钮。,Not connected: settings and history only — no Start/Stop buttons.,ManualScreen.kt,56
+manual.s8,已连接 · 待命：实时豆温照常显示，但不画曲线、不走计时。,"Connected · Standby: live bean temperature is displayed, but no curve is drawn and timer is paused.",ManualScreen.kt,57
+manual.s9,已连接 · 记录中：曲线绘制、计时走动。,Connected · Recording: curve is being drawn and timer is running.,ManualScreen.kt,58
+manual.s10,「开始」= 连上后手动起表；「停止」= 断开并把曲线定稿保存。开启「入豆自动开始跟随」则投豆瞬间点「入豆」隐式起表。,"Start = begin recording manually after connecting; Stop = disconnect and finalize the curve. With Auto-follow on Charge enabled, tapping Charge at drop-in implicitly starts recording.",ManualScreen.kt,59
+manual.s11,信号强度：连接后顶部显示彩色圆点 + dBm 值（绿强/黄中/橙弱/红极弱）。烘前若为橙/红，先调整桥接器位置或天线再开烘，避免中途掉线。,"Signal strength: a colored dot + dBm value is shown at the top after connecting (green=strong, yellow=fair, orange=weak, red=very weak). If orange or red before roasting, reposition the bridge or antenna first to avoid mid-roast disconnection.",ManualScreen.kt,60
+manual.s12,三、完整烘焙流程,3. Full Roast Workflow,ManualScreen.kt,63
 manual.s13,准备,Prep,ManualScreen.kt,64
-manual.s14,给温控器和 Wi-Fi 转 RS485 设备通电，打开 App 连接（可在设置开启自动连接）。需预热时用 ±5 把 SV 设到预热温度。,"Power the controller & RS485 gateway, connect in app (auto-connect available). Use ±5 to preheat SV.",ManualScreen.kt,64
+manual.s14,给温控器和 Wi-Fi 转 RS485 设备通电，打开 App 连接（可在设置开启自动连接）。需预热时用 ±5 把 SV 设到预热温度。,"Power on the temperature controller and Wi-Fi-to-RS485 gateway, then connect in the app (auto-connect available in Settings). Use ±5 to set SV to preheat temperature if needed.",ManualScreen.kt,64
 manual.s15,入豆（计时起点）,Charge (t=0),ManualScreen.kt,65
-manual.s16,投豆瞬间点「入豆」：清空预热段、计时归零、记录入豆时刻豆温。若在待命态，入豆会自动开始正式记录。,"Tap Charge at drop-in: resets timer, logs BT. Auto-starts recording from standby.",ManualScreen.kt,65
-manual.s17,选模板跟随（可选）,Pick Profile (optional),ManualScreen.kt,66
-manual.s18,点「跟随曲线」→ 选一炉（仅选中不立刻跟随）。入豆时若开着「入豆自动开始跟随」则自动进入跟随。图表上米灰虚线=目标曲线，橙色实线=实际豆温。,Follow → pick a roast (select only). Auto-follows at Charge if enabled. Dashed gray = target; solid orange = actual BT.,ManualScreen.kt,66
-manual.s19,烘焙过程,During Roast,ManualScreen.kt,67
-manual.s20,点事件标记即可，全程不用碰 SV：黄点（转黄）、一爆、一爆止。阶段卡自动算脱水/美拉德/发展三段时长与占比。,"Tap events only: Yellowing, FCs, FCe. Phases auto-computed.",ManualScreen.kt,67
+manual.s16,投豆瞬间点「入豆」：清空预热段、计时归零、记录入豆时刻豆温。若在待命态，入豆会自动开始正式记录。,"Tap Charge when beans drop in: clears the preheat segment, resets the timer, and logs bean temperature at charge. If in standby, Charge automatically starts formal recording.",ManualScreen.kt,65
+manual.s17,选模板跟随（可选）,Pick a Profile to Follow (optional),ManualScreen.kt,66
+manual.s18,点「跟随曲线」→ 选一炉（仅选中不立刻跟随）。入豆时若开着「入豆自动开始跟随」则自动进入跟随。图表上米灰虚线=目标曲线，橙色实线=实际豆温。,"Tap Follow Profile → select a roast (selecting does not start following immediately). If Auto-follow on Charge is enabled, following starts automatically at charge. On the chart, light gray dashed line = target curve; solid orange line = actual bean temperature.",ManualScreen.kt,66
+manual.s19,烘焙过程,During the Roast,ManualScreen.kt,67
+manual.s20,点事件标记即可，全程不用碰 SV：黄点（转黄）、一爆、一爆止。阶段卡自动算脱水/美拉德/发展三段时长与占比。,"Just tap event markers — no need to touch SV: Yellowing, First Crack Start, First Crack End. The phase card automatically calculates Drying / Maillard / Development durations and ratios.",ManualScreen.kt,67
 manual.s21,出豆与收尾,Drop & Wrap-up,ManualScreen.kt,68
-manual.s22,点「出豆」：SV 自动降到 25°C 进入冷却并立即存快照。冷却完成后点「停止」最终定稿。,"Tap Drop: SV to 25°C, snapshot saved. Stop finalizes after cooling.",ManualScreen.kt,68
-manual.s23,四、记录保存机制,4. Data Persistence,ManualScreen.kt,71
-manual.s24,连接期间每 30 秒自动存草稿。,Auto-draft every 30s while connected.,ManualScreen.kt,72
-manual.s25,点「出豆」立即存一版快照。,Drop saves a snapshot instantly.,ManualScreen.kt,73
-manual.s26,停止/断开时最终定稿。,Stop/disconnect finalizes.,ManualScreen.kt,74
-manual.s27,同一炉所有保存都是同一条记录的覆盖更新。App 崩溃或意外断连最多丢最近 30 秒数据；进程被杀后重开会自动恢复未完成的会话。,All saves overwrite the same record. A crash loses at most 30s; unfinished sessions restore on relaunch.,ManualScreen.kt,75
-manual.s28,五、创建烘焙模板,5. Creating Profiles,ManualScreen.kt,78
-manual.s29,方式一：从历史记录提取,From history,ManualScreen.kt,79
-manual.s30,记录 → 选一炉满意的记录 → 右上角「存为模板」。该炉曲线（出豆处截断）即成为可回放模板。,History → pick a roast → Save as Profile. Curve (to Drop) becomes the template.,ManualScreen.kt,80
-manual.s31,方式二：导入 Artisan 曲线,Import Artisan curve,ManualScreen.kt,81
-manual.s32,监控页 →「跟随曲线」→「导入」→ 选择 Artisan 导出的 .alog 文件。自动解析豆温曲线，若文件自带 computed 事件（入豆/脱水/一爆/出豆的时间与温度）会直接读取为锚点。,Monitor → Follow → Import → pick .alog. Parses the curve; computed events become anchors directly.,ManualScreen.kt,82
-manual.s33,方式三：自定义锚点绘制,Draw custom anchors,ManualScreen.kt,83
-manual.s34,「+ 新建自定义模板」，点空白加锚点、长按拖动调位置，列表里可精确改时间/温度。,"+ New Profile: tap to add anchors, long-press to drag, edit times/temps in list.",ManualScreen.kt,84
-manual.s35,六、设置项说明,6. Settings,ManualScreen.kt,87
-manual.s36,入豆瞬间若已选模板，自动进入跟随模式,"With a profile selected, Charge auto-follows.",ManualScreen.kt,88
-manual.s37,打开 App 自动连上次的桥接器 IP,Reconnect last IP at launch,ManualScreen.kt,89
-manual.s38,事件条增加二爆/二爆止两键，意式深烘用,Adds 2nd crack events for dark roasts,ManualScreen.kt,91
-manual.s39,七、事件术语速查,7. Event Reference,ManualScreen.kt,94
+manual.s22,点「出豆」：SV 自动降到 25°C 进入冷却并立即存快照。冷却完成后点「停止」最终定稿。,Tap Drop: SV automatically drops to 25°C for cooling and a snapshot is saved immediately. Tap Stop after cooling to finalize.,ManualScreen.kt,68
+manual.s23,四、记录保存机制,4. Data Saving Mechanism,ManualScreen.kt,71
+manual.s24,连接期间每 30 秒自动存草稿。,Auto-draft saved every 30 seconds while connected.,ManualScreen.kt,72
+manual.s25,点「出豆」立即存一版快照。,Tapping Drop saves an instant snapshot.,ManualScreen.kt,73
+manual.s26,停止/断开时最终定稿。,Stop / disconnect finalizes the record.,ManualScreen.kt,74
+manual.s27,同一炉所有保存都是同一条记录的覆盖更新。App 崩溃或意外断连最多丢最近 30 秒数据；进程被杀后重开会自动恢复未完成的会话。,All saves for the same roast overwrite the same record. An app crash or unexpected disconnection loses at most 30 seconds of data; unfinished sessions are automatically restored on relaunch.,ManualScreen.kt,75
+manual.s28,五、创建烘焙模板,5. Creating Roast Profiles,ManualScreen.kt,78
+manual.s29,方式一：从历史记录提取,Method 1: Extract from History,ManualScreen.kt,79
+manual.s30,记录 → 选一炉满意的记录 → 右上角「存为模板」。该炉曲线（出豆处截断）即成为可回放模板。,Records → pick a roast you like → Save as Profile (top-right). The curve of that roast (truncated at Drop) becomes a replayable profile.,ManualScreen.kt,80
+manual.s31,方式二：导入 Artisan 曲线,Method 2: Import Artisan Curve,ManualScreen.kt,81
+manual.s32,监控页 →「跟随曲线」→「导入」→ 选择 Artisan 导出的 .alog 文件。自动解析豆温曲线，若文件自带 computed 事件（入豆/脱水/一爆/出豆的时间与温度）会直接读取为锚点。,"Monitor → Follow Profile → Import → select an .alog file exported from Artisan. The bean temperature curve is parsed automatically; if the file contains computed events (charge / dry / first crack / drop times and temps), they are imported directly as anchor points.",ManualScreen.kt,82
+manual.s33,方式三：自定义锚点绘制,Method 3: Draw with Custom Anchors,ManualScreen.kt,83
+manual.s34,「+ 新建自定义模板」，点空白加锚点、长按拖动调位置，列表里可精确改时间/温度。,"+ New Custom Profile: tap empty area to add anchors, long-press to drag, and edit time/temperature precisely in the list.",ManualScreen.kt,84
+manual.s35,六、设置项说明,6. Settings Explained,ManualScreen.kt,87
+manual.s36,入豆瞬间若已选模板，自动进入跟随模式,"With a profile selected, Charge triggers auto-follow",ManualScreen.kt,88
+manual.s37,打开 App 自动连上次的桥接器 IP,Auto-connect to last bridge IP on app launch,ManualScreen.kt,89
+manual.s38,事件条增加二爆/二爆止两键，意式深烘用,Adds Second Crack Start / End buttons for dark / espresso roasts,ManualScreen.kt,91
+manual.s39,七、事件术语速查,7. Event Terminology Quick Reference,ManualScreen.kt,94
 manual.s40,入豆 CHARGE,Charge CHARGE,ManualScreen.kt,95
-manual.s41,生豆下锅，计时起点,"Beans in, timer starts",ManualScreen.kt,95
+manual.s41,生豆下锅，计时起点,Green beans dropped in; timer starts,ManualScreen.kt,95
 manual.s42,黄点 DRY,Yellowing DRY,ManualScreen.kt,96
-manual.s43,豆色转黄，脱水阶段结束,Beans turn yellow; drying ends,ManualScreen.kt,96
-manual.s44,一爆 FCs,First crack FCs,ManualScreen.kt,97
-manual.s45,第一声爆裂，发展期开始,First pop; development begins,ManualScreen.kt,97
-manual.s46,一爆止 FCe,First crack end FCe,ManualScreen.kt,98
-manual.s47,一爆爆裂声结束,First crack ends,ManualScreen.kt,98
-manual.s48,二爆 SCs,Second crack SCs,ManualScreen.kt,99
-manual.s49,第二爆开始（深烘区间）,Second crack (dark roast),ManualScreen.kt,99
-manual.s50,二爆止 SCe,Second crack end SCe,ManualScreen.kt,100
-manual.s51,第二爆结束（深度烘焙极限区）,Second crack ends,ManualScreen.kt,100
+manual.s43,豆色转黄，脱水阶段结束,Beans turn yellow; drying phase ends,ManualScreen.kt,96
+manual.s44,一爆 FCs,First Crack FCs,ManualScreen.kt,97
+manual.s45,第一声爆裂，发展期开始,First audible crack; development phase begins,ManualScreen.kt,97
+manual.s46,一爆止 FCe,First Crack End FCe,ManualScreen.kt,98
+manual.s47,一爆爆裂声结束,First crack sounds cease,ManualScreen.kt,98
+manual.s48,二爆 SCs,Second Crack SCs,ManualScreen.kt,99
+manual.s49,第二爆开始（深烘区间）,Second crack begins (dark roast range),ManualScreen.kt,99
+manual.s50,二爆止 SCe,Second Crack End SCe,ManualScreen.kt,100
+manual.s51,第二爆结束（深度烘焙极限区）,Second crack ends (deep dark roast boundary),ManualScreen.kt,100
 manual.s52,出豆 DROP,Drop DROP,ManualScreen.kt,101
-manual.s53,下豆，记录终点,"Beans out, recording ends",ManualScreen.kt,101
-manual.s54,八、注意事项,8. Notes,ManualScreen.kt,104
-manual.s55,空载测试：空锅跟随带豆模板，BT 会升得比模板快、偏高，属正常物理差异。,Empty-roaster test: BT rises faster than profile - normal physics.,ManualScreen.kt,105
-manual.s56,总线上单主站：接自制桥接器时原 Wi-Fi 转 RS485 设备需断电，两个主站不能同时说话。,Single-master bus: power off the old gateway when using the DIY bridge; two masters cannot share the bus.,ManualScreen.kt,106
-manual.s57,SV 上限 260°C：适配特殊豆种，超出会被硬限幅。,SV capped at 260°C.,ManualScreen.kt,107
-manual.s58,返回键：浮层页面（记录/详情/设置/手册）按返回=关闭浮层；烘焙会话进行中返回键被屏蔽防误触退出。,Back closes overlays (history/detail/settings/manual); it is blocked during an active roast.,ManualScreen.kt,108
-manual.s59,失重率：典型 12%~18%，超出 8%~25% 区间会提示复查克重。,Weight loss: typically 12-18%; outside 8-25% triggers a check.,ManualScreen.kt,109
-manual.s60,九、开源协议,9. License,ManualScreen.kt,112
-manual.s61,本项目（App + ESP32 固件）以 Apache License 2.0 开源，源码见 GitHub 仓库。,Licensed under Apache 2.0 (App + ESP32 firmware). Source on GitHub.,ManualScreen.kt,113
-app.s12,桥接器持续无响应：可能已被其他程序占用，或设备刚重启尚未就绪,Bridge unresponsive: busy or booting,ModbusTcpChannel.kt,69
+manual.s53,下豆，记录终点,Beans discharged; end of recording,ManualScreen.kt,101
+manual.s54,八、注意事项,8. Notes & Precautions,ManualScreen.kt,104
+manual.s55,空载测试：空锅跟随带豆模板，BT 会升得比模板快、偏高，属正常物理差异。,"Empty-roaster test: when following a loaded profile with an empty drum, BT will rise faster and higher than the profile — this is normal physics.",ManualScreen.kt,105
+manual.s56,总线上单主站：接自制桥接器时原 Wi-Fi 转 RS485 设备需断电，两个主站不能同时说话。,Single-master bus: power off the original Wi-Fi-to-RS485 gateway when using a DIY bridge — two masters cannot share the same bus.,ManualScreen.kt,106
+manual.s57,SV 上限 260°C：适配特殊豆种，超出会被硬限幅。,SV upper limit is 260°C (for special beans); values above are hard-clipped.,ManualScreen.kt,107
+manual.s58,返回键：浮层页面（记录/详情/设置/手册）按返回=关闭浮层；烘焙会话进行中返回键被屏蔽防误触退出。,"Back button: on overlay pages (records / details / settings / manual), Back closes the overlay. During an active roast session, the Back button is disabled to prevent accidental exit.",ManualScreen.kt,108
+manual.s59,失重率：典型 12%~18%，超出 8%~25% 区间会提示复查克重。,Weight loss: typically 12–18%. Values outside 8–25% trigger a weight review prompt.,ManualScreen.kt,109
+manual.s60,九、开源协议,9. Open Source License,ManualScreen.kt,112
+manual.s61,本项目（App + ESP32 固件）以 Apache License 2.0 开源，源码见 GitHub 仓库。,This project (App + ESP32 firmware) is open-sourced under Apache License 2.0. Source code is available on GitHub.,ManualScreen.kt,113
+app.s12,桥接器持续无响应：可能已被其他程序占用，或设备刚重启尚未就绪,"Bridge unresponsive: may be in use by another program, or the device is still booting up",ModbusTcpChannel.kt,69
 monitor.s1,设定失败: {message},Set failed: {message},MonitorScreen.kt,154
 monitor.s2,无法识别的 .alog 文件,Unrecognized .alog file,MonitorScreen.kt,289
 monitor.s3,Artisan 曲线,Artisan Curve,MonitorScreen.kt,295
-monitor.s4,已导入模板：{nm}（{size} 点，含 {size} 个事件锚点）,"Profile imported: {nm} ({size} pts, {size} events)",MonitorScreen.kt,309
-monitor.s5,已导入模板：{nm}（{size} 点）；脱水/一爆等锚点可在编辑器中补充标注,Profile imported: {nm} ({size} pts). Add anchors in the editor.,MonitorScreen.kt,311
+monitor.s4,已导入模板：{nm}（{size} 点，含 {size} 个事件锚点）,"Profile imported: {nm} ({size} pts, {size} event anchors)",MonitorScreen.kt,309
+monitor.s5,已导入模板：{nm}（{size} 点）；脱水/一爆等锚点可在编辑器中补充标注,Profile imported: {nm} ({size} pts). Add drying / first crack and other anchors in the editor.,MonitorScreen.kt,311
 monitor.s6,温控器,Controller,MonitorScreen.kt,333
-monitor.s7,占用,usage,MonitorScreen.kt,404
-monitor.s8,连接不上桥接器：请确认设备已上电、手机与它在同一 WiFi（多次重试均失败）,Bridge unreachable: check power & WiFi (retried).,MonitorScreen.kt,407
+monitor.s7,占用,In Use,MonitorScreen.kt,404
+monitor.s8,连接不上桥接器：请确认设备已上电、手机与它在同一 WiFi（多次重试均失败）,Cannot reach bridge: check power and ensure the phone is on the same WiFi (multiple retries failed).,MonitorScreen.kt,407
 monitor.s9,连接失败: {simpleName}},Connect failed: {simpleName},MonitorScreen.kt,408
-monitor.s10,模板曲线已走完，已切回手动,Profile finished - back to manual,MonitorScreen.kt,441
-monitor.s11,偏差超过 15°C 持续 30 秒，已自动切回手动,15°C deviation for 30s - back to manual,MonitorScreen.kt,455
-monitor.s12,检测到上次未完成的烘焙会话，已恢复；请重新连接设备继续,Session restored. Reconnect to continue.,MonitorScreen.kt,495
+monitor.s10,模板曲线已走完，已切回手动,Profile curve finished — switched back to manual,MonitorScreen.kt,441
+monitor.s11,偏差超过 15°C 持续 30 秒，已自动切回手动,Deviation exceeded 15°C for 30s — auto-switched back to manual,MonitorScreen.kt,455
+monitor.s12,检测到上次未完成的烘焙会话，已恢复；请重新连接设备继续,Previous unfinished roast session detected and restored. Reconnect the device to continue.,MonitorScreen.kt,495
 monitor.s13,烤豆 · 监控,RoastCurve · Monitor,MonitorScreen.kt,541
 monitor.s14,记录,Records,MonitorScreen.kt,543
 monitor.s15,开始,Start,MonitorScreen.kt,555
 monitor.s16,停止,Stop,MonitorScreen.kt,558
-monitor.s17,串口透传,Serial passthrough,MonitorScreen.kt,573
+monitor.s17,串口透传,Serial Passthrough,MonitorScreen.kt,573
 monitor.s18,蓝牙,Bluetooth,MonitorScreen.kt,574
-monitor.s19,蓝牙地址 (MAC),Bluetooth address (MAC),MonitorScreen.kt,591
+monitor.s19,蓝牙地址 (MAC),Bluetooth Address (MAC),MonitorScreen.kt,591
 monitor.s20,桥接器 IP,Bridge IP,MonitorScreen.kt,591
 monitor.s21,断开,Disconnect,MonitorScreen.kt,603
 monitor.s22,连接,Connect,MonitorScreen.kt,603
-monitor.s23,知道了,OK,MonitorScreen.kt,622
-monitor.s24,已连接温控器（实时）,Controller connected (live),MonitorScreen.kt,627
+monitor.s23,知道了,Got it,MonitorScreen.kt,622
+monitor.s24,已连接温控器（实时）,Controller Connected (Live),MonitorScreen.kt,627
 monitor.s25,强,Strong,MonitorScreen.kt,635
-monitor.s26,中,Med,MonitorScreen.kt,636
+monitor.s26,中,Fair,MonitorScreen.kt,636
 monitor.s27,弱,Weak,MonitorScreen.kt,637
-monitor.s28,极弱,V.Weak,MonitorScreen.kt,638
-monitor.s29,信号{sigLabel} {rssi} dBm,{sigLabel} {rssi} dBm,MonitorScreen.kt,646
-monitor.s30,烘焙模式,Roast mode,MonitorScreen.kt,668
+monitor.s28,极弱,Very Weak,MonitorScreen.kt,638
+monitor.s29,信号{sigLabel} {rssi} dBm,Signal {sigLabel} {rssi} dBm,MonitorScreen.kt,646
+monitor.s30,烘焙模式,Roast Mode,MonitorScreen.kt,668
 monitor.s31,手动,Manual,MonitorScreen.kt,674
 monitor.s32,跟随曲线,Follow Profile,MonitorScreen.kt,685
 monitor.s33,模板：{name},Profile: {name},MonitorScreen.kt,699
 monitor.s34,更换,Change,MonitorScreen.kt,707
-monitor.s35,参照中,Ref,MonitorScreen.kt,715
-monitor.s36,未选模板：点「跟随曲线」选择一炉历史记录作为目标,No profile: tap Follow to pick one,MonitorScreen.kt,730
-monitor.s37,SV 设定温度,SV,MonitorScreen.kt,784
-monitor.s38,已切回手动模式,Back to manual,MonitorScreen.kt,796
-monitor.s39,BT 豆温,BT Bean temp,MonitorScreen.kt,821
+monitor.s35,参照中,Reference,MonitorScreen.kt,715
+monitor.s36,未选模板：点「跟随曲线」选择一炉历史记录作为目标,No profile selected: tap Follow Profile to pick a historical roast as target,MonitorScreen.kt,730
+monitor.s37,SV 设定温度,SV Set Temperature,MonitorScreen.kt,784
+monitor.s38,已切回手动模式,Switched back to manual mode,MonitorScreen.kt,796
+monitor.s39,BT 豆温,BT Bean Temperature,MonitorScreen.kt,821
 monitor.s40,脱水,Drying,MonitorScreen.kt,861
 monitor.s41,美拉德,Maillard,MonitorScreen.kt,862
 monitor.s42,发展,Development,MonitorScreen.kt,863
 monitor.s43,模板,Profile,MonitorScreen.kt,865
 monitor.s44,导入 Artisan 曲线,Import Artisan Curve,MonitorScreen.kt,932
-monitor.s45,将从 .alog 文件读取温度曲线，生成可跟随的模板。,Reads curve from .alog to create a followable profile.,MonitorScreen.kt,935
-monitor.s46,✓ 会导入,✓ Imports,MonitorScreen.kt,938
+monitor.s45,将从 .alog 文件读取温度曲线，生成可跟随的模板。,Reads the temperature curve from an .alog file to create a followable profile.,MonitorScreen.kt,935
+monitor.s46,✓ 会导入,✓ What gets imported,MonitorScreen.kt,938
 monitor.s47,· 温度曲线（时间 + 豆温）\n· 入豆 / 出豆 时间锚点,· Temp curve (time+BT)\n· Charge/Drop anchors,MonitorScreen.kt,940
-monitor.s48,✓ 自动识别事件节点,✓ Auto-detects events,MonitorScreen.kt,944
-monitor.s49,若 .alog 自带 computed 事件（入豆/脱水/一爆/出豆的时间与温度），导入时直接读取为锚点；缺失时回退为温度阈值推导。,Computed events (charge/dry/FCs/drop) import as anchors; falls back to thresholds if absent.,MonitorScreen.kt,946
-monitor.s50,选择文件,Choose file,MonitorScreen.kt,955
-monitor.s51,选择烘焙模板,Pick profile,MonitorScreen.kt,969
-monitor.s52,读取中…,Loading...,MonitorScreen.kt,972
-monitor.s53,还没有模板。可点「+ 新建自定义模板」「导入 Artisan 曲线」，或到历史详情页「存为模板」。,"No profiles yet. Create one, import .alog, or save one from history.",MonitorScreen.kt,975
-monitor.s54,+ 新建自定义模板,+ New Profile,MonitorScreen.kt,980
+monitor.s48,✓ 自动识别事件节点,✓ Auto-detected events,MonitorScreen.kt,944
+monitor.s49,若 .alog 自带 computed 事件（入豆/脱水/一爆/出豆的时间与温度），导入时直接读取为锚点；缺失时回退为温度阈值推导。,"If the .alog file has computed events (charge / dry / FCs / drop times and temps), they are imported as anchors. If absent, it falls back to temperature-threshold inference.",MonitorScreen.kt,946
+monitor.s50,选择文件,Choose File,MonitorScreen.kt,955
+monitor.s51,选择烘焙模板,Pick a Roast Profile,MonitorScreen.kt,969
+monitor.s52,读取中…,Loading…,MonitorScreen.kt,972
+monitor.s53,还没有模板。可点「+ 新建自定义模板」「导入 Artisan 曲线」，或到历史详情页「存为模板」。,"No profiles yet. Tap + New Custom Profile, Import Artisan Curve, or go to a roast detail and Save as Profile.",MonitorScreen.kt,975
+monitor.s54,+ 新建自定义模板,+ New Custom Profile,MonitorScreen.kt,980
 monitor.s55,导入 Artisan 曲线 (.alog),Import Artisan Curve (.alog),MonitorScreen.kt,985
 monitor.s56,{size} 个采样点,{size} samples,MonitorScreen.kt,1010
 monitor.s57,编辑,Edit,MonitorScreen.kt,1021
 monitor.s58,删除,Delete,MonitorScreen.kt,1031
 monitor.s59,+ 新建,+ New,MonitorScreen.kt,1047
 monitor.s60,同步到豆袋,Sync to BeanBag,MonitorScreen.kt,1087
-monitor.s61,读取豆袋生豆批次…,Loading green batches...,MonitorScreen.kt,1090
-monitor.s62,未读到豆袋生豆批次。请确认：,No green beans found. Check:,MonitorScreen.kt,1092
+monitor.s61,读取豆袋生豆批次…,Loading BeanBag green batches…,MonitorScreen.kt,1090
+monitor.s62,未读到豆袋生豆批次。请确认：,No green bean batches found in BeanBag. Please verify:,MonitorScreen.kt,1092
 monitor.s63,· 豆袋已安装且为 3.0.13 或以上版本\n· 豆袋里有生豆批次记录,· BeanBag 3.0.13+ installed\n· Has green batches,MonitorScreen.kt,1094
-monitor.s64,选批次扣生豆，同时按熟豆名入库熟豆（同名累加）。重复推送不会重复扣/入。,Deduct green & add roasted (merges by name). Idempotent.,MonitorScreen.kt,1099
+monitor.s64,选批次扣生豆，同时按熟豆名入库熟豆（同名累加）。重复推送不会重复扣/入。,Select a batch to deduct green beans and add roasted beans by name (merged if same name). Repeat pushes are idempotent.,MonitorScreen.kt,1099
 monitor.s65,剩余 {remainingGrams}g,{remainingGrams}g left,MonitorScreen.kt,1118
-monitor.s66,生豆消耗克重（入豆重）,Green used (charge),MonitorScreen.kt,1129
-monitor.s67,熟豆名称（同名累加库存）,Roasted name (merges stock),MonitorScreen.kt,1138
-monitor.s68,熟豆克重（出豆重，入库量）,"Roasted g (drop, stocked)",MonitorScreen.kt,1147
+monitor.s66,生豆消耗克重（入豆重）,Green bean weight used (charge weight),MonitorScreen.kt,1129
+monitor.s67,熟豆名称（同名累加库存）,Roasted bean name (stock merges by name),MonitorScreen.kt,1138
+monitor.s68,熟豆克重（出豆重，入库量）,"Roasted bean weight (drop weight, stock added)",MonitorScreen.kt,1147
 monitor.s69,完成,Done,MonitorScreen.kt,1165
-monitor.s70,\n⚠ 熟豆入库失败：{message}（可用历史页补录）,\n⚠ Roasted add failed: {message},MonitorScreen.kt,1191
+monitor.s70,\n⚠ 熟豆入库失败：{message}（可用历史页补录）,\n⚠ Roasted add failed: {message} (backfill from history page),MonitorScreen.kt,1191
 monitor.s71,扣减失败：{message},Deduct failed: {message},MonitorScreen.kt,1195
-monitor.s72,推送中…,Pushing...,MonitorScreen.kt,1199
-monitor.s73,确认扣减,Confirm,MonitorScreen.kt,1199
+monitor.s72,推送中…,Syncing…,MonitorScreen.kt,1199
+monitor.s73,确认扣减,Confirm Deduct,MonitorScreen.kt,1199
 monitor.s74,跳过,Skip,MonitorScreen.kt,1203
 monitor.s75,入豆,Charge,MonitorScreen.kt,1234
 monitor.s76,黄点,Yellowing,MonitorScreen.kt,1234
-monitor.s77,一爆,First crack,MonitorScreen.kt,1235
-monitor.s78,一爆止,First crack end,MonitorScreen.kt,1235
-monitor.s79,二爆,Second crack,MonitorScreen.kt,1236
-monitor.s80,二爆止,Second crack end,MonitorScreen.kt,1236
+monitor.s77,一爆,First Crack,MonitorScreen.kt,1235
+monitor.s78,一爆止,First Crack End,MonitorScreen.kt,1235
+monitor.s79,二爆,Second Crack,MonitorScreen.kt,1236
+monitor.s80,二爆止,Second Crack End,MonitorScreen.kt,1236
 monitor.s81,出豆,Drop,MonitorScreen.kt,1236
-monitor.s82,已入豆，未选模板，当前手动模式；可点「跟随曲线」选择模板开始自动跟随,Charged without profile (manual). Tap Follow to auto-follow.,MonitorScreen.kt,1279
-app.s1,数据不出设备,Data never leaves the device,PrivacyPolicy.kt,13
-detail.s1,重命名记录,Rename,RoastDetailScreen.kt,58
+monitor.s82,已入豆，未选模板，当前手动模式；可点「跟随曲线」选择模板开始自动跟随,Charged without a profile — manual mode. Tap Follow Profile to select one and start auto-follow.,MonitorScreen.kt,1279
+app.s1,数据不出设备,Data never leaves your device,PrivacyPolicy.kt,13
+detail.s1,重命名记录,Rename Record,RoastDetailScreen.kt,58
 detail.s2,豆子名称（如：耶加雪菲 水洗）,Bean name (e.g. Yirgacheffe Washed),RoastDetailScreen.kt,63
 detail.s3,保存,Save,RoastDetailScreen.kt,76
 detail.s4,删除后无法恢复,Cannot be undone,RoastDetailScreen.kt,86
@@ -214,73 +214,73 @@ detail.s6,重命名,Rename,RoastDetailScreen.kt,114
 detail.s7,模板 {id},Profile {id},RoastDetailScreen.kt,123
 detail.s8,已保存✓,Saved ✓,RoastDetailScreen.kt,130
 detail.s9,存为模板,Save as Profile,RoastDetailScreen.kt,130
-detail.s10,导出CSV,ExportCSV,RoastDetailScreen.kt,134
-detail.s11,重量与失重率,Weight & Loss,RoastDetailScreen.kt,272
-detail.s12,生豆重 g,Green g,RoastDetailScreen.kt,285
-detail.s13,熟豆重 g,Roasted g,RoastDetailScreen.kt,297
-detail.s14,失重率,Loss %,RoastDetailScreen.kt,310
+detail.s10,导出CSV,Export CSV,RoastDetailScreen.kt,134
+detail.s11,重量与失重率,Weight & Weight Loss,RoastDetailScreen.kt,272
+detail.s12,生豆重 g,Green weight (g),RoastDetailScreen.kt,285
+detail.s13,熟豆重 g,Roasted weight (g),RoastDetailScreen.kt,297
+detail.s14,失重率,Weight Loss %,RoastDetailScreen.kt,310
 detail.s15,已存✓,Saved ✓,RoastDetailScreen.kt,330
-detail.s16,⚠ 失重率超出常见区间（8%~25%），确认克重是否输错,⚠ Loss outside 8-25%. Check weights.,RoastDetailScreen.kt,333
+detail.s16,⚠ 失重率超出常见区间（8%~25%），确认克重是否输错,⚠ Weight loss outside typical range (8–25%). Check weight entries.,RoastDetailScreen.kt,333
 detail.s17,豆袋同步,BeanBag Sync,RoastDetailScreen.kt,363
-detail.s18,把本炉补录到豆袋：扣生豆/入熟豆。已同步过的炉会幂等跳过，重复点不会重复入账,Backfill this roast to BeanBag. Idempotent - safe to repeat.,RoastDetailScreen.kt,366
+detail.s18,把本炉补录到豆袋：扣生豆/入熟豆。已同步过的炉会幂等跳过，重复点不会重复入账,Backfill this roast to BeanBag: deduct green / add roasted. Already-synced roasts are skipped — safe to tap repeatedly.,RoastDetailScreen.kt,366
 detail.s19,补录,Backfill,RoastDetailScreen.kt,371
 detail.s20,补录到豆袋,Backfill to BeanBag,RoastDetailScreen.kt,406
-detail.s21,生豆已扣过，只补熟豆,Green already deducted; roasted only,RoastDetailScreen.kt,411
-detail.s22,未读到豆袋生豆批次（需豆袋 3.0.14+）,No green batches (need BeanBag 3.0.14+),RoastDetailScreen.kt,416
+detail.s21,生豆已扣过，只补熟豆,Green already deducted — roasted only,RoastDetailScreen.kt,411
+detail.s22,未读到豆袋生豆批次（需豆袋 3.0.14+）,No green batches found (requires BeanBag 3.0.14+),RoastDetailScreen.kt,416
 detail.s23,{name}（剩 {remainingGrams}g）,{name} ({remainingGrams}g left),RoastDetailScreen.kt,431
 detail.s24,熟豆克重（出豆重）,Roasted weight (drop),RoastDetailScreen.kt,459
-detail.s25,请选择生豆批次并填克重,Pick a batch & enter grams,RoastDetailScreen.kt,489
+detail.s25,请选择生豆批次并填克重,Select a green batch and enter weight,RoastDetailScreen.kt,489
 detail.s26,生豆扣减失败：{message},Green deduct failed: {message},RoastDetailScreen.kt,496
-detail.s27,⚠ 熟豆入库失败：{message},⚠ Roasted add failed: {message},RoastDetailScreen.kt,514
-detail.s28,无操作,No action,RoastDetailScreen.kt,518
-detail.s29,确认补录,Backfill,RoastDetailScreen.kt,524
+detail.s27,⚠ 熟豆入库失败：{message},⚠ Roasted stock add failed: {message},RoastDetailScreen.kt,514
+detail.s28,无操作,No Action,RoastDetailScreen.kt,518
+detail.s29,确认补录,Confirm Backfill,RoastDetailScreen.kt,524
 detail.s30,关闭,Off,RoastDetailScreen.kt,527
 stats.s1,烘焙阶段,Roast Phases,RoastPhaseStats.kt,94
 stats.s2,发展 {fcsT} · {totalEnd},Development {fcsT} · {totalEnd},RoastPhaseStats.kt,99
 stats.s3,全程 {totalEnd},Total {totalEnd},RoastPhaseStats.kt,104
 settings.s1,设置,Settings,SettingsScreen.kt,42
-settings.s2,使用手册,Manual,SettingsScreen.kt,44
+settings.s2,使用手册,User Manual,SettingsScreen.kt,44
 settings.s3,已取消导入,Import cancelled,SettingsScreen.kt,60
 settings.s4,无法识别的备份格式,Unrecognized backup format,SettingsScreen.kt,64
 settings.s5,解析失败：{take},Parse failed: {take},SettingsScreen.kt,67
 settings.s6,数据备份,Data Backup,SettingsScreen.kt,74
-settings.s7,备份全部记录、模板与设置。「存到下载目录」生成 .zip；「导出到文件」分享 .json。导入时两种格式通用，按 ID 合并（同 ID 覆盖、不删除现有数据）,"Backs up records, profiles & settings. Downloads=.zip; Share=.json. Both import by ID (merge, never delete).",SettingsScreen.kt,80
-settings.s8,已调起分享：{size} 条记录 / {size} 个模板,Sharing: {size} records / {size} profiles,SettingsScreen.kt,102
+settings.s7,备份全部记录、模板与设置。「存到下载目录」生成 .zip；「导出到文件」分享 .json。导入时两种格式通用，按 ID 合并（同 ID 覆盖、不删除现有数据）,"Backs up all records, profiles, and settings. Save to Downloads creates a .zip; Export to File shares a .json. Both formats can be imported and are merged by ID (same-ID overwrites; existing data is never deleted).",SettingsScreen.kt,80
+settings.s8,已调起分享：{size} 条记录 / {size} 个模板,Share opened: {size} records / {size} profiles,SettingsScreen.kt,102
 settings.s9,导出失败：{take},Export failed: {take},SettingsScreen.kt,104
 settings.s10,导出 .json,Export .json,SettingsScreen.kt,109
 settings.s11,从文件导入,Import from File,SettingsScreen.kt,113
 settings.s12,当前版本：{appVersion},Version: {appVersion},SettingsScreen.kt,117
-settings.s13,此系统不支持直存，请用「导出到文件」分享保存,Direct save unsupported - use Share,SettingsScreen.kt,141
+settings.s13,此系统不支持直存，请用「导出到文件」分享保存,Direct save is not supported on this system. Use Export to File to share and save.,SettingsScreen.kt,141
 settings.s14,已保存到 {where},Saved to {where},SettingsScreen.kt,147
-settings.s15,存到下载目录（同局域网迁移推荐）,Save to Downloads,SettingsScreen.kt,156
-settings.s16,确认导入？,ConfirmImport?,SettingsScreen.kt,169
-settings.s17,将合并导入 {size} 条记录、{size} 个模板,"Merge {size} records, {size} profiles",SettingsScreen.kt,171
-settings.s18,及设置项, and settings,SettingsScreen.kt,172
-settings.s19,。同 ID 覆盖、现有数据保留。,. Same-ID overwrites; nothing deleted.,SettingsScreen.kt,173
-settings.s20,✅ 导入完成：{size} 条记录 / {size} 个模板,✅ Imported: {size} records / {size} profiles,SettingsScreen.kt,188
+settings.s15,存到下载目录（同局域网迁移推荐）,Save to Downloads (recommended for same-network migration),SettingsScreen.kt,156
+settings.s16,确认导入？,Confirm import?,SettingsScreen.kt,169
+settings.s17,将合并导入 {size} 条记录、{size} 个模板,Will merge-import {size} records and {size} profiles,SettingsScreen.kt,171
+settings.s18,及设置项,and settings,SettingsScreen.kt,172
+settings.s19,。同 ID 覆盖、现有数据保留。,. Same-ID overwrites; existing data is preserved.,SettingsScreen.kt,173
+settings.s20,✅ 导入完成：{size} 条记录 / {size} 个模板,✅ Import complete: {size} records / {size} profiles,SettingsScreen.kt,188
 settings.s21,导入失败：{take},Import failed: {take},SettingsScreen.kt,190
 settings.s22,导入,Import,SettingsScreen.kt,193
 settings.s23,取消,Cancel,SettingsScreen.kt,196
 settings.s24,跟随控制,Follow Control,SettingsScreen.kt,202
-settings.s25,入豆自动开始跟随,Auto-follow on charge,SettingsScreen.kt,211
-settings.s26,点「入豆」时若已选模板，自动进入跟随曲线模式,"With a profile, tapping Charge auto-follows",SettingsScreen.kt,213
+settings.s25,入豆自动开始跟随,Auto-follow on Charge,SettingsScreen.kt,211
+settings.s26,点「入豆」时若已选模板，自动进入跟随曲线模式,"With a profile selected, tapping Charge auto-starts Follow Profile mode",SettingsScreen.kt,213
 settings.s27,跟随前瞻,Lookahead,SettingsScreen.kt,239
-settings.s28,SV 提前参考 N 秒后的目标值，补偿炉子热惯性（0=关闭）,Look ahead N seconds for roaster lag (0=off),SettingsScreen.kt,241
-settings.s29,设备连接,Device,SettingsScreen.kt,273
-settings.s30,启动时自动连接,Auto-connect on launch,SettingsScreen.kt,282
-settings.s31,启动应用后自动连接上次的桥接器 IP,Auto-connect last bridge IP,SettingsScreen.kt,284
-settings.s32,🔵 蓝牙配网,🔵 BluetoothWiFi setup,SettingsScreen.kt,309
-settings.s33,给桥接器设置 WiFi（无需电脑），配网模式下手机蓝牙直连,Set bridge WiFi via Bluetooth - no PC needed,SettingsScreen.kt,311
+settings.s28,SV 提前参考 N 秒后的目标值，补偿炉子热惯性（0=关闭）,SV references the target value N seconds ahead to compensate for roaster thermal inertia (0 = off),SettingsScreen.kt,241
+settings.s29,设备连接,Device Connection,SettingsScreen.kt,273
+settings.s30,启动时自动连接,Auto-connect on Launch,SettingsScreen.kt,282
+settings.s31,启动应用后自动连接上次的桥接器 IP,Auto-connect to the last bridge IP on app launch,SettingsScreen.kt,284
+settings.s32,🔵 蓝牙配网,🔵 Bluetooth Setup,SettingsScreen.kt,309
+settings.s33,给桥接器设置 WiFi（无需电脑），配网模式下手机蓝牙直连,Set up WiFi on the bridge via Bluetooth — no computer needed,SettingsScreen.kt,311
 settings.s34,烘焙事件,Roast Events,SettingsScreen.kt,321
-settings.s35,深烘模式（显示二爆）,Dark roast mode (2nd crack),SettingsScreen.kt,330
-settings.s36,底部事件条增加 二爆/二爆止，意式深烘用,Adds 2nd crack buttons for dark roasts,SettingsScreen.kt,332
-settings.s37,提示：建议烘焙前先在监控页选好模板（选模板不会立刻开始跟随），投豆瞬间点「入豆」即自动跟随。,Tip: pick a profile before charging (selecting does not start follow); Charge then auto-follows.,SettingsScreen.kt,350
+settings.s35,深烘模式（显示二爆）,Dark Roast Mode (show 2nd crack),SettingsScreen.kt,330
+settings.s36,底部事件条增加 二爆/二爆止，意式深烘用,Adds Second Crack Start / End buttons to the bottom bar — for dark / espresso roasts,SettingsScreen.kt,332
+settings.s37,提示：建议烘焙前先在监控页选好模板（选模板不会立刻开始跟随），投豆瞬间点「入豆」即自动跟随。,Tip: pick a profile on the monitor screen before roasting (selecting does not start following immediately). Tap Charge at drop-in and following starts automatically.,SettingsScreen.kt,350
 settings.s38,支持开发者,Support the Developer,SettingsScreen.kt,356
-settings.s39,☕ 支持开发者,☕ Support Developer,SettingsScreen.kt,366
-settings.s40,烤豆永久免费、开源、无广告。如果你觉得它帮到了你，欢迎到爱发电支持。,"RoastCurve is free, open-source, and ad-free. Support us on Afdian if it helps.",SettingsScreen.kt,368
-settings.s41,🫘 姐妹应用：豆袋 CoffeeBeanTracker,🫘 Sister app: BeanBag,SettingsScreen.kt,384
-settings.s42,生豆熟豆库存、做一杯扣账、烘焙消耗联动。烘完的豆子它来管。,"Green & roasted inventory, brew deduction, roast sync. It manages your beans.",SettingsScreen.kt,386
+settings.s39,☕ 支持开发者,☕ Support the Developer,SettingsScreen.kt,366
+settings.s40,烤豆永久免费、开源、无广告。如果你觉得它帮到了你，欢迎到爱发电支持。,"RoastCurve is permanently free, open-source, and ad-free. If it helps you, consider supporting us on Afdian.",SettingsScreen.kt,368
+settings.s41,🫘 姐妹应用：豆袋 CoffeeBeanTracker,🫘 Sister App: BeanBag — Coffee Bean Tracker,SettingsScreen.kt,384
+settings.s42,生豆熟豆库存、做一杯扣账、烘焙消耗联动。烘完的豆子它来管。,"Track green and roasted bean inventory, deduct per brew, and sync with roast consumption. It manages your beans after roasting.",SettingsScreen.kt,386
 app.s7,分享 {filename},Share {filename},ShareText.android.kt,19
-app.s8,app外部分区/{name},App storage/{name},ShareText.android.kt,42
-app.s10,透传设备持续无响应：可能已被其他程序占用，或设备刚重启尚未就绪,Passthrough device unresponsive: busy or booting,TransparentChannel.kt,66
-app.s11,SV 写入失败（设备无响应）,SV write failed (no response),TransparentChannel.kt,142
+app.s8,app外部分区/{name},App external storage/{name},ShareText.android.kt,42
+app.s10,透传设备持续无响应：可能已被其他程序占用，或设备刚重启尚未就绪,"Passthrough device unresponsive: may be in use by another program, or the device is still booting up",TransparentChannel.kt,66
+app.s11,SV 写入失败（设备无响应）,SV write failed (device not responding),TransparentChannel.kt,142
