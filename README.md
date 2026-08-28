@@ -9,12 +9,14 @@
 
 > **Android 已可用，iOS 正在进行中，敬请期待。**
 
-CoffeeBeanTracker 的姊妹应用：
+CoffeeBeanTracker（豆袋，管豆子库存）的姊妹应用：
 
 ```
-CoffeeBeanTracker → 管豆子（库存、记录、杯测）
-烤豆 RoastCurve   → 管曲线（监控、设计、导出）
+豆袋 CoffeeBeanTracker → 管豆子（库存、记录、杯测）→ github.com/MDx-MoJe/CoffeeBeanTracker
+烤豆 RoastCurve       → 管曲线（监控、设计、导出）
 ```
+
+两 App 通过 Android ContentProvider（内容提供器）互联：烘完一炉，豆袋自动「扣生豆 + 熟豆入库」。
 
 ## 技术栈
 
