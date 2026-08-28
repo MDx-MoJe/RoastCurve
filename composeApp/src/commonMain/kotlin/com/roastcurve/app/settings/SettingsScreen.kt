@@ -98,15 +98,19 @@ fun SettingsScreen(
                                         .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
                                     fun p2(v: Int) = v.toString().padStart(2, '0')
                                     val fname = "roastcurve_backup_${p2(d.monthNumber)}${p2(d.dayOfMonth)}-${p2(d.hour)}${p2(d.minute)}.json"
-                                    shareText(fname, BackupCodec.encode(bundle))
-                                    statusText = "已调起分享：${bundle.records.size} 条记录 / ${bundle.profiles.size} 个模板"
+                                    // zip 铁律：统一 zip 直写 Download（shareText 在 vivo 上会静默失败）
+                                    val zip = packBackupZip(fname, BackupCodec.encode(bundle))
+                                    val zipName = fname.removeSuffix(".json") + ".zip"
+                                    val where = if (zip != null) exportBackupToDownloads(zipName, zip) else null
+                                    statusText = where?.let { "已保存到 $where" }
+                                        ?: "此系统不支持直存，请用「存到下载目录」按钮"
                                 } catch (e: Exception) {
                                     statusText = "导出失败：${e.message?.take(50)}"
                                 } finally { busy = false }
                             }
                         },
                         enabled = !busy,
-                    ) { Text("导出 .json") }
+                    ) { Text("导出备份 (zip)") }
                     OutlinedButton(
                         onClick = { BackupBridge.requestPick?.invoke() },
                         enabled = !busy,
