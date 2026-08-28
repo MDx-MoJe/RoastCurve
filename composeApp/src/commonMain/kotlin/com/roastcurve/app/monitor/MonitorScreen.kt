@@ -1058,17 +1058,29 @@ fun MonitorScreen(
             )
         }
 
-        // ===== 豆袋同步：出豆后同步扣生豆库存 =====
+        // ===== 豆袋同步：出豆后同步扣生豆库存 + 熟豆入库 =====
         if (showBeanBagSync) {
             val bridge = remember { beanBagBridge() }
             var beans by remember { mutableStateOf<List<GreenBeanSummary>?>(null) }
             var selectedId by remember { mutableStateOf<Long?>(null) }
             var gramsText by remember { mutableStateOf("") }
+            var roastedNameText by remember { mutableStateOf("") }   // 熟豆名（默认填当前豆名）
+            var roastedGramsText by remember { mutableStateOf("") }  // 熟豆克重（默认填失重率估算值）
             var pushing by remember { mutableStateOf(false) }
             var resultMsg by remember { mutableStateOf<String?>(null) }
             var success by remember { mutableStateOf(false) }
 
-            LaunchedEffect(Unit) { beans = bridge.listGreenBeans() }
+            LaunchedEffect(Unit) {
+                beans = bridge.listGreenBeans()
+                // 预填：熟豆名用当前记录名，熟豆重用出豆克重（无则按 15% 失重率估算）
+                val rec = sessionId?.let { runCatching { RoastStore().load(it) }.getOrNull() }
+                roastedNameText = rec?.beanName.orEmpty()
+                val dw = rec?.dropWeight ?: 0f
+                val bw = rec?.beanWeight ?: 0f
+                roastedGramsText = if (dw > 0f) dw.toInt().toString()
+                    else if (bw > 0f) (bw * 0.85f).toInt().toString()
+                    else ""
+            }
 
             AlertDialog(
                 onDismissRequest = { if (!pushing) showBeanBagSync = false },
@@ -1084,7 +1096,7 @@ fun MonitorScreen(
                                  color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         else -> Column {
-                            Text("选择生豆批次并确认克重，豆袋将自动扣减库存。重复推送不会重复扣减。",
+                            Text("选批次扣生豆，同时按熟豆名入库熟豆（同名累加）。重复推送不会重复扣/入。",
                                  style = MaterialTheme.typography.bodySmall,
                                  color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(8.dp))
@@ -1114,7 +1126,25 @@ fun MonitorScreen(
                             OutlinedTextField(
                                 value = gramsText,
                                 onValueChange = { gramsText = it.filter { ch -> ch.isDigit() || ch == '.' } },
-                                label = { Text("本次消耗克重（入豆重）") },
+                                label = { Text("生豆消耗克重（入豆重）") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                enabled = !success,
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            OutlinedTextField(
+                                value = roastedNameText,
+                                onValueChange = { roastedNameText = it },
+                                label = { Text("熟豆名称（同名累加库存）") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                enabled = !success,
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            OutlinedTextField(
+                                value = roastedGramsText,
+                                onValueChange = { roastedGramsText = it.filter { ch -> ch.isDigit() || ch == '.' } },
+                                label = { Text("熟豆克重（出豆重，入库量）") },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 enabled = !success,
@@ -1144,7 +1174,24 @@ fun MonitorScreen(
                                     val res = bridge.consume(rid, bid, g)
                                     pushing = false
                                     when (res) {
-                                        is BridgeResult.Ok -> { success = true; resultMsg = "✓ ${res.message}" }
+                                        is BridgeResult.Ok -> {
+                                            success = true
+                                            resultMsg = "✓ ${res.message}"
+                                            // 熟豆入库：有克重才追送（与生豆扣减同一幂等键体系，独立前缀）
+                                            val rg = roastedGramsText.toDoubleOrNull() ?: 0.0
+                                            if (rg > 0) {
+                                                when (val r2 = bridge.addRoasted(
+                                                    roastId = rid,
+                                                    beanName = roastedNameText.trim(),
+                                                    roastedGrams = rg,
+                                                    roastLevel = "",
+                                                    roastDateEpochMs = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+                                                )) {
+                                                    is BridgeResult.Ok -> resultMsg = "✓ ${res.message}\n✓ ${r2.message}"
+                                                    is BridgeResult.Err -> resultMsg += "\n⚠ 熟豆入库失败：${r2.message}（可用历史页补录）"
+                                                }
+                                            }
+                                        }
                                         is BridgeResult.Err -> resultMsg = "扣减失败：${res.message}"
                                     }
                                 }

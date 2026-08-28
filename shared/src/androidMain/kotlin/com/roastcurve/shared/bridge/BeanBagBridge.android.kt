@@ -19,11 +19,16 @@ class AndroidBeanBagBridge(private val context: Context) : BeanBagBridge {
     companion object {
         private val CONTENT_URI: Uri = Uri.parse("content://com.coffee.beantracker.bridge/green_beans")
         private const val METHOD_CONSUME = "consume"
+        private const val METHOD_ADD_ROASTED = "add_roasted"
         private const val EXTRA_ROAST_ID = "roast_id"
         private const val EXTRA_GREEN_BEAN_ID = "bean_id"
         private const val EXTRA_GRAMS = "grams"
         private const val EXTRA_RESULT = "result"
         private const val EXTRA_MESSAGE = "message"
+        private const val EXTRA_BEAN_NAME = "bean_name"
+        private const val EXTRA_ROASTED_GRAMS = "roasted_grams"
+        private const val EXTRA_ROAST_LEVEL = "roast_level"
+        private const val EXTRA_ROAST_DATE = "roast_date"
     }
 
     override suspend fun listGreenBeans(): List<GreenBeanSummary> = withContext(Dispatchers.IO) {
@@ -67,6 +72,31 @@ class AndroidBeanBagBridge(private val context: Context) : BeanBagBridge {
                 BridgeResult.Err(e.message ?: e.javaClass.simpleName)
             }
         }
+
+    override suspend fun addRoasted(
+        roastId: String,
+        beanName: String,
+        roastedGrams: Double,
+        roastLevel: String,
+        roastDateEpochMs: Long,
+    ): BridgeResult = withContext(Dispatchers.IO) {
+        try {
+            val extras = Bundle().apply {
+                putString(EXTRA_ROAST_ID, roastId)
+                putString(EXTRA_BEAN_NAME, beanName)
+                putDouble(EXTRA_ROASTED_GRAMS, roastedGrams)
+                putString(EXTRA_ROAST_LEVEL, roastLevel)
+                putLong(EXTRA_ROAST_DATE, roastDateEpochMs)
+            }
+            val out = context.contentResolver.call(CONTENT_URI, METHOD_ADD_ROASTED, null, extras)
+                ?: return@withContext BridgeResult.Err("豆袋无响应（需 3.0.14+ 支持熟豆补录）")
+            val ok = out.getString(EXTRA_RESULT) == "ok"
+            val msg = out.getString(EXTRA_MESSAGE).orEmpty()
+            if (ok) BridgeResult.Ok(msg) else BridgeResult.Err(msg.ifBlank { "未知错误" })
+        } catch (e: Exception) {
+            BridgeResult.Err(e.message ?: e.javaClass.simpleName)
+        }
+    }
 }
 
 actual fun beanBagBridge(): BeanBagBridge = AndroidBeanBagBridge(

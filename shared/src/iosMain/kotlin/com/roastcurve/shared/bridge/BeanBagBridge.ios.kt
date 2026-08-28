@@ -7,6 +7,13 @@ private object UnsupportedBridge : BeanBagBridge {
     override suspend fun listGreenBeans(): List<GreenBeanSummary> = emptyList()
     override suspend fun consume(roastId: String, greenBeanId: Long, grams: Double): BridgeResult =
         BridgeResult.Err("当前平台不支持豆袋互联")
+    override suspend fun addRoasted(
+        roastId: String,
+        beanName: String,
+        roastedGrams: Double,
+        roastLevel: String,
+        roastDateEpochMs: Long,
+    ): BridgeResult = BridgeResult.Err("当前平台不支持豆袋互联")
 }
 
 actual fun beanBagBridge(): BeanBagBridge = UnsupportedBridge

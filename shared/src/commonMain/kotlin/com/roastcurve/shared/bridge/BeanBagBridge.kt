@@ -15,6 +15,18 @@ interface BeanBagBridge {
      * @param grams 本次消耗克重（= 入豆重）
      */
     suspend fun consume(roastId: String, greenBeanId: Long, grams: Double): BridgeResult
+
+    /**
+     * 只补熟豆入库，不碰生豆库存（手动补录场景：生豆已扣过）。
+     * 豆袋端用独立幂等键，重复推送不重复入库。
+     */
+    suspend fun addRoasted(
+        roastId: String,
+        beanName: String,
+        roastedGrams: Double,
+        roastLevel: String,
+        roastDateEpochMs: Long,
+    ): BridgeResult
 }
 
 /** 平台工厂：android 返回真实桥，其他平台返回不可用桩 */
