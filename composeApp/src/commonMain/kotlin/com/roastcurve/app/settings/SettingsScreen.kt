@@ -1,5 +1,6 @@
 package com.roastcurve.app.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -257,23 +258,51 @@ fun SettingsScreen(
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     OutlinedButton(
                         onClick = {
-                            val v = (settings.lookaheadSec - 5).coerceAtLeast(0)
+                            val v = (settings.lookaheadSec - 1).coerceAtLeast(0)
                             val next = settings.copy(lookaheadSec = v)
                             onUpdate(next); scope.launch { SettingsStore().save(next) }
                         },
-                    ) { Text("−5s") }
-                    Text(
-                        "${settings.lookaheadSec}s",
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
+                    ) { Text("−1") }
+                    var editingLookahead by remember { mutableStateOf(false) }
+                    var draftText by remember { mutableStateOf("") }
+                    if (editingLookahead) {
+                        OutlinedTextField(
+                            value = draftText,
+                            onValueChange = { draftText = it.filter { ch -> ch.isDigit() } },
+                            label = { Text("秒") },
+                            singleLine = true,
+                            modifier = Modifier.width(90.dp).padding(horizontal = 4.dp),
+                            textStyle = MaterialTheme.typography.titleMedium,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        )
+                        TextButton(onClick = {
+                            val v = draftText.toIntOrNull()?.coerceIn(0, 120)
+                            if (v != null) {
+                                val next = settings.copy(lookaheadSec = v)
+                                onUpdate(next); scope.launch { SettingsStore().save(next) }
+                            }
+                            editingLookahead = false
+                        }) { Text("OK") }
+                    } else {
+                        Text(
+                            "${settings.lookaheadSec}s",
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .clickable {
+                                    draftText = settings.lookaheadSec.toString()
+                                    editingLookahead = true
+                                },
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
                     OutlinedButton(
                         onClick = {
-                            val v = (settings.lookaheadSec + 5).coerceAtMost(60)
+                            val v = (settings.lookaheadSec + 1).coerceAtMost(120)
                             val next = settings.copy(lookaheadSec = v)
                             onUpdate(next); scope.launch { SettingsStore().save(next) }
                         },
-                    ) { Text("+5s") }
+                    ) { Text("+1") }
                 }
             }
         }
