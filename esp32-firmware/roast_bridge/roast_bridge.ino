@@ -1,5 +1,5 @@
 /*
- * RoastCurve ESP32-S3 桥接固件 v1.0
+ * RoastCurve ESP32-S3 桥接固件 v1.1
  * ================================================
  * 角色：替代 Wi-Fi 转 RS485 设备，作为 App 与温控器之间的
  *       WiFi(Modbus TCP) <-> RS485(Modbus RTU) 协议网关
