@@ -1,5 +1,7 @@
 # 烤豆 RoastCurve
 
+[English](README_EN.md) | 简体中文
+
 [![License](https://img.shields.io/badge/code%20license-Apache%202.0-blue)](LICENSE) [![Trademark](https://img.shields.io/badge/name%20%26%20logo-%E4%B8%8D%E5%9C%A8%E6%8E%88%E6%9D%83%E8%8C%83%E5%9B%B4-important)](NOTICE.txt)
 [![Platform](https://img.shields.io/badge/platform-Android-brightgreen)](#)
 [![iOS](https://img.shields.io/badge/iOS-开发中-yellow)](#)
