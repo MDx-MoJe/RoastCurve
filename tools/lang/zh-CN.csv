@@ -98,7 +98,7 @@ manual.s35,六、设置项说明,6. Settings Explained,ManualScreen.kt,87
 manual.s36,入豆瞬间若已选模板，自动进入跟随模式,"With a profile selected, Charge triggers auto-follow",ManualScreen.kt,88
 manual.s37,打开 App 自动连上次的桥接器 IP,Auto-connect to last bridge IP on app launch,ManualScreen.kt,89
 manual.s38,事件条增加二爆/二爆止两键，意式深烘用,Adds Second Crack Start / End buttons for dark / espresso roasts,ManualScreen.kt,91
-manual.s39,七、事件术语速查,8. Event Terminology Quick Reference,ManualScreen.kt,94
+manual.s39,八、事件术语速查,8. Event Terminology Quick Reference,ManualScreen.kt,94
 manual.s40,入豆 CHARGE,Charge CHARGE,ManualScreen.kt,95
 manual.s41,生豆下锅，计时起点,Green beans dropped in; timer starts,ManualScreen.kt,95
 manual.s42,黄点 DRY,Yellowing DRY,ManualScreen.kt,96
@@ -113,13 +113,13 @@ manual.s50,二爆止 SCe,Second Crack End SCe,ManualScreen.kt,100
 manual.s51,第二爆结束（深度烘焙极限区）,Second crack ends (deep dark roast boundary),ManualScreen.kt,100
 manual.s52,出豆 DROP,Drop DROP,ManualScreen.kt,101
 manual.s53,下豆，记录终点,Beans discharged; end of recording,ManualScreen.kt,101
-manual.s54,八、注意事项,9. Notes & Precautions,ManualScreen.kt,104
+manual.s54,九、注意事项,9. Notes & Precautions,ManualScreen.kt,104
 manual.s55,空载测试：空锅跟随带豆模板，BT 会升得比模板快、偏高，属正常物理差异。,"Empty-roaster test: when following a loaded profile with an empty drum, BT will rise faster and higher than the profile — this is normal physics.",ManualScreen.kt,105
 manual.s56,总线上单主站：接自制桥接器时原 Wi-Fi 转 RS485 设备需断电，两个主站不能同时说话。,Single-master bus: power off the original Wi-Fi-to-RS485 gateway when using a DIY bridge — two masters cannot share the same bus.,ManualScreen.kt,106
 manual.s57,SV 上限 260°C：适配特殊豆种，超出会被硬限幅。,SV upper limit is 260°C (for special beans); values above are hard-clipped.,ManualScreen.kt,107
 manual.s58,返回键：浮层页面（记录/详情/设置/手册）按返回=关闭浮层；烘焙会话进行中返回键被屏蔽防误触退出。,"Back button: on overlay pages (records / details / settings / manual), Back closes the overlay. During an active roast session, the Back button is disabled to prevent accidental exit.",ManualScreen.kt,108
 manual.s59,失重率：典型 12%~18%，超出 8%~25% 区间会提示复查克重。,Weight loss: typically 12–18%. Values outside 8–25% trigger a weight review prompt.,ManualScreen.kt,109
-manual.s60,九、开源协议,10. Open Source License,ManualScreen.kt,112
+manual.s60,十、开源协议,10. Open Source License,ManualScreen.kt,112
 manual.s61,本项目（App + ESP32 固件）以 Apache License 2.0 开源，源码见 GitHub 仓库。,This project (App + ESP32 firmware) is open-sourced under Apache License 2.0. Source code is available on GitHub.,ManualScreen.kt,113
 app.s12,桥接器持续无响应：可能已被其他程序占用，或设备刚重启尚未就绪,"Bridge unresponsive: may be in use by another program, or the device is still booting up",ModbusTcpChannel.kt,69
 monitor.s1,设定失败: {message},Set failed: {message},MonitorScreen.kt,154
