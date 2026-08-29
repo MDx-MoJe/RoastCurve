@@ -17,7 +17,7 @@ actual fun shareText(filename: String, content: String) {
         putExtra(Intent.EXTRA_TEXT, content)
     }
     if (context is Activity) {
-        context.startActivity(Intent.createChooser(intent, L10n.get("app.s7")))
+        context.startActivity(Intent.createChooser(intent, L10n.get("app.s7", "filename" to filename)))
     }
 }
 
@@ -40,7 +40,7 @@ actual fun exportBackupToDownloads(filename: String, data: ByteArray): String? {
             ?.apply { mkdirs() } ?: return null
         val f = java.io.File(dir, filename)
         f.writeBytes(data)
-        L10n.get("app.s8")
+        L10n.get("app.s8", "name" to f.name)
     } catch (_: Exception) {
         null
     }

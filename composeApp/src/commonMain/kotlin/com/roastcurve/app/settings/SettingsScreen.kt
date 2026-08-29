@@ -66,7 +66,7 @@ fun SettingsScreen(
                             ?: throw IllegalStateException(L10n.get("settings.s4"))
                         pendingImport = BackupCodec.decode(json)
                     } catch (e: Exception) {
-                        statusText = L10n.get("settings.s5")
+                        statusText = L10n.get("settings.s5", "take" to (e.message?.take(40) ?: ""))
                     }
                 }
             }
@@ -104,10 +104,10 @@ fun SettingsScreen(
                                     val zip = packBackupZip(fname, BackupCodec.encode(bundle))
                                     val zipName = fname.removeSuffix(".json") + ".zip"
                                     val where = if (zip != null) exportBackupToDownloads(zipName, zip) else null
-                                    statusText = where?.let { L10n.get("settings.s14") }
+                                    statusText = where?.let { L10n.get("settings.s14", "where" to where) }
                                         ?: "此系统不支持直存，请用「存到下载目录」按钮"
                                 } catch (e: Exception) {
-                                    statusText = L10n.get("settings.s9")
+                                    statusText = L10n.get("settings.s9", "take" to (e.message?.take(50) ?: ""))
                                 } finally { busy = false }
                             }
                         },
@@ -150,10 +150,10 @@ fun SettingsScreen(
                                 }
                                 val zipName = fname.removeSuffix(".json") + ".zip"
                                 val where = exportBackupToDownloads(zipName, zip)
-                                statusText = where?.let { L10n.get("settings.s14") }
+                                statusText = where?.let { L10n.get("settings.s14", "where" to where) }
                                     ?: L10n.get("settings.s13")
                             } catch (e: Exception) {
-                                statusText = L10n.get("settings.s9")
+                                statusText = L10n.get("settings.s9", "take" to (e.message?.take(50) ?: ""))
                             } finally { busy = false }
                         }
                     },
@@ -174,7 +174,7 @@ fun SettingsScreen(
                 onDismissRequest = { pendingImport = null },
                 title = { Text(L10n.get("settings.s16")) },
                 text = {
-                    Text(L10n.get("settings.s17") +
+                    Text(L10n.get("settings.s17", "size" to b.records.size, "size2" to b.profiles.size) +
                          (if (b.settings != null) L10n.get("settings.s18") else "") +
                          L10n.get("settings.s19"))
                 },
@@ -191,9 +191,9 @@ fun SettingsScreen(
                                     onUpdate(it)
                                     SettingsStore().save(it)
                                 }
-                                statusText = L10n.get("settings.s20")
+                                statusText = L10n.get("settings.s20", "size" to bundle.records.size, "size2" to bundle.profiles.size)
                             } catch (e: Exception) {
-                                statusText = L10n.get("settings.s21")
+                                statusText = L10n.get("settings.s21", "take" to (e.message?.take(40) ?: ""))
                             } finally { busy = false }
                         }
                     }) { Text(L10n.get("settings.s22"), color = MaterialTheme.colorScheme.primary) }

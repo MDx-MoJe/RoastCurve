@@ -70,8 +70,8 @@ fun ConsentDialog(
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 buildString {
-                                    if (externalUrl.isNotEmpty()) append(L10n.get("consent.s2"))
-                                    if (cnUrl.isNotEmpty()) append(L10n.get("consent.s3"))
+                                    if (externalUrl.isNotEmpty()) append(L10n.get("consent.s2", "externalUrl" to ""))
+                                    if (cnUrl.isNotEmpty()) append(L10n.get("consent.s3", "cnUrl" to ""))
                                 },
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.primary,

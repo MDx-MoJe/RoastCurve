@@ -41,7 +41,7 @@ fun HistoryScreen(
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text(L10n.get("history.s1")) },
-            text = { Text(L10n.get("history.s2")) },
+            text = { Text(L10n.get("history.s2", "id" to (target?.id ?: ""))) },
             confirmButton = {
                 TextButton(onClick = {
                     scope.launch {
@@ -112,11 +112,11 @@ private fun RecordCard(record: RoastRecord, onClick: () -> Unit, onDelete: () ->
                 Text(
                     buildString {
                         append("${record.beanName.ifEmpty { L10n.get("history.s5") }} · ")
-                        append(L10n.get("history.s6"))
-                        append(L10n.get("history.s7"))
+                        append(L10n.get("history.s6", "m" to (record.totalTimeSeconds.toInt() / 60), "s" to (record.totalTimeSeconds.toInt() % 60)))
+                        append(L10n.get("history.s7", "size" to record.curveData.size))
                         if (record.beanWeight > 0f && record.dropWeight > 0f) {
                             val loss = ((record.beanWeight - record.dropWeight) / record.beanWeight * 1000f).toInt() / 10f
-                            append(L10n.get("history.s8"))
+                            append(L10n.get("history.s8", "loss" to loss))
                         }
                     },
                     style = MaterialTheme.typography.bodySmall,

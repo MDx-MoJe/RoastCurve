@@ -121,7 +121,7 @@ fun RoastDetailScreen(
                             ProfileStore().save(
                                 RoastProfile(
                                     id = RoastStore.newId(nowMs),
-                                    name = L10n.get("detail.s7"),
+                                    name = L10n.get("detail.s7", "nowMs" to (nowMs % 100000)),
                                     sourceRecordId = record.id,
                                     points = pts,
                                 )
@@ -429,7 +429,7 @@ private fun BeanBagSyncDialog(
                                             selected = greenId == b.id,
                                             onClick = { greenId = b.id },
                                         )
-                                        Text(L10n.get("detail.s23"))
+                                        Text(L10n.get("detail.s23", "name" to b.name, "remainingGrams" to b.remainingGrams.toInt()))
                                     }
                                 }
                             }
@@ -494,7 +494,7 @@ private fun BeanBagSyncDialog(
                                 when (val r = bridge.consume(record.id, gid, g)) {
                                     is BridgeResult.Ok -> parts.add("✓ ${r.message}")
                                     is BridgeResult.Err -> {
-                                        msg = L10n.get("detail.s26")
+                                        msg = L10n.get("detail.s26", "message" to r.message)
                                         busy = false
                                         return@launch
                                     }
@@ -512,7 +512,7 @@ private fun BeanBagSyncDialog(
                                         ?: kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                                 )) {
                                     is BridgeResult.Ok -> parts.add("✓ ${r2.message}")
-                                    is BridgeResult.Err -> parts.add(L10n.get("detail.s27"))
+                                    is BridgeResult.Err -> parts.add(L10n.get("detail.s27", "message" to (r2.message ?: "")))
                                 }
                             }
                             done = true

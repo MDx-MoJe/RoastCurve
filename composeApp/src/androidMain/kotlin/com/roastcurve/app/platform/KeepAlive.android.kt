@@ -101,7 +101,7 @@ class RoastKeepService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val minutes = (System.currentTimeMillis() - startedAtMs) / 60_000
-        val text = if (minutes <= 0) L10n.get("app.s4") else L10n.get("app.s5")
+        val text = if (minutes <= 0) L10n.get("app.s4") else L10n.get("app.s5", "minutes" to minutes)
         val builder = if (Build.VERSION.SDK_INT >= 26)
             Notification.Builder(this, CHANNEL_ID) else @Suppress("DEPRECATION") Notification.Builder(this)
         val n: Notification = builder

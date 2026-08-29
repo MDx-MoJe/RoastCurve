@@ -72,7 +72,7 @@ fun BleConfigScreen(onBack: () -> Unit) {
                         message = if (ok) {
                             L10n.get("ble.s5")
                         } else {
-                            L10n.get("ble.s6")
+                            L10n.get("ble.s6", "host" to host)
                         }
                     }
                     resetting = false
@@ -163,7 +163,7 @@ fun BleConfigScreen(onBack: () -> Unit) {
                     configuring = false
                     if (ok) {
                         // 桥接器收到凭据后重启并连 WiFi（需几秒），用 mDNS 自动发现 IP
-                        message = L10n.get("ble.s17")
+                        message = L10n.get("ble.s17", "ssid" to ssid)
                         val bridge = discoverBridge(20000)
                         if (bridge != null) {
                             withContext(Dispatchers.IO) {
@@ -172,7 +172,7 @@ fun BleConfigScreen(onBack: () -> Unit) {
                                     s.save(s.load().copy(lastBridgeHost = bridge.host))
                                 }
                             }
-                            message = L10n.get("ble.s18")
+                            message = L10n.get("ble.s18", "host" to bridge.host)
                         } else {
                             message = L10n.get("ble.s19")
                         }

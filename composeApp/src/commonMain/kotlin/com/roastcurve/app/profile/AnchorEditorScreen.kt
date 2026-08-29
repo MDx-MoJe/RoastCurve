@@ -424,5 +424,5 @@ private fun defaultName(): String {
     val d = kotlinx.datetime.Clock.System.now()
         .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
     fun p2(v: Int) = v.toString().padStart(2, '0')
-    return L10n.get("anchor.s15")
+    return L10n.get("anchor.s15", "monthNumber" to d.monthNumber, "dayOfMonth" to d.dayOfMonth, "hour" to d.hour, "minute" to d.minute)
 }

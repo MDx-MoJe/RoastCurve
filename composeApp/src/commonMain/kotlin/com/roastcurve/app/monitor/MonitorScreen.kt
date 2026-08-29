@@ -152,7 +152,7 @@ fun MonitorScreen(
             try {
                 ch.sendCommand(DeviceCommand(CommandType.PID_SETPOINT, target))
             } catch (e: Exception) {
-                connectionError = L10n.get("monitor.s1")
+                connectionError = L10n.get("monitor.s1", "message" to (e.message ?: ""))
             } finally {
                 writingSv = false
             }
@@ -271,7 +271,7 @@ fun MonitorScreen(
                 ch.sendCommand(DeviceCommand(CommandType.PID_SETPOINT, target))
                 // 写入成功，下一轮询周期回读刷新 currentSv
             } catch (e: Exception) {
-                connectionError = L10n.get("monitor.s1")
+                connectionError = L10n.get("monitor.s1", "message" to (e.message ?: ""))
             } finally {
                 writingSv = false
             }
@@ -307,9 +307,9 @@ fun MonitorScreen(
                             )
                         )
                         followAlert = if (computedEvents.isNotEmpty())
-                            L10n.get("monitor.s4")
+                            L10n.get("monitor.s4", "nm" to nm, "size" to pts.size, "size2" to computedEvents.size)
                         else
-                            L10n.get("monitor.s5")
+                            L10n.get("monitor.s5", "nm" to nm, "size" to pts.size)
                         activeProfile = ProfileStore().listAll().find { it.id.startsWith("2026") && it.name == nm } ?: activeProfile
                         showProfilePicker = true   // 重开选择器展示结果
                     } catch (e: Exception) {
@@ -406,7 +406,7 @@ fun MonitorScreen(
                         // 瞬时网络错误：3 次重试后仍失败多半是设备不在线，不要照搬系统层原文误导用户
                         "route to host" in msg || "EHOSTUNREACH" in msg || "ENETUNREACH" in msg ->
                             L10n.get("monitor.s8")
-                        else -> L10n.get("monitor.s9")
+                        else -> L10n.get("monitor.s9", "simpleName" to e.javaClass.simpleName)
                     }
             }
         }
@@ -650,7 +650,7 @@ fun MonitorScreen(
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        L10n.get("monitor.s29"),
+                        L10n.get("monitor.s29", "sigLabel" to sigLabel, "rssi" to rssi),
                         color = sigColor,
                         style = MaterialTheme.typography.labelSmall,
                     )
@@ -703,7 +703,7 @@ fun MonitorScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                L10n.get("monitor.s33"),
+                                L10n.get("monitor.s33", "name" to prof.name),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
@@ -1014,7 +1014,7 @@ fun MonitorScreen(
                                         ) {
                                             Text(p.name, fontWeight = FontWeight.Bold)
                                             Text(
-                                                L10n.get("monitor.s56"),
+                                                L10n.get("monitor.s56", "size" to curvePoints.size),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
@@ -1122,7 +1122,7 @@ fun MonitorScreen(
                                         )
                                         Column(Modifier.weight(1f)) {
                                             Text(b.name, fontWeight = FontWeight.Bold)
-                                            Text(L10n.get("monitor.s65"),
+                                            Text(L10n.get("monitor.s65", "remainingGrams" to b.remainingGrams.toInt()),
                                                  style = MaterialTheme.typography.labelSmall,
                                                  color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
@@ -1195,11 +1195,11 @@ fun MonitorScreen(
                                                     roastDateEpochMs = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                                                 )) {
                                                     is BridgeResult.Ok -> resultMsg = "✓ ${res.message}\n✓ ${r2.message}"
-                                                    is BridgeResult.Err -> resultMsg += L10n.get("monitor.s70")
+                                                    is BridgeResult.Err -> resultMsg += L10n.get("monitor.s70", "message" to (r2.message ?: ""))
                                                 }
                                             }
                                         }
-                                        is BridgeResult.Err -> resultMsg = L10n.get("monitor.s71")
+                                        is BridgeResult.Err -> resultMsg = L10n.get("monitor.s71", "message" to (res.message ?: ""))
                                     }
                                 }
                             },

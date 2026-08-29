@@ -97,12 +97,12 @@ internal fun RoastPhaseStats(
                 // 一爆后右侧实时显示发展时间与率；平时显示全程
                 val devLive = fcsT != null && dropT == null && currentElapsedSec >= fcsT
                 if (devLive) {
-                    Text(L10n.get("stats.s2"),
+                    Text(L10n.get("stats.s2", "fcsT" to (fcsT?.toInt() ?: 0), "totalEnd" to totalEnd.toInt()),
                          style = MaterialTheme.typography.labelMedium,
                          fontWeight = FontWeight.Bold,
                          color = MaterialTheme.colorScheme.primary)
                 } else {
-                    Text(L10n.get("stats.s3"),
+                    Text(L10n.get("stats.s3", "totalEnd" to totalEnd.toInt()),
                          style = MaterialTheme.typography.labelMedium,
                          color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
