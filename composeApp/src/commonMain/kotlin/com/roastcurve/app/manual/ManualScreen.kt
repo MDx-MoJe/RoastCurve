@@ -37,8 +37,8 @@ fun ManualScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("使用手册", style = MaterialTheme.typography.headlineMedium)
-            OutlinedButton(onClick = onBack) { Text("返回") }
+            Text(L10n.get("manual.title"), style = MaterialTheme.typography.headlineMedium)
+            OutlinedButton(onClick = onBack) { Text(L10n.get("common.back2")) }
         }
 
         LazyColumn(
@@ -86,10 +86,10 @@ fun ManualScreen(
             } }
 
             item { Section(L10n.get("manual.s35")) {
-                SettingRow("入豆自动开始跟随", L10n.get("manual.s36"))
-                SettingRow("启动时自动连接", L10n.get("manual.s37"))
-                SettingRow("跟随前瞻", "SV 提前参考 N 秒后的目标值，补偿炉子热惯性（0=关闭）")
-                SettingRow("深烘模式（显示二爆）", L10n.get("manual.s38"))
+                SettingRow(L10n.get("manual.setting_autofollow"), L10n.get("manual.s36"))
+                SettingRow(L10n.get("manual.setting_autoconnect"), L10n.get("manual.s37"))
+                SettingRow(L10n.get("manual.setting_lookahead"), L10n.get("manual.setting_lookahead_desc"))
+                SettingRow(L10n.get("manual.setting_darkmode"), L10n.get("manual.s38"))
             } }
 
             item { Section(L10n.get("manual.s39")) {
