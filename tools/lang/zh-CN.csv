@@ -140,8 +140,8 @@ monitor.s15,开始,Start,MonitorScreen.kt,555
 monitor.s16,停止,Stop,MonitorScreen.kt,558
 monitor.s17,串口透传,Serial Passthrough,MonitorScreen.kt,573
 monitor.s18,蓝牙,Bluetooth,MonitorScreen.kt,574
-monitor.s19,蓝牙地址 (MAC),Bluetooth Address (MAC),MonitorScreen.kt,591
-monitor.s20,桥接器 IP,Bridge IP,MonitorScreen.kt,591
+monitor.s19,蓝牙地址 (MAC),BT Addr (MAC),MonitorScreen.kt,591
+monitor.s20,桥接器 IP,Bridge IP / BT MAC,MonitorScreen.kt,591
 monitor.s21,断开,Disconnect,MonitorScreen.kt,603
 monitor.s22,连接,Connect,MonitorScreen.kt,603
 monitor.s23,知道了,Got it,MonitorScreen.kt,622
@@ -198,8 +198,8 @@ monitor.s73,确认扣减,Confirm Deduct,MonitorScreen.kt,1199
 monitor.s74,跳过,Skip,MonitorScreen.kt,1203
 monitor.s75,入豆,Charge,MonitorScreen.kt,1234
 monitor.s76,黄点,Yellowing,MonitorScreen.kt,1234
-monitor.s77,一爆,First Crack,MonitorScreen.kt,1235
-monitor.s78,一爆止,First Crack End,MonitorScreen.kt,1235
+monitor.s77,一爆,1st Crack,MonitorScreen.kt,1235
+monitor.s78,一爆止,FC End,MonitorScreen.kt,1235
 monitor.s79,二爆,Second Crack,MonitorScreen.kt,1236
 monitor.s80,二爆止,Second Crack End,MonitorScreen.kt,1236
 monitor.s81,出豆,Drop,MonitorScreen.kt,1236

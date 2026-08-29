@@ -1,11 +1,13 @@
 package com.roastcurve.app.settings
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.roastcurve.shared.l10n.L10n
 import com.roastcurve.shared.l10n.LangPackIO
 import com.roastcurve.shared.l10n.langPackIO
@@ -56,17 +58,23 @@ internal fun LanguageCard(
 
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { filePick = true }, enabled = io.let { true }) {
-                    Text(L10n.get("settings.import_pack"))
-                }
-                OutlinedButton(onClick = {
-                    scope.launch {
-                        val zip = io.exportCurrent()
-                        status = if (zip != null) "✅ 语言包已生成（见导出分享）" else "导出失败"
-                    }
-                }) { Text(L10n.get("settings.export_current")) }
+                OutlinedButton(
+                    onClick = { filePick = true },
+                    enabled = true,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                ) { Text(L10n.get("settings.import_pack"), maxLines = 1, fontSize = 13.sp) }
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            val zip = io.exportCurrent()
+                            status = if (zip != null) "✅ Language pack generated" else "Export failed"
+                        }
+                    },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                ) { Text(L10n.get("settings.export_current"), maxLines = 1, fontSize = 13.sp) }
                 // 应用：写状态 + 通知上层重建 UI
                 Button(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                     enabled = pendingBuiltin != null || pendingPackFile != null,
                     onClick = {
                         pendingPackFile?.let { pf ->

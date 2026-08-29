@@ -539,10 +539,16 @@ fun MonitorScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(L10n.get("monitor.s13"), style = MaterialTheme.typography.headlineMedium)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedButton(onClick = onOpenHistory) { Text(L10n.get("monitor.s14")) }
-                OutlinedButton(onClick = onOpenSettings) { Text(L10n.get("common.settings")) }
+            Text(L10n.get("monitor.s13"), style = MaterialTheme.typography.headlineMedium, maxLines = 1)
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedButton(
+                    onClick = onOpenHistory,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                ) { Text(L10n.get("monitor.s14"), maxLines = 1, fontSize = 13.sp) }
+                OutlinedButton(
+                    onClick = onOpenSettings,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                ) { Text(L10n.get("common.settings"), maxLines = 1, fontSize = 13.sp) }
                 // 已连接未记录：手动起表；采集中：停止=断开并定稿保存
                 if (useRealDevice && !recording) {
                     Button(onClick = {
