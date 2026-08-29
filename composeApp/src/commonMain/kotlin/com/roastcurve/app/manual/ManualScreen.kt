@@ -92,6 +92,11 @@ fun ManualScreen(
                 SettingRow(L10n.get("manual.setting_darkmode"), L10n.get("manual.s38"))
             } }
 
+            item { Section(L10n.get("manual.s70")) {
+                Para(L10n.get("manual.s71"))
+                Bullet(L10n.get("manual.s72"))
+            } }
+
             item { Section(L10n.get("manual.s39")) {
                 EventRow(L10n.get("manual.s40"), L10n.get("manual.s41"))
                 EventRow(L10n.get("manual.s42"), L10n.get("manual.s43"))
