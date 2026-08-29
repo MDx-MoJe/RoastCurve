@@ -44,7 +44,7 @@ fun SettingsScreen(
             Text(L10n.get("settings.s1"), style = MaterialTheme.typography.headlineMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 OutlinedButton(onClick = onOpenManual) { Text(L10n.get("settings.s2")) }
-                OutlinedButton(onClick = onBack) { Text("返回") }
+                OutlinedButton(onClick = onBack) { Text(L10n.get("common.back2")) }
             }
         }
 
@@ -112,7 +112,7 @@ fun SettingsScreen(
                             }
                         },
                         enabled = !busy,
-                    ) { Text("导出备份 (zip)") }
+                    ) { Text(L10n.get("settings.export_zip")) }
                     OutlinedButton(
                         onClick = { BackupBridge.requestPick?.invoke() },
                         enabled = !busy,
@@ -120,8 +120,8 @@ fun SettingsScreen(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    L10n.get("settings.s12") +
-                        AppDirs.buildIdentityLabel.let { if (it.isNotBlank()) "（$it）" else "" },
+                    L10n.get("settings.s12", "appVersion" to AppDirs.appVersion) +
+                        AppDirs.buildIdentityLabel.let { if (it.isNotBlank()) " ($it)" else "" },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

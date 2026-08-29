@@ -33,7 +33,7 @@ internal fun LanguageCard(
 
     Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Text("当前语言", style = MaterialTheme.typography.bodyLarge)
+            Text(L10n.get("settings.current_lang"), style = MaterialTheme.typography.bodyLarge)
             Text(
                 state.displayName + if (state.packCount > 0) "（${state.packCount} 词条）" else "",
                 style = MaterialTheme.typography.bodySmall,
@@ -57,14 +57,14 @@ internal fun LanguageCard(
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { filePick = true }, enabled = io.let { true }) {
-                    Text("导入语言包")
+                    Text(L10n.get("settings.import_pack"))
                 }
                 OutlinedButton(onClick = {
                     scope.launch {
                         val zip = io.exportCurrent()
                         status = if (zip != null) "✅ 语言包已生成（见导出分享）" else "导出失败"
                     }
-                }) { Text("导出当前") }
+                }) { Text(L10n.get("settings.export_current")) }
                 // 应用：写状态 + 通知上层重建 UI
                 Button(
                     enabled = pendingBuiltin != null || pendingPackFile != null,
@@ -83,18 +83,20 @@ internal fun LanguageCard(
                             }
                         } ?: pendingBuiltin?.let { lang ->
                             L10n.selectBuiltin(lang)
-                            // 持久化内置语言选择
-                            scope.launch {
-                                val store = com.roastcurve.shared.storage.SettingsStore()
-                                val cur = store.load()
-                                store.save(cur.copy(langBuiltin = lang.code, langPackFile = ""))
+                            // 持久化：同步写（runBlocking），避免 launch 被重组打断导致丢失
+                            kotlinx.coroutines.runBlocking {
+                                runCatching {
+                                    val store = com.roastcurve.shared.storage.SettingsStore()
+                                    val cur = store.load()
+                                    store.save(cur.copy(langBuiltin = lang.code, langPackFile = ""))
+                                }
                             }
                             status = null
                             pendingBuiltin = null
                             onApply()
                         }
                     },
-                ) { Text("应用") }
+                ) { Text(L10n.get("settings.apply")) }
             }
 
             // 已保存语言包
