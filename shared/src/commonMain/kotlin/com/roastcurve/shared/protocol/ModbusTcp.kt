@@ -66,6 +66,24 @@ object ModbusTcp {
     )
 
     /**
+     * 校验写单寄存器（FC06）响应
+     * FC06 响应 = MBAP 头 + 回显（功能码 0x06 + 地址 2B + 值 2B），共 12 字节
+     * 不能复用 parseReadResponse（那是读响应的 byteCount 布局）
+     * @return true = 响应合法（事务匹配 + 功能码对 + 回显地址值一致）
+     */
+    fun verifyWriteResponse(request: ByteArray, response: ByteArray): Boolean {
+        if (response.size < 12) return false
+        if (response[0] != request[0] || response[1] != request[1]) return false
+        if (response[7].toInt() and 0xFF == 0x86) return false   // 异常码
+        if (response[7] != request[7]) return false               // 功能码必须 0x06
+        if (response[6] != request[6]) return false               // 从站号一致
+        // 回显地址与值必须与请求一致（FC06 响应是请求的回显）
+        if (response[8] != request[8] || response[9] != request[9]) return false   // 地址
+        if (response[10] != request[10] || response[11] != request[11]) return false // 值
+        return true
+    }
+
+    /**
      * 解析读响应
      * @return 各寄存器的 16 位无符号值
      * @throws ModbusException 事务不匹配 / 异常码 / CRC 类错误（长度不足）

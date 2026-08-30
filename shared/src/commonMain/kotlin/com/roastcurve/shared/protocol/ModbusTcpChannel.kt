@@ -48,7 +48,11 @@ class ModbusTcpChannel(
     override var isConnected: Boolean = false
         private set
 
-    // 单调时钟：不受系统 NTP 校时影响，杜绝计时/RoR 跳动
+    // 单调时钟：不受系统 NTP 校时影响，杜绝计时/RoR 跳动。
+    // 必须 @Volatile：此变量被 IO 线程（connect/resetTimer）与 Main 线程（resetTimer、200ms 计时循环）
+    // 并发访问，非 volatile 会导致 Main 线程读到过期引用（null/旧 mark），elapsedSec() 短暂跳 0 再跳回，
+    // 表现为计时「从 10 跳到不相干的数再回 11/12」（2026-08-30 实锤）。
+    @Volatile
     private var startMark: kotlin.time.TimeMark? = null
     private var transId = 0
     private val transactionMutex = Mutex()
@@ -149,7 +153,10 @@ class ModbusTcpChannel(
     }
 
     /** 重置计时基准（入豆时调用）：后续采样点时间从零开始 */
-    override fun resetTimer() { startMark = kotlin.time.TimeSource.Monotonic.markNow() }
+    override fun resetTimer() {
+        startMark = kotlin.time.TimeSource.Monotonic.markNow()
+        println("RESET_TIMER mark=${startMark.hashCode()}")
+    }
 
     override suspend fun disconnect() = withContext(Dispatchers.IO) {
         // 先停止新事务的调度
@@ -163,9 +170,13 @@ class ModbusTcpChannel(
 
     private fun nextTransId(): Int = ++transId and 0xFFFF
 
-    /** 按预期字节数读取；超时/断开返回 null（不抛取消类异常） */
-    private suspend fun readExactOrNull(channel: ByteReadChannel, count: Int): ByteArray? =
-        withTimeoutOrNull(READ_TIMEOUT_MS) {
+    /** 按预期字节数读取；超时/断开返回 null（不抛取消类异常）。可指定超时 */
+    private suspend fun readExactOrNull(
+        channel: ByteReadChannel,
+        count: Int,
+        timeoutMs: Long = READ_TIMEOUT_MS,
+    ): ByteArray? =
+        withTimeoutOrNull(timeoutMs) {
             val buffer = ByteArray(count)
             var filled = 0
             while (filled < count) {
@@ -198,10 +209,11 @@ class ModbusTcpChannel(
     }
 
     private suspend fun writeSingleRegister(address: Int, value: Int): Boolean {
-        // 一次静默重试：1200 低波特率下自动收发模块偶发喳帧（实测约百分之几概率），
-        // 重试能吞掉毛刺；仅连续两败才报失败，避免手动 ±5 误报「设定失败」
+        // 低波特率下自动收发模块偶发喳帧，重试能吞毛刺。
+        // 但重试间隔递增且总次数克制，避免长时间持锁阻塞轮询（轮询停摆会让曲线/模板时钟跳变）。
+        // 更重的重试交给上层（跟随控制器 2 秒一拍、手动 ±5 由用户再点），不在此层层层加码。
         repeat(2) { attempt ->
-            if (attempt == 1) delay(300)   // 让总线静默一下再重试
+            if (attempt > 0) delay(300L)   // 一次静默后重试
             if (writeSingleRegisterOnce(address, value)) return true
         }
         return false
@@ -215,9 +227,11 @@ class ModbusTcpChannel(
         val request = ModbusTcp.buildWriteSingleRegister(nextTransId(), slaveId, address, value)
         out.writeFully(request, 0, request.size)
         out.flush()
-        val echo = readExactOrNull(inp, WRITE_RESPONSE_LEN) ?: return false
-        ModbusTcp.parseReadResponse(request, echo)
-        return true
+        // 写用独立短超时：1200 波特率写响应约 350-470ms，1.5s 足够；
+        // 避免用读的 2.5s 超时，减少写失败时对轮询的长时间阻塞（这是「跳秒」的诱因之一）
+        val echo = readExactOrNull(inp, WRITE_RESPONSE_LEN, WRITE_TIMEOUT_MS) ?: return false
+        // 用写响应专用校验（回显地址/值一致），不再误用读响应解析器
+        return ModbusTcp.verifyWriteResponse(request, echo)
     }
 
     override suspend fun sendCharge() { emitLocal(RoastEvent.CHARGE) }
@@ -229,11 +243,14 @@ class ModbusTcpChannel(
         _eventFlow.emit(EventMarker(event, elapsed, label))
     }
 
-    override fun elapsedSec(): Float =
-        (startMark?.elapsedNow()?.inWholeMilliseconds ?: 0L) / 1000f
+    override fun elapsedSec(): Float {
+        val mark = startMark ?: return 0f
+        return mark.elapsedNow().inWholeMilliseconds / 1000f
+    }
 
     companion object {
         const val READ_TIMEOUT_MS = 2500L
+        const val WRITE_TIMEOUT_MS = 1500L   // 写响应短超时，避免写失败长时间阻塞轮询
         const val RESPONSE_LEN_QTY3 = 15
         const val WRITE_RESPONSE_LEN = 12
         const val AUTO_RECONNECT_THRESHOLD = 5
