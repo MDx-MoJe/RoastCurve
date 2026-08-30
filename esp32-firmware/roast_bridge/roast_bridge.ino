@@ -1,5 +1,5 @@
 /*
- * RoastCurve ESP32-S3 桥接固件 v1.3
+ * RoastCurve ESP32-S3 桥接固件 v1.4
  * ================================================
  * 角色：替代 Wi-Fi 转 RS485 设备，作为 App 与温控器之间的
  *       WiFi(Modbus TCP) <-> RS485(Modbus RTU) 协议网关
@@ -29,6 +29,7 @@
 #include <HardwareSerial.h>
 #include <Preferences.h>
 #include <ArduinoOTA.h>
+#include <Update.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
@@ -47,7 +48,7 @@ constexpr const char* MDNS_NAME  = "roastbridge";  // 可用 roastbridge.local �
 // v1.3 实测：自动收发模块在 9600 下读写全通；改温控器波特率必须断电重启才生效
 constexpr int      PIN_485_TX   = 18;
 constexpr int      PIN_485_RX   = 17;
-constexpr uint32_t MODBUS_BAUD  = 9600;
+constexpr uint32_t MODBUS_BAUD  = 1200;
 
 // RS485 方向控制（v1.2）：DIR 脚拉到 DIR_TX_LEVEL = 发送态，拉到相反电平 = 接收态。
 // 大多数模块 DE/RE 已在板上短接成一脚（标 DIR / DE / RSE），高电平=发送；
@@ -352,6 +353,12 @@ uint32_t statReqCount = 0, statRspOk = 0;   // 粗粒度通信统计
 uint8_t wifiFailCount = 0;              // WiFi 连续失败计数（达到阈值进配网模式）
 
 // ---------- HTTP 状态口（8898）：/status 返回信号强度；/reset 清除 WiFi 重新配网 ----------
+// OTA 诊断：把最近一次 OTA 错误码记下来，供状态口查询（OTA 失败时不用串口也能定位）
+volatile int otaLastError = -1;         // -1=从未OTA, 0=上次成功, >0=错误码(ota_error_t)
+volatile uint32_t otaLastTs = 0;        // 最近一次 OTA 结束的时间戳
+volatile int otaUpdErr = 0;             // Update.getError()：底层更新错误码（区分 MD5/空间/写入等）
+volatile uint32_t otaProgress = 0;      // OTA 实时进度（字节），OTA 中/后可见，诊断卡点用
+volatile uint32_t otaTotal = 0;         // OTA 总大小
 void handleStatus() {
   WiFiClient sc = statusServer.available();
   if (!sc) return;
@@ -385,9 +392,11 @@ void handleStatus() {
   uint32_t upS = (millis() - bootMs) / 1000;
   char body[192];
   snprintf(body, sizeof(body),
-    "{\"rssi\":%ld,\"uptime\":%lu,\"client\":%d,\"req\":%lu}",
+    "{\"rssi\":%ld,\"uptime\":%lu,\"client\":%d,\"req\":%lu,\"ota_err\":%d,\"ota_ts\":%lu,\"ota_upd\":%d,\"ota_pg\":%lu,\"ota_tot\":%lu}",
     (long)rssi, (unsigned long)upS,
-    (client && client.connected()) ? 1 : 0, (unsigned long)statReqCount);
+    (client && client.connected()) ? 1 : 0, (unsigned long)statReqCount,
+    (int)otaLastError, (unsigned long)(otaLastTs ? otaLastTs / 1000 : 0),
+    (int)otaUpdErr, (unsigned long)otaProgress, (unsigned long)otaTotal);
   char head[128];
   snprintf(head, sizeof(head),
     "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %u\r\nConnection: close\r\n\r\n",
@@ -417,13 +426,20 @@ void setup() {
   // OTA：无线升级（此后重刷固件不必再插 USB，走 WiFi 即可）
   ArduinoOTA.setHostname(MDNS_NAME);
   ArduinoOTA.setPassword(OTA_PASSWORD);   // 简单口令防误刷（同局域网才可达）
+  ArduinoOTA.setTimeout(30000);          // 关键修复：默认接收窗口仅 1s，App 连着轮询时
+                                          // loop 里 rtuToMbap 可阻塞 800ms，窗口不够必然
+                                          // 传输中途超时（现象：进度条走完才报 timed out）。
+                                          // 实测偶发 RECEIVE_ERROR（设备端 10s 没等到数据），
+                                          // 再加大到 30s 给 WiFi 抖动留足余量
+  // OTA 诊断回调：把结束状态写到全局，/status 可查（OTA 失败不再需要串口）
   ArduinoOTA
-    .onStart([]() { Serial.println("[OTA] 开始烧写…"); })
-    .onEnd([]()   { Serial.println("\n[OTA] 完成"); })
+    .onStart([]() { Serial.println("[OTA] 开始烧写…"); otaProgress = 0; })
+    .onEnd([]()   { Serial.println("\n[OTA] 完成"); otaLastError = 0; otaLastTs = millis(); })
     .onProgress([](unsigned p, unsigned t) {
+      otaProgress = p; otaTotal = t;
       if (p % 25 == 0) Serial.printf("[OTA] %u%%\n", p / (t / 100));
     })
-    .onError([](ota_error_t e) { Serial.printf("[OTA] 错误 %u\n", e); });
+    .onError([](ota_error_t e) { Serial.printf("[OTA] 错误 %u\n", e); otaLastError = e; otaLastTs = millis(); otaUpdErr = (int)Update.getError(); });
   ArduinoOTA.begin();
 
   Serial.printf("[TCP] 监听端口 %u\n", TCP_PORT);
@@ -431,6 +447,12 @@ void setup() {
 
 void loop() {
   ArduinoOTA.handle();                   // OTA 升级处理（无升级时零开销）
+
+  // OTA 进行中：把整个 loop 让给升级流程，跳过一切可能阻塞的业务处理
+  // （rtuToMbap 可阻塞 800ms、handleStatus 有循环等待，若与 OTA 抢时间会触发
+  //   设备端 1s 接收超时——即便 setTimeout 已放宽，仍应避免无谓竞争）
+  if (Update.isRunning()) { delay(1); return; }
+
   handleStatus();                        // 状态口轮询（无连接时零开销）
 
   // BOOT 键长按 3 秒：强制进入配网模式（配网写错/换 WiFi 的手动重置）
