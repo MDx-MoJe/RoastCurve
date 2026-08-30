@@ -1,5 +1,5 @@
 /*
- * RoastCurve ESP32-S3 桥接固件 v1.1
+ * RoastCurve ESP32-S3 桥接固件 v1.3
  * ================================================
  * 角色：替代 Wi-Fi 转 RS485 设备，作为 App 与温控器之间的
  *       WiFi(Modbus TCP) <-> RS485(Modbus RTU) 协议网关
@@ -9,12 +9,14 @@
  *   串口收到 RTU 应答 -> 校验 CRC -> 用原事务号重新封装 MBAP 回 TCP
  * 这样 App 端一行代码都不用改，只换 IP。
  *
- * 引脚（ESP32-S3 DevKitC-1 N16R8）：
- *   GPIO17 (TX) -> RS485模块 DI
- *   GPIO18 (RX) <- RS485模块 RO
- *   3V3         -> RS485模块 VCC
- *   GND         -> RS485模块 GND
- *   A/B         -> 温控器 RS485 A/B（极性与原设备接法一致）
+ * 引脚（ESP32-S3 DevKitC-1 N16R8，v1.3 定稿接线）：
+ *   经实机验证：此类模块丝印是「接设备视角」—— TXD 是模块的 TTL 输入，RXD 是输出！
+ *   GPIO18 (TX) -> 模块 TXD（输入）
+ *   GPIO17 (RX) <- 模块 RXD（输出）
+ *   GPIO21      -> 模块 DIR（仅带 DIR 脚的模块需要；自动收发模块悬空即可）
+ *   3V3/GND     -> 模块供电
+ *   A/B         -> 温控器 RS485 A/B
+ *   坑：按「设备视角」（GPIO18→RXD、GPIO17→TXD）接会全线死寂，见 runbook 04-踩坑清单
  *
  * 板载 WS2812（GPIO48）状态灯：
  *   绿色常亮 = WiFi 已连接，等待客户端
@@ -41,10 +43,20 @@ constexpr const char* OTA_PASSWORD = "roastota";
 constexpr uint16_t TCP_PORT      = 8899;   // 与原设备一致，App无需改动
 constexpr const char* MDNS_NAME  = "roastbridge";  // 可用 roastbridge.local 访问
 
-// RS485 串口参数：与温控器一致（1200-8-无校验-1，自动收发模块降速验证实验）
-constexpr int      PIN_485_TX   = 17;
-constexpr int      PIN_485_RX   = 18;
-constexpr uint32_t MODBUS_BAUD  = 1200;
+// RS485 串口参数：与温控器一致（9600-8-无校验-1，实测定稿）
+// v1.3 实测：自动收发模块在 9600 下读写全通；改温控器波特率必须断电重启才生效
+constexpr int      PIN_485_TX   = 18;
+constexpr int      PIN_485_RX   = 17;
+constexpr uint32_t MODBUS_BAUD  = 9600;
+
+// RS485 方向控制（v1.2）：DIR 脚拉到 DIR_TX_LEVEL = 发送态，拉到相反电平 = 接收态。
+// 大多数模块 DE/RE 已在板上短接成一脚（标 DIR / DE / RSE），高电平=发送；
+// 2026-08-30 排查记录：引脚对调修复后重归标准极性 HIGH=发送（LOW 翻转版是在接线错误时测的，不作数）
+constexpr int      PIN_485_DIR  = 21;
+constexpr int      DIR_TX_LEVEL = HIGH;
+// 发送完成后的收尾等待：flush() 保证 FIFO+移位寄存器排空，这里再留半个字节的时间余量，
+// 确保最后一个停止位完整离开总线后才切回接收，避免吞掉应答首字节。
+constexpr uint32_t DIR_SETTLE_US = 100;
 
 // BOOT 键（GPIO0，按下为低电平）：长按 3 秒强制进入配网模式（配网写错时的重置开关）
 constexpr int      PIN_BOOT      = 0;
@@ -106,6 +118,18 @@ uint16_t crc16(const uint8_t* buf, size_t len) {
   return crc;
 }
 
+// ---------- RS485 方向控制（v1.2，带 DIR 脚的模块专用） ----------
+void rs485BeginTx() {
+  digitalWrite(PIN_485_DIR, DIR_TX_LEVEL);   // 切到发送态
+  delayMicroseconds(5);                      // 收发器切换建立时间（几微秒级，留 5µs 余量）
+}
+
+void rs485EndTx() {
+  rs485.flush();                             // 等待 FIFO+移位寄存器全部排空（阻塞到最后一个停止位发出）
+  delayMicroseconds(DIR_SETTLE_US);          // 再留半个字节时长的总线静默余量
+  digitalWrite(PIN_485_DIR, !DIR_TX_LEVEL);  // 切回接收态，放总线给温控器
+}
+
 // ---------- TCP -> RTU：解析 MBAP 并下发串口 ----------
 // 返回是否成功发出（合法 MBAP 才发）
 bool mbapToRtu(const uint8_t* frame, size_t frameLen) {
@@ -122,10 +146,11 @@ bool mbapToRtu(const uint8_t* frame, size_t frameLen) {
   rtu[length]     = crc & 0xFF;
   rtu[length + 1] = crc >> 8;
 
-  // 清掉串口残留，再发送
+  // 清掉串口残留，再发送（DIR 拉发送态 -> 发帧 -> 等排空 -> 切回接收态）
   while (rs485.available()) rs485.read();
+  rs485BeginTx();
   rs485.write(rtu, length + 2);
-  rs485.flush();
+  rs485EndTx();
   return true;
 }
 
@@ -379,6 +404,8 @@ void setup() {
   WiFi.setSleep(false);   // 服务器角色禁用省电：Modem 休眠在拥挤信道下会偶发掉线
   pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_BOOT, INPUT_PULLUP);
+  pinMode(PIN_485_DIR, OUTPUT);
+  digitalWrite(PIN_485_DIR, !DIR_TX_LEVEL);  // 默认接收态：把总线放给温控器
   rs485.begin(MODBUS_BAUD, SERIAL_8N1, PIN_485_RX, PIN_485_TX);
   loadCreds();
   ensureWifi();
