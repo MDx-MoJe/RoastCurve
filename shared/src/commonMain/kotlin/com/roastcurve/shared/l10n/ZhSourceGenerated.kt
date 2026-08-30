@@ -97,7 +97,7 @@ object ZhSourceGenerated {
         "history.s3" to "烘焙记录",
         "history.s4" to "还没有烘焙记录\\n连接温控器烘一炉试试",
         "history.s5" to "未命名",
-        "history.s6" to "{toInt}分{toInt}秒 · ",
+        "history.s6" to "{m}分{s}秒 · ",
         "history.s7" to "{size}点",
         "history.s8" to " · 失重{loss}%",
         "manual.s1" to "一、两种烘焙模式",

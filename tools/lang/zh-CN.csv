@@ -52,7 +52,7 @@ history.s2,{id}\n删除后无法恢复,{id}\nCannot be undone,HistoryScreen.kt,4
 history.s3,烘焙记录,Roast Records,HistoryScreen.kt,65
 history.s4,还没有烘焙记录\n连接温控器烘一炉试试,No roasts yet\nConnect and roast!,HistoryScreen.kt,77
 history.s5,未命名,Unnamed,HistoryScreen.kt,113
-history.s6,{toInt}分{toInt}秒 · ,{a}m{b}s ·,HistoryScreen.kt,114
+history.s6,{m}分{s}秒 · ,{m}m{s}s ·,HistoryScreen.kt,114
 history.s7,{size}点,{size} pts,HistoryScreen.kt,115
 history.s8, · 失重{loss}%,· Loss {loss}%,HistoryScreen.kt,118
 app.s2,烘焙会话,Roast Session,KeepAlive.android.kt,91

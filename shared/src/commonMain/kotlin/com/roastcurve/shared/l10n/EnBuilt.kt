@@ -97,7 +97,7 @@ object EnBuilt {
         "history.s3" to "Roast Records",
         "history.s4" to "No roasts yet\\nConnect and roast!",
         "history.s5" to "Unnamed",
-        "history.s6" to "{a}m{b}s ·",
+        "history.s6" to "{m}m{s}s ·",
         "history.s7" to "{size} pts",
         "history.s8" to "· Loss {loss}%",
         "manual.s1" to "1. Two Roast Modes",
