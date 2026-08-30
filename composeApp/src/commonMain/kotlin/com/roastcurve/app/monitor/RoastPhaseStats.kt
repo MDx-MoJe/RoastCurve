@@ -94,15 +94,17 @@ internal fun RoastPhaseStats(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(L10n.get("stats.s1"), style = MaterialTheme.typography.labelMedium,
                      color = MaterialTheme.colorScheme.onSurfaceVariant)
-                // 一爆后右侧实时显示发展时间与率；平时显示全程
+                // 右侧状态：发展中（一爆后未出豆）显示发展时长；已出豆显示全程
                 val devLive = fcsT != null && dropT == null && currentElapsedSec >= fcsT
                 if (devLive) {
-                    Text(L10n.get("stats.s2", "fcsT" to (fcsT?.toInt() ?: 0), "totalEnd" to totalEnd.toInt()),
+                    // 发展时间 DT = 当前时刻 − 一爆时刻（时长，mm:ss），烘焙语义的发展段用时
+                    val dt = currentElapsedSec - fcsT
+                    Text(L10n.get("stats.s2", "dev" to fmtMMSS(dt), "totalEnd" to fmtMMSS(totalEnd)),
                          style = MaterialTheme.typography.labelMedium,
                          fontWeight = FontWeight.Bold,
                          color = MaterialTheme.colorScheme.primary)
                 } else {
-                    Text(L10n.get("stats.s3", "totalEnd" to totalEnd.toInt()),
+                    Text(L10n.get("stats.s3", "totalEnd" to fmtMMSS(totalEnd)),
                          style = MaterialTheme.typography.labelMedium,
                          color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

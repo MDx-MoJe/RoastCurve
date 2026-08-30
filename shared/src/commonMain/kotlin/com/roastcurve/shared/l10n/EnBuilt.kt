@@ -286,7 +286,7 @@ object EnBuilt {
         "settings.s8" to "Share opened: {size} records / {size} profiles",
         "settings.s9" to "Export failed: {take}",
         "stats.s1" to "Roast Phases",
-        "stats.s2" to "Development {fcsT} · {totalEnd}",
+        "stats.s2" to "Development {dev} · Total {totalEnd}",
         "stats.s3" to "Total {totalEnd}"
     )
 }

@@ -236,7 +236,7 @@ detail.s28,无操作,No Action,RoastDetailScreen.kt,518
 detail.s29,确认补录,Confirm Backfill,RoastDetailScreen.kt,524
 detail.s30,关闭,Off,RoastDetailScreen.kt,527
 stats.s1,烘焙阶段,Roast Phases,RoastPhaseStats.kt,94
-stats.s2,发展 {fcsT} · {totalEnd},Development {fcsT} · {totalEnd},RoastPhaseStats.kt,99
+stats.s2,发展 {dev} · 全程 {totalEnd},Development {dev} · Total {totalEnd},RoastPhaseStats.kt,99
 stats.s3,全程 {totalEnd},Total {totalEnd},RoastPhaseStats.kt,104
 settings.s1,设置,Settings,SettingsScreen.kt,42
 settings.s2,使用手册,User Manual,SettingsScreen.kt,44

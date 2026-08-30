@@ -286,7 +286,7 @@ object ZhSourceGenerated {
         "settings.s8" to "已调起分享：{size} 条记录 / {size} 个模板",
         "settings.s9" to "导出失败：{take}",
         "stats.s1" to "烘焙阶段",
-        "stats.s2" to "发展 {fcsT} · {totalEnd}",
+        "stats.s2" to "发展 {dev} · 全程 {totalEnd}",
         "stats.s3" to "全程 {totalEnd}"
     )
 }

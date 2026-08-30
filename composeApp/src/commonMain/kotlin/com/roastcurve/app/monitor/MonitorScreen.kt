@@ -215,6 +215,10 @@ fun MonitorScreen(
     /** 只结束记录不定连接：本炉定稿归档，回到待命态（可继续看温度/再开一炉） */
     fun stopRecording() {
         if (!recording) return
+        // 停止记录同时退出跟随：否则跟随控制器（followMode 仍 true）会继续每 2 秒改 SV，
+        // 表现为「点停止不停止」（2026-08-30 实锤，出豆后 SV 被改回高温同源）
+        followMode = false
+        followAlert = null
         persistSession()
         recording = false
         sessionId = null
@@ -1310,24 +1314,35 @@ fun MonitorScreen(
                                     }
                                 }
                             }
-                            // 出豆：自动把炉温设定降到25°C进入冷却，免手动调整
+                            // 出豆：先退出跟随（否则跟随控制器下一拍会把 SV 改回高温），
+                            // 再自动把炉温设定降到 25°C 进入冷却。
+                            // 关键：先等 writingSv 复位（在途跟随写完成）再降温，否则并发写可能
+                            // 顺序颠倒（在途高温写后到，把刚降的 25°C 又改回高温）。
+                            // sendCommand 内部 transactionMutex 会串行化，安全。
                             if (event == RoastEvent.DROP && useRealDevice) {
+                                exitFollow()   // followMode=false，停止跟随控制器
                                 val ch = channel
-                                if (ch != null && !writingSv) {
-                                    writingSv = true
+                                if (ch != null) {
                                     scope.launch(Dispatchers.Main) {
+                                        // 等最多 3s 让在途跟随写完成（正常 ~1s 内）；超时也继续降温
+                                        var waited = 0
+                                        while (writingSv && waited < 15) { delay(200); waited++ }
                                         try {
                                             ch.sendCommand(DeviceCommand(CommandType.PID_SETPOINT, 25f))
                                         } catch (_: Exception) {
-                                        } finally { writingSv = false }
+                                        }
                                     }
                                 }
                                 persistSession()   // 出豆即存兑底快照，之后定时器继续覆盖更新
                                 // 出豆后弹豆袋同步扣库存（若设置了入豆克重）
                                 if (isBridgeAvailableOnPlatform()) showBeanBagSync = true
                             }
+                            // 事件时间戳用「点击时刻的当前计时」而非最后采样点时间戳：
+                            // 采样点可能滞后（轮询 1s 间隔 + 写 SV 阻塞轮询），用 lastP 会让事件时刻偏小，
+                            // 导致美拉德段（黄点→一爆）等阶段计时不准（2026-08-30 实锤）。
+                            val evtNow = channel?.elapsedSec() ?: fullCurve.lastOrNull()?.timeSeconds ?: 0f
                             val lastP = if (event == RoastEvent.CHARGE && useRealDevice) null else fullCurve.lastOrNull()
-                            val t = lastP?.timeSeconds ?: 0f   // 入豆后从 0 起，作为跟随时钟锚点
+                            val t = if (event == RoastEvent.CHARGE) 0f else evtNow   // 入豆锚定 0，其余用点击时刻
                             // 记录事件时刻的豆温，图表与阶段卡都会用到
                             events.add(EventMarker(event, t, temperature = lastP?.bt ?: 0f))
                             // 真机模式下同步到通道（温控器本地记录，无远端动作）
