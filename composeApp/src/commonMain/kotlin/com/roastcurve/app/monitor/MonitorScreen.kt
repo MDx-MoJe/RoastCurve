@@ -118,6 +118,7 @@ fun MonitorScreen(
     var writingSv by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var collectJob by remember { mutableStateOf<Job?>(null) }
+    var connecting by remember { mutableStateOf(false) }   // connect 幂等门控：防止并发 connect 产生双连接
     // 本炉记录 id：草稿/定稿共用，自动落盘按它覆盖更新，不重复建档
     var sessionId by remember { mutableStateOf<String?>(null) }
     var persistBusy by remember { mutableStateOf(false) }
@@ -323,6 +324,22 @@ fun MonitorScreen(
 
     fun connect(host: String) {
         connectionError = null
+        println("CONNECT called host=$host connecting=$connecting oldChannel=${channel != null} oldCollectJob=${collectJob != null}")
+        // 幂等门控：connect 非原子（ch.connect() 是异步 suspend），快速双击或自动+手动叠加
+        // 会并发进入两次。第一次完成后 channel 已就绪，第二次若还进来直接忽略（已有活跃连接）。
+        if (connecting) { println("CONNECT ignored: already connecting"); return }
+        if (channel != null && (channel?.isConnected == true)) {
+            println("CONNECT ignored: already connected")
+            return
+        }
+        connecting = true
+        // 清理旧连接（残留的未连接 channel 或已断开引用）
+        collectJob?.cancel(); collectJob = null
+        val oldChannel = channel
+        channel = null
+        if (oldChannel != null) {
+            scope.launch(Dispatchers.IO) { runCatching { oldChannel.disconnect() } }
+        }
         scope.launch(Dispatchers.Main) {
             try {
                 var lastError: Exception? = null
@@ -393,7 +410,7 @@ fun MonitorScreen(
                     launch {
                         while (isActive) {
                             // 仅记录中刷新自然时钟；待命态保持 0:00
-                            println("RC_TICK rec=$recording ch=${ch.elapsedSec()} disp=$displayTimeSec")
+                            println("RC_TICK rec=$recording ch=${ch.elapsedSec()} disp=$displayTimeSec off=$timerOffsetSec start=$startTimeSec")
                             if (recording) displayTimeSec = ch.elapsedSec() + timerOffsetSec
                             delay(200)
                         }
@@ -408,6 +425,8 @@ fun MonitorScreen(
                             L10n.get("monitor.s8")
                         else -> L10n.get("monitor.s9", "simpleName" to e.javaClass.simpleName)
                     }
+            } finally {
+                connecting = false
             }
         }
     }
@@ -425,8 +444,12 @@ fun MonitorScreen(
         while (followMode && useRealDevice && activeProfile != null) {
             delay(2000)
             val profile = activeProfile ?: break
+            val ch = channel ?: break
+            // 时间轴改用设备自然计时（单调时钟），不再用 lastP.timeSeconds：
+            // 写 SV 阻塞轮询时采样点停更，若用 lastP 会让模板时钟/目标值卡顿甚至跳变（「跳秒」）。
+            // elapsedSec() 与采样点、入豆事件共用同一单调时钟基准，可直接替换。
+            val t = ch.elapsedSec()
             val lastP = curvePoints.lastOrNull()
-            val t = lastP?.timeSeconds ?: startTimeSec
             // 模板时钟：入豆后经过的时间（未入豆则为 0，目标停在起点）
             val chargeT = events.find { it.event == RoastEvent.CHARGE }?.timeSeconds
             val tEff = if (chargeT != null) (t - chargeT).coerceAtLeast(0f) else 0f
@@ -1377,6 +1400,8 @@ private fun TimeCard(
 ) {
     val m = (seconds / 60).toInt()
     val s = (seconds % 60).toInt()
+    // 跳秒诊断：打印 UI 层实际拿到的秒数与转换结果，定位「跳」发生在哪一层
+    println("TIMECARD sec=$seconds m=$m s=$s")
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(10.dp),
