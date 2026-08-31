@@ -20,6 +20,12 @@ CoffeeBeanTracker（豆袋，管豆子库存）的姊妹应用：
 
 两 App 通过 Android ContentProvider（内容提供器）互联：烘完一炉，豆袋自动「扣生豆 + 熟豆入库」。
 
+## 界面预览
+
+实时监控主界面：双栏仪表盘，豆温 / 时间 / RoR 实时卡片，烘焙阶段统计，手动或跟随曲线自动烘焙，底部事件按钮一键标记入豆、黄点、一爆、出豆。
+
+<img src="docs/monitor_overview.png" alt="烤豆·监控 实时监控界面" width="360"/>
+
 ## 技术栈
 
 | 层 | 选型 |

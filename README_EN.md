@@ -27,6 +27,12 @@ RoastCurve (烤豆) → manage curves (monitoring, design, export)
 
 100% offline. No ads, no tracking, no accounts.
 
+## Screenshots
+
+Live monitor dashboard: dual-pane layout with real-time bean temperature / time / RoR cards, phase statistics, manual or curve-follow auto roasting, and one-tap event markers (Charge / Yellowing / First crack / Drop).
+
+<img src="docs/monitor_overview.png" alt="RoastCurve live monitor" width="360"/>
+
 ## Tech Stack
 
 | Layer | Choice |
