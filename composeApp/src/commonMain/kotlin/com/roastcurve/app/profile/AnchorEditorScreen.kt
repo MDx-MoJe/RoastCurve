@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -60,7 +61,7 @@ fun AnchorEditorScreen(
     var name by remember {
         mutableStateOf(initial?.name ?: defaultName())
     }
-    val anchors = remember {
+    val tempAnchors = remember {
         mutableStateListOf<AnchorPoint>().apply {
             (initial?.anchors ?: emptyList()).let { base ->
                 if (base.isNotEmpty()) addAll(base)
@@ -73,6 +74,23 @@ fun AnchorEditorScreen(
             }
         }
     }
+    // 风速曲线锚点（bt 字段存风速 0-100%）：模板无风速曲线时给 3 个渐降起步点（烘焙风量递减惯例）
+    val fanAnchors = remember {
+        mutableStateListOf<AnchorPoint>().apply {
+            (initial?.fanAnchors ?: emptyList()).let { base ->
+                if (base.isNotEmpty()) addAll(base)
+                else {
+                    add(AnchorPoint(timeSeconds = 0f, bt = 70f))
+                    add(AnchorPoint(timeSeconds = 300f, bt = 55f))
+                    add(AnchorPoint(timeSeconds = 600f, bt = 40f))
+                }
+            }
+        }
+    }
+    // 曲线类型：false=温度曲线，true=风速曲线
+    var editFan by remember { mutableStateOf(false) }
+    // 当前激活的锚点列表：用 state 持有列表引用，切模式时同步切换
+    var anchors by remember { mutableStateOf<SnapshotStateList<AnchorPoint>>(tempAnchors) }
     var saveMsg by remember { mutableStateOf(false) }
 
     Column(
@@ -99,6 +117,21 @@ fun AnchorEditorScreen(
 
         Spacer(Modifier.height(12.dp))
 
+        // ===== 曲线类型切换：温度曲线 / 风速曲线（双变量）=====
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(
+                selected = !editFan,
+                onClick = { editFan = false; anchors = tempAnchors },
+                label = { Text(L10n.get("anchor.temp_tab")) },
+            )
+            FilterChip(
+                selected = editFan,
+                onClick = { editFan = true; anchors = fanAnchors },
+                label = { Text(L10n.get("anchor.fan_tab")) },
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+
         // ===== 实时预览 =====
         Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
             Column(Modifier.padding(10.dp)) {
@@ -106,12 +139,12 @@ fun AnchorEditorScreen(
                 var dragSession by remember { mutableStateOf<AnchorPoint?>(null) }
                 ProfilePreviewCanvas(
                     anchors = anchors.toList(),
-                    onAdd = { t, b -> anchors.add(AnchorPoint(timeSeconds = t, bt = b, label = guessStage(b))) },
+                    onAdd = { t, b -> anchors.add(AnchorPoint(timeSeconds = t, bt = b, label = if (editFan) "" else guessStage(b))) },
                     onMove = { target, t, b ->
                         val cur = dragSession ?: target.also { dragSession = it }
                         val i = anchors.indexOfFirst { it === cur }
                         if (i >= 0) {
-                            val np = cur.copy(timeSeconds = t, bt = b)
+                            val np = cur.copy(timeSeconds = t, bt = b, label = if (editFan) cur.label else cur.label.ifBlank { guessStage(cur.bt) })
                             anchors[i] = np
                             dragSession = np
                         } else {
@@ -120,6 +153,11 @@ fun AnchorEditorScreen(
                     },
                     onDragEndReset = { dragSession = null },
                     modifier = Modifier.fillMaxWidth().height(230.dp),
+                    yMax = if (editFan) 100f else -1f,
+                    yStep = if (editFan) 20f else 50f,
+                    valueSuffix = if (editFan) "%" else "°",
+                    valueMin = if (editFan) 0f else 20f,
+                    valueMax = if (editFan) 100f else 400f,
                 )
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -149,6 +187,8 @@ fun AnchorEditorScreen(
                 point = p,
                 onUpdate = { np -> anchors[origIdx] = np },
                 onDelete = { if (anchors.size > 2) anchors.removeAt(origIdx) },
+                valueUnit = if (editFan) "%" else "°C",
+                valueMax = if (editFan) 100f else 500f,
             )
             Spacer(Modifier.height(6.dp))
         }
@@ -160,8 +200,14 @@ fun AnchorEditorScreen(
             onClick = {
                 val last = anchors.maxByOrNull { it.timeSeconds }
                 val t = (last?.timeSeconds ?: 0f) + 30f
-                val bt = ((last?.bt ?: 25f) + 8f).coerceAtMost(260f)
-                anchors.add(AnchorPoint(timeSeconds = t, bt = bt, label = guessStage(bt)))
+                if (editFan) {
+                    // 风速曲线：新点风速 +5（上限 100）
+                    val fb = ((last?.bt ?: 50f) + 5f).coerceAtMost(100f)
+                    anchors.add(AnchorPoint(timeSeconds = t, bt = fb))
+                } else {
+                    val bt = ((last?.bt ?: 25f) + 8f).coerceAtMost(260f)
+                    anchors.add(AnchorPoint(timeSeconds = t, bt = bt, label = guessStage(bt)))
+                }
             },
             modifier = Modifier.fillMaxWidth(),
         ) { Text(L10n.get("anchor.s8")) }
@@ -170,16 +216,29 @@ fun AnchorEditorScreen(
 
         Button(
             onClick = {
-                val valid = anchors.filter { it.timeSeconds >= 0f && it.bt > 0f }
-                if (valid.size < 2) return@Button
+                val tempValid = tempAnchors.filter { it.timeSeconds >= 0f && it.bt > 0f }
+                val fanValid = fanAnchors.filter { it.timeSeconds >= 0f && it.bt > 0f }
+                if (tempValid.size < 2) return@Button
                 scope.launch {
+                    // 温度曲线：风速模式编辑时不改动（保留 initial/默认）；温度模式用当前编辑结果
+                    val tempForSave = if (editFan && initial != null)
+                        initial.anchors
+                    else tempValid.sortedBy { it.timeSeconds }
+                    val pointsForSave = if (editFan && initial != null)
+                        initial.points
+                    else RoastMath.anchorsToPoints(tempValid)
+                    // 风速曲线：风速模式存编辑结果；温度模式保留原有（新建模板默认无风速曲线）
+                    val fanForSave = if (editFan)
+                        fanValid.sortedBy { it.timeSeconds }
+                    else (initial?.fanAnchors ?: emptyList())
                     ProfileStore().save(
                         RoastProfile(
                             id = initial?.id ?: RoastStore.newId(kotlinx.datetime.Clock.System.now().toEpochMilliseconds()),
                             name = name.ifBlank { defaultName() },
                             sourceRecordId = initial?.sourceRecordId ?: "",
-                            points = RoastMath.anchorsToPoints(valid),
-                            anchors = valid.sortedBy { it.timeSeconds },
+                            points = pointsForSave,
+                            anchors = tempForSave,
+                            fanAnchors = fanForSave,
                         )
                     )
                     saveMsg = true
@@ -204,6 +263,8 @@ private fun AnchorRow(
     point: AnchorPoint,
     onUpdate: (AnchorPoint) -> Unit,
     onDelete: () -> Unit,
+    valueUnit: String = "°C",
+    valueMax: Float = 500f,
 ) {
     // 文本框内容跟随数据，但允许中间态自由输入：
     // 用本地状态托管字符串，外部数据变化时同步
@@ -246,9 +307,9 @@ private fun AnchorRow(
                 value = cText,
                 onValueChange = { s ->
                     cText = s
-                    parseNum(s)?.let { v -> onUpdate(point.copy(bt = v.coerceIn(0f, 500f))) }
+                    parseNum(s)?.let { v -> onUpdate(point.copy(bt = v.coerceIn(0f, valueMax))) }
                 },
-                label = { Text("°C") },
+                label = { Text(valueUnit) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f).heightIn(min = 56.dp),
@@ -284,6 +345,11 @@ private fun ProfilePreviewCanvas(
     onMove: (AnchorPoint, Float, Float) -> Unit,
     onDragEndReset: () -> Unit,
     modifier: Modifier = Modifier,
+    yMax: Float = -1f,          // <0 = 自适应（温度曲线）；>0 = 固定值域（风速 100）
+    yStep: Float = 50f,         // 网格纵步长
+    valueSuffix: String = "°",  // 锚点标签单位
+    valueMin: Float = 20f,      // 新增/拖动值域下限
+    valueMax: Float = 400f,     // 值域上限
 ) {
     val gridColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
     val curveColor = Color(0xFFC05A2E)
@@ -303,8 +369,8 @@ private fun ProfilePreviewCanvas(
 
     fun buildPV(a: List<AnchorPoint>): PV {
         val xMax = ((a.maxOfOrNull { it.timeSeconds } ?: 300f) * 1.06f).coerceAtLeast(300f)
-        val yMax = ((a.maxOfOrNull { it.bt } ?: 100f) * 1.15f).coerceAtLeast(100f)
-        return PV(canvasSize.width.toFloat(), canvasSize.height.toFloat(), xMax, yMax)
+        val yMaxV = if (yMax > 0f) yMax else ((a.maxOfOrNull { it.bt } ?: 100f) * 1.15f).coerceAtLeast(100f)
+        return PV(canvasSize.width.toFloat(), canvasSize.height.toFloat(), xMax, yMaxV)
     }
     fun currentPV(): PV? =
         frozenPV ?: if (canvasSize == IntSize.Zero) null else buildPV(curAnchors)
@@ -330,7 +396,7 @@ private fun ProfilePreviewCanvas(
                     if (nearest(off) != null) return@detectTapGestures   // 点在已有锚点上不加
                     if (off.x < PV.PADL || off.x > pv.w - PV.PADR) return@detectTapGestures
                     val t = ((pv.tx(off.x) / 5f).toInt().coerceAtLeast(0)) * 5f
-                    val b = pv.vy(off.y).coerceIn(20f, 400f)
+                    val b = pv.vy(off.y).coerceIn(valueMin, valueMax)
                     curOnAdd(t, kotlin.math.round(b))
                 }
             }
@@ -347,7 +413,7 @@ private fun ProfilePreviewCanvas(
                         val tgt = dragTarget ?: return@detectDragGesturesAfterLongPress
                         val pv = currentPV() ?: return@detectDragGesturesAfterLongPress
                         val t = pv.tx(change.position.x).coerceAtLeast(0f)
-                        val b = pv.vy(change.position.y).coerceIn(20f, 400f)
+                        val b = pv.vy(change.position.y).coerceIn(valueMin, valueMax)
                         curOnMove(tgt, kotlin.math.round(t), kotlin.math.round(b))
                     },
                     onDragEnd = { dragTarget = null; frozenPV = null; curOnEnd() },
@@ -363,7 +429,7 @@ private fun ProfilePreviewCanvas(
         var gy = 0f
         while (gy <= pv.yMax) {
             drawLine(gridColor, Offset(PV.PADL, pv.py(gy)), Offset(w - PV.PADR, pv.py(gy)), 1f)
-            gy += 50f
+            gy += yStep
         }
         var gx = 0f
         while (gx <= pv.xMax) {
@@ -392,7 +458,7 @@ private fun ProfilePreviewCanvas(
             val ts = (p.timeSeconds % 60).toInt()
             val text = buildString {
                 if (p.label.isNotBlank()) { append(p.label); append(" ") }
-                append("$tm:${ts.toString().padStart(2, '0')} ${p.bt.toInt()}°")
+                append("$tm:${ts.toString().padStart(2, '0')} ${p.bt.toInt()}$valueSuffix")
             }
             val label = measurer.measure(text, TextStyle(fontSize = 10.sp, color = textColor))
             drawText(label, topLeft = Offset(c.x - label.size.width / 2f, (c.y - 26f).coerceAtLeast(0f)))

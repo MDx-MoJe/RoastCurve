@@ -232,6 +232,8 @@ object ZhSourceGenerated {
         "monitor.fan_manual" to "风速手动 {value}%",
         "monitor.fan_resume" to "恢复曲线",
         "monitor.fan_err" to "风速设置失败：{message}",
+        "anchor.temp_tab" to "温度曲线",
+        "anchor.fan_tab" to "风速曲线",
         "monitor.s7" to "占用",
         "monitor.s70" to "\\n⚠ 熟豆入库失败：{message}（可用历史页补录）",
         "monitor.s71" to "扣减失败：{message}",
