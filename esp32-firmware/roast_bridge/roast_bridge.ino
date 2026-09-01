@@ -47,13 +47,15 @@ constexpr int      PIN_485_TX     = 17;      // 固件 TX -> 模块 DI（输入�
 constexpr int      PIN_485_RX     = 18;      // 固件 RX <- 模块 RO（输出）
 constexpr uint32_t MODBUS_BAUD    = 1200;
 
-// ==================== 风机 PWM（风速自动化，2026-09-01 接入）====================
+// ==================== 风机 PWM（风速自动化，2026-09-01 定稿）====================
 // 旋钮模块（C030_PCB_V2）输出 PWM 给主控板 ADJ，实测频率 1.002kHz（占空比调速）
-// 验证阶段：全范围 0-100% 映射，确认电机最低可转占空比后再锁下限（FAN_DUTY_FLOOR 预留）
+// 3.3V 直连 R20 全链路验证通过（2026-09-01）：5%~100% 全范围稳定，无需电平转换
+// 映射定稿（MDx 拍板）：下限锁 7%（防低速抖动/堵转），上限锁 99%（规避 100% 常高直流模式）
 constexpr int      PIN_FAN_PWM       = 2;      // 空闲 GPIO，可改（避开 17/18 RS485、48 LED、0 BOOT）
 constexpr uint32_t FAN_PWM_FREQ      = 1000;   // 与旋钮模块一致（实测 1.002kHz）
 constexpr int      FAN_PWM_BITS      = 8;      // 占空比分辨率 8 位（duty 0-255）
-constexpr uint16_t FAN_DUTY_FLOOR    = 0;      // 预留下限锁死（如 26=10%），验证后启用
+constexpr uint16_t FAN_DUTY_FLOOR    = 18;     // 下限锁死：18/255≈7.1%（speed>0 时 duty 不低于此值）
+constexpr uint16_t FAN_DUTY_CEIL     = 252;    // 上限锁死：252/255≈98.8%（防 100% 常高直流模式）
 
 // 自动收发模块：无需 DIR 控制，模块靠 RC 电路自己切方向，固件只管发/收
 // （带 DIR 脚的模块才需要手动控方向，本固件当前用自动收发模块，故无 DIR 代码）
@@ -329,6 +331,7 @@ void handleStatus() {
     fanSpeed = (uint8_t)sp;
     uint16_t duty = (uint16_t)fanSpeed * 255 / 100;
     if (duty < FAN_DUTY_FLOOR && fanSpeed > 0) duty = FAN_DUTY_FLOOR;
+    if (duty > FAN_DUTY_CEIL) duty = FAN_DUTY_CEIL;
     ledcWrite(PIN_FAN_PWM, duty);
     Serial.printf("[风] 风速 %u%% -> duty %u\n", (unsigned)fanSpeed, (unsigned)duty);
     char body[96];
