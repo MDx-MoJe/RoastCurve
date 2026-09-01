@@ -70,6 +70,34 @@ object RoastMath {
     }
 
     /**
+     * 风速曲线目标：从风速锚点线性插值（锚点 bt 字段存风速 0-100%）
+     * 语义与温度目标一致：开头之前取首点，超出末尾返回 null
+     * 锚点为空返回 null（模板无风速曲线 → 跟随不动风速）
+     */
+    fun fanTargetAt(anchors: List<com.roastcurve.shared.model.AnchorPoint>, t: Float): Float? {
+        if (anchors.isEmpty()) return null
+        return profileTargetAt(anchors.map { CurvePoint(it.timeSeconds, it.bt.coerceIn(0f, 100f)) }, t)
+    }
+
+    /**
+     * 从曲线采样点提取风速锚点（存为模板用）：
+     * 取 fanDuty 非空且风速变化 ≥2% 的点 + 首点，压缩成稀疏锚点列表
+     */
+    fun fanAnchorsFrom(points: List<CurvePoint>): List<com.roastcurve.shared.model.AnchorPoint> {
+        val out = mutableListOf<com.roastcurve.shared.model.AnchorPoint>()
+        var lastFan = -1f
+        for (p in points) {
+            val f = p.fanDuty ?: continue
+            if (f < 0f) continue
+            if (out.isEmpty() || kotlin.math.abs(f - lastFan) >= 2f) {
+                out.add(com.roastcurve.shared.model.AnchorPoint(p.timeSeconds, f))
+                lastFan = f
+            }
+        }
+        return out
+    }
+
+    /**
      * SV 平滑（Artisan 同款）：最近 n 个目标值的衰减加权平均，权重 1..n
      * 越新权重越大，把模板的台阶抹成缓坡，对应 Artisan 的 smooth_sv()
      */

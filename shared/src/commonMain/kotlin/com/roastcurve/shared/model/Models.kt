@@ -92,6 +92,7 @@ data class RoastProfile(
     val sourceRecordId: String = "",     // 来源记录
     val points: List<CurvePoint> = emptyList(),
     val anchors: List<AnchorPoint> = emptyList(), // 自定义模板的锚点（历史提取的模板为空）
+    val fanAnchors: List<AnchorPoint> = emptyList(), // 风速曲线锚点（bt 字段存风速 0-100%，双变量烘焙用）
 )
 
 /**

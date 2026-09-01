@@ -32,6 +32,7 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <driver/ledc.h>
 
 // OTA 升级口令（同局域网可达）
 constexpr const char* OTA_PASSWORD = "roastota";
@@ -45,6 +46,14 @@ constexpr const char* MDNS_NAME   = "roastbridge";
 constexpr int      PIN_485_TX     = 17;      // 固件 TX -> 模块 DI（输入）
 constexpr int      PIN_485_RX     = 18;      // 固件 RX <- 模块 RO（输出）
 constexpr uint32_t MODBUS_BAUD    = 1200;
+
+// ==================== 风机 PWM（风速自动化，2026-09-01 接入）====================
+// 旋钮模块（C030_PCB_V2）输出 PWM 给主控板 ADJ，实测频率 1.002kHz（占空比调速）
+// 验证阶段：全范围 0-100% 映射，确认电机最低可转占空比后再锁下限（FAN_DUTY_FLOOR 预留）
+constexpr int      PIN_FAN_PWM       = 2;      // 空闲 GPIO，可改（避开 17/18 RS485、48 LED、0 BOOT）
+constexpr uint32_t FAN_PWM_FREQ      = 1000;   // 与旋钮模块一致（实测 1.002kHz）
+constexpr int      FAN_PWM_BITS      = 8;      // 占空比分辨率 8 位（duty 0-255）
+constexpr uint16_t FAN_DUTY_FLOOR    = 0;      // 预留下限锁死（如 26=10%），验证后启用
 
 // 自动收发模块：无需 DIR 控制，模块靠 RC 电路自己切方向，固件只管发/收
 // （带 DIR 脚的模块才需要手动控方向，本固件当前用自动收发模块，故无 DIR 代码）
@@ -280,6 +289,9 @@ uint32_t bootMs = 0;
 uint32_t statReqCount = 0;
 uint8_t wifiFailCount = 0;
 
+// 风机风速状态：0-100（验证阶段全范围，duty = speed*255/100）
+uint8_t fanSpeed = 0;
+
 // ---------- HTTP 状态口（8898）：/status 返回信号；/reset 清除 WiFi ----------
 void handleStatus() {
   WiFiClient sc = statusServer.available();
@@ -307,13 +319,41 @@ void handleStatus() {
     return;
   }
 
+  if (reqLine.indexOf("/fan") >= 0) {
+    // /fan?speed=NN  ->  NN 0-100，验证阶段全范围映射 duty = speed*255/100
+    int sp = 0;
+    int eq = reqLine.indexOf("speed=");
+    if (eq >= 0) sp = atoi(reqLine.c_str() + eq + 6);
+    if (sp < 0) sp = 0;
+    if (sp > 100) sp = 100;
+    fanSpeed = (uint8_t)sp;
+    uint16_t duty = (uint16_t)fanSpeed * 255 / 100;
+    if (duty < FAN_DUTY_FLOOR && fanSpeed > 0) duty = FAN_DUTY_FLOOR;
+    ledcWrite(PIN_FAN_PWM, duty);
+    Serial.printf("[风] 风速 %u%% -> duty %u\n", (unsigned)fanSpeed, (unsigned)duty);
+    char body[96];
+    snprintf(body, sizeof(body), "{\"fan_speed\":%u,\"duty\":%u}",
+             (unsigned)fanSpeed, (unsigned)duty);
+    char head[128];
+    snprintf(head, sizeof(head),
+      "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %u\r\nConnection: close\r\n\r\n",
+      (unsigned)strlen(body));
+    sc.print(head);
+    sc.print(body);
+    sc.flush();
+    delay(2);
+    sc.stop();
+    return;
+  }
+
   int32_t rssi = WiFi.RSSI();
   uint32_t upS = (millis() - bootMs) / 1000;
   char body[128];
   snprintf(body, sizeof(body),
-    "{\"rssi\":%ld,\"uptime\":%lu,\"client\":%d,\"req\":%lu}",
+    "{\"rssi\":%ld,\"uptime\":%lu,\"client\":%d,\"req\":%lu,\"fan_speed\":%u}",
     (long)rssi, (unsigned long)upS,
-    (client && client.connected()) ? 1 : 0, (unsigned long)statReqCount);
+    (client && client.connected()) ? 1 : 0, (unsigned long)statReqCount,
+    (unsigned)fanSpeed);
   char head[128];
   snprintf(head, sizeof(head),
     "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %u\r\nConnection: close\r\n\r\n",
@@ -331,6 +371,12 @@ void setup() {
   pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_BOOT, INPUT_PULLUP);
   rs485.begin(MODBUS_BAUD, SERIAL_8N1, PIN_485_RX, PIN_485_TX);
+
+  // 风机 PWM 初始化：频率 1000Hz（与旋钮模块一致），起始占空比 0（风机停）
+  ledcAttach(PIN_FAN_PWM, FAN_PWM_FREQ, FAN_PWM_BITS);
+  ledcWrite(PIN_FAN_PWM, 0);
+  fanSpeed = 0;
+  Serial.printf("[风] PWM 引脚 GPIO%d，频率 %uHz\n", PIN_FAN_PWM, (unsigned)FAN_PWM_FREQ);
   loadCreds();
   ensureWifi();
   server.begin();

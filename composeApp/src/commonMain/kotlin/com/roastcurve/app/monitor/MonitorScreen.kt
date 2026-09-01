@@ -140,6 +140,12 @@ fun MonitorScreen(
     var followTarget by remember { mutableStateOf<Float?>(null) }   // 诊断：当前目标温度
     var followLastSv by remember { mutableStateOf<Float?>(null) }   // 诊断：最近回读的 SV
 
+    // ===== 风速控制状态（双变量烘焙：手动滑块 + 跟随曲线）=====
+    var fanSpeed by remember { mutableStateOf(0f) }           // 当前风速 0-100%
+    var fanLastSent by remember { mutableStateOf<Float?>(null) }   // 去重：最近已下发风速
+    var followFanTarget by remember { mutableStateOf<Float?>(null) } // 诊断：跟随中的风速目标
+    var fanSending by remember { mutableStateOf(false) }      // 发送门控（防止连发/并发）
+
     // ===== 豆袋互联状态 =====
     var showBeanBagSync by remember { mutableStateOf(false) }     // 出豆后弹同步扣库存对话框
     var pendingRoastId by remember { mutableStateOf<String?>(null) } // 本炉幂等键（入豆时生成，出豆时用）
@@ -156,6 +162,26 @@ fun MonitorScreen(
                 connectionError = L10n.get("monitor.s1", "message" to (e.message ?: ""))
             } finally {
                 writingSv = false
+            }
+        }
+    }
+
+    /** 设置风速 0-100%（跟随模式与手动滑块共用；走桥接器 HTTP /fan）
+     *  与 setSvAbsolute 同语义：写入失败不打断会话，仅提示 */
+    fun setFanSpeed(value: Float) {
+        val ch = channel ?: return
+        if (fanSending) return
+        fanSending = true
+        val v = value.coerceIn(0f, 100f)
+        scope.launch(Dispatchers.Main) {
+            try {
+                ch.sendCommand(DeviceCommand(CommandType.FAN_DUTY, v))
+                fanSpeed = v
+                fanLastSent = v
+            } catch (e: Exception) {
+                connectionError = L10n.get("monitor.fan_err", "message" to (e.message ?: ""))
+            } finally {
+                fanSending = false
             }
         }
     }
@@ -402,7 +428,10 @@ fun MonitorScreen(
                         ch.temperatureFlow.collect { point ->
                             liveBt = point.bt
                             if (recording) {
-                                val shifted = point.copy(timeSeconds = point.timeSeconds + timerOffsetSec)
+                                val shifted = point.copy(
+                                    timeSeconds = point.timeSeconds + timerOffsetSec,
+                                    fanDuty = fanSpeed,   // 记录当前风速（双变量曲线数据）
+                                )
                                 curvePoints.add(shifted)
                                 startTimeSec = shifted.timeSeconds
                             }
@@ -492,6 +521,15 @@ fun MonitorScreen(
             followLastSv = cur
             if (cur != null && kotlin.math.abs(target - cur) >= 1f && !writingSv) {
                 setSvAbsolute(target)
+            }
+
+            // 风速曲线跟随：模板带风速锚点才动；变化 ≥1% 才写（同 SV 去重）
+            val fanT = if (profile.fanAnchors.isNotEmpty())
+                RoastMath.fanTargetAt(profile.fanAnchors, tEff)
+            else null
+            followFanTarget = fanT
+            if (fanT != null && !fanSending && fanT != fanLastSent) {
+                setFanSpeed(fanT)
             }
         }
     }
@@ -847,6 +885,47 @@ fun MonitorScreen(
 
             }
 
+    val SectionFanControl: @Composable () -> Unit = {
+// ===== 风速控制条（双变量：手动滑块 + 跟随曲线目标，仅真机模式）=====
+        if (useRealDevice) {
+            Surface(shape = RoundedCornerShape(10.dp), tonalElevation = 2.dp) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column {
+                            Text(L10n.get("monitor.fan_title"), style = MaterialTheme.typography.labelMedium,
+                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${fanSpeed.toInt()}%", fontSize = 24.sp, fontWeight = FontWeight.Bold,
+                                 color = MaterialTheme.colorScheme.primary)
+                        }
+                        if (followMode && followFanTarget != null) {
+                            Text(
+                                L10n.get("monitor.fan_target", "value" to followFanTarget!!.toInt()),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Slider(
+                        value = fanSpeed,
+                        onValueChange = { fanSpeed = it },
+                        onValueChangeFinished = {
+                            // 手动介入风速：跟随模式立即退出（与 SV 手动介入同语义）
+                            if (followMode) exitFollow(L10n.get("monitor.s38"))
+                            setFanSpeed(fanSpeed)
+                        },
+                        valueRange = 0f..100f,
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+
     val SectionLcdCards: @Composable () -> Unit = {
 // ===== LCD 读数卡片 =====
         val last = fullCurve.lastOrNull()
@@ -920,6 +999,7 @@ fun MonitorScreen(
                 SectionConnection()
                 SectionModeCard()
                 SectionSvControl()
+                SectionFanControl()
                 SectionLcdCards()
                 SectionPhaseStats()
                 SectionChart(Modifier.fillMaxWidth().height(320.dp))
@@ -953,6 +1033,7 @@ fun MonitorScreen(
                         SectionConnection()
                         SectionModeCard()
                         SectionSvControl()
+                        SectionFanControl()
                     }
                 }
             }

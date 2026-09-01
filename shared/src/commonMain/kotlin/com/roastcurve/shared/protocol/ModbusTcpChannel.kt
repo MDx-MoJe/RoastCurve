@@ -7,6 +7,7 @@ import com.roastcurve.shared.model.RoastEvent
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.*
+import io.ktor.client.HttpClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
@@ -56,6 +57,9 @@ class ModbusTcpChannel(
     private var startMark: kotlin.time.TimeMark? = null
     private var transId = 0
     private val transactionMutex = Mutex()
+
+    // 风扇 HTTP 客户端：惰性创建，随通道实例存活（同 bridge 复用）
+    private var fanClient: HttpClient? = null
 
     override suspend fun connect(): Unit = withContext(Dispatchers.IO) {
         if (isConnected) return@withContext
@@ -204,9 +208,20 @@ class ModbusTcpChannel(
                 }
                 if (!ok) throw ModbusException("SV 写入失败（设备无响应）")
             }
+            // 风扇占空比：走 RoastBridge 状态口 HTTP（/fan?speed=NN），非 Modbus 寄存器
+            // 与轮询串行化避免同时写 TCP 双路；失败抛出由上层（跟随控制器/手动滑块）处理
+            CommandType.FAN_DUTY -> {
+                val ok = transactionMutex.withLock {
+                    sendFanSpeed(fanHttpClient(), host, command.value.toInt())
+                }
+                if (!ok) throw ModbusException("风扇写入失败（桥接器无响应）")
+            }
             else -> throw ModbusException("command ${command.type} not supported yet")
         }
     }
+
+    private fun fanHttpClient(): HttpClient =
+        fanClient ?: createFanHttpClient().also { fanClient = it }
 
     private suspend fun writeSingleRegister(address: Int, value: Int): Boolean {
         // 低波特率下自动收发模块偶发喳帧，重试能吞毛刺。

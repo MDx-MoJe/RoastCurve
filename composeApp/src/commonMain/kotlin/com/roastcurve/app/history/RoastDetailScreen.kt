@@ -124,6 +124,7 @@ fun RoastDetailScreen(
                                     name = L10n.get("detail.s7", "nowMs" to (nowMs % 100000)),
                                     sourceRecordId = record.id,
                                     points = pts,
+                                    fanAnchors = com.roastcurve.shared.math.RoastMath.fanAnchorsFrom(pts),
                                 )
                             )
                             savedMsg = true
