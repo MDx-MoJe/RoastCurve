@@ -229,6 +229,8 @@ object ZhSourceGenerated {
         "monitor.s69" to "完成",
         "monitor.fan_title" to "风机风速",
         "monitor.fan_target" to "曲线目标 {value}%",
+        "monitor.fan_manual" to "风速手动 {value}%",
+        "monitor.fan_resume" to "恢复曲线",
         "monitor.fan_err" to "风速设置失败：{message}",
         "monitor.s7" to "占用",
         "monitor.s70" to "\\n⚠ 熟豆入库失败：{message}（可用历史页补录）",

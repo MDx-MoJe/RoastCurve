@@ -229,6 +229,8 @@ object EnBuilt {
         "monitor.s69" to "Done",
         "monitor.fan_title" to "Fan Speed",
         "monitor.fan_target" to "Curve {value}%",
+        "monitor.fan_manual" to "Manual {value}%",
+        "monitor.fan_resume" to "Resume Curve",
         "monitor.fan_err" to "Fan control failed: {message}",
         "monitor.s7" to "In Use",
         "monitor.s70" to "\\n⚠ Roasted add failed: {message} (backfill from history page)",
