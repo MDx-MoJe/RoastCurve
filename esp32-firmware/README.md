@@ -93,7 +93,12 @@ DI/RO 丝印视角不跟固件脚位走。接反会全线死寂（字节上不�
 
 ## 刷写方式二：直接刷 .bin（无需 Arduino IDE）
 
-到 [Releases](../releases/) 下载编译好的固件 `.bin`，任选一种方式：
+到下载页获取编译好的固件 `.bin`（GitHub 与 Gitee 同步发布）：
+
+- GitHub：[Releases](https://github.com/MDx-MoJe/RoastCurve/releases)
+- Gitee（国内快）：[发行版](https://gitee.com/MDx-MoJe/roast-curve/releases)
+
+任选一种方式刷写：
 
 ### A. 网页刷写（推荐，零安装）
 
