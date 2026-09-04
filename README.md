@@ -14,7 +14,7 @@
 CoffeeBeanTracker（豆袋，管豆子库存）的姊妹应用：
 
 ```
-豆袋 CoffeeBeanTracker → 管豆子（库存、记录、杯测）→ github.com/MDx-MoJe/CoffeeBeanTracker
+豆袋 CoffeeBeanTracker → 管豆子（库存、记录、杯测）→ GitHub: github.com/MDx-MoJe/CoffeeBeanTracker · Gitee: gitee.com/MDx-MoJe/coffee-bean-tracker
 烤豆 RoastCurve       → 管曲线（监控、设计、导出）
 ```
 
@@ -56,7 +56,7 @@ RoastCurve/
 
 ## 下载
 
-不想自己构建？直接到 [Releases](https://github.com/MDx-MoJe/RoastCurve/releases) 下载现成的：
+不想自己构建？直接到 [Releases](releases/) 下载现成的（GitHub 与 Gitee 同步发布，国内推荐 Gitee：gitee.com/MDx-MoJe/roast-curve/releases）：
 
 - **APK**：Android 直接安装
 - **固件 .bin**：ESP32 桥接器刷写文件（配合 esp32-firmware/ 使用）

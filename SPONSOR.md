@@ -14,7 +14,7 @@
 
 - **GitHub**：给仓库点个 Star ⭐，把项目推荐给身边玩烘焙的朋友，就是很好的支持
 - **贡献代码 / 反馈问题**：欢迎提交 Issue 或 Pull Request，详见 [CONTRIBUTING.md](CONTRIBUTING.md)
-- 试试姐妹应用 [豆袋 CoffeeBeanTracker](https://github.com/MDx-MoJe/CoffeeBeanTracker)：库存、记录、杯测，烘好的豆子交给它
+- 试试姐妹应用 [豆袋 CoffeeBeanTracker](https://github.com/MDx-MoJe/CoffeeBeanTracker)（[Gitee](https://gitee.com/MDx-MoJe/coffee-bean-tracker)）：库存、记录、杯测，烘好的豆子交给它
 
 ---
 

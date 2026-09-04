@@ -9,7 +9,7 @@ Mobile coffee roasting monitor & curve designer for DIY hot-air roasters. Compat
 
 > Chinese documentation: [README.md (中文)](README.md)
 
-Sister app: [BeanBag (CoffeeBeanTracker)](https://github.com/MDx-MoJe/CoffeeBeanTracker) — green/roasted bean inventory, brew tracking. The two apps sync roast deductions via a system-level interface.
+Sister app: [BeanBag (CoffeeBeanTracker)](https://github.com/MDx-MoJe/CoffeeBeanTracker) · [Gitee](https://gitee.com/MDx-MoJe/coffee-bean-tracker) — green/roasted bean inventory, brew tracking. The two apps sync roast deductions via a system-level interface.
 
 ```
 BeanBag  (豆袋) → manage beans (inventory, records, cupping)
@@ -45,7 +45,7 @@ Live monitor dashboard: dual-pane layout with real-time bean temperature / time 
 
 ## Downloads
 
-Grab the APK and ESP32 firmware `.bin` from the [Releases](https://github.com/MDx-MoJe/RoastCurve/releases) page.
+Grab the APK and ESP32 firmware `.bin` from the [Releases](releases/) page (GitHub · Gitee: gitee.com/MDx-MoJe/roast-curve/releases).
 
 ## Build
 
@@ -96,6 +96,6 @@ Probe tool: `tools/probe_tc4s.py <IP>`
 
 ## Support
 
-RoastCurve is free, open-source and ad-free forever. If it helps your roasting, consider a [star ⭐](https://github.com/MDx-MoJe/RoastCurve/stargazers) or [sponsoring on Afdian](https://afdian.com/a/RoastCurve). See [SPONSOR.md](SPONSOR.md).
+RoastCurve is free, open-source and ad-free forever. If it helps your roasting, consider a star on [GitHub](https://github.com/MDx-MoJe/RoastCurve/stargazers) or [Gitee](https://gitee.com/MDx-MoJe/roast-curve), or [sponsoring on Afdian](https://afdian.com/a/RoastCurve). See [SPONSOR.md](SPONSOR.md).
 
 Copyright © 2026 MDx
