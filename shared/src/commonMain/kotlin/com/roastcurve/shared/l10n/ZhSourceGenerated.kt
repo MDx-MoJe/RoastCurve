@@ -231,6 +231,7 @@ object ZhSourceGenerated {
         "monitor.fan_target" to "曲线目标 {value}%",
         "monitor.fan_manual" to "风速手动 {value}%",
         "monitor.fan_resume" to "恢复曲线",
+        "monitor.fan_auto" to "自动风速（RoR 自适应）",
         "monitor.fan_err" to "风速设置失败：{message}",
         "anchor.temp_tab" to "温度曲线",
         "anchor.fan_tab" to "风速曲线",

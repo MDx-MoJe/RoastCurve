@@ -70,6 +70,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+// ===== RoR 自适应风速（自动风速模式）参数，实机调参 =====
+private const val FAN_KP = 5.0f        // RoR 偏差→风速修正增益（%/每°C/min）
+private const val FAN_DEADZONE = 3.0f  // 死区：|偏差|<3°C/min 不修正（防噪声触发）
+private const val FAN_LIMIT = 10.0f    // 修正量限幅 ±10%（防振荡）
+private const val FAN_RAMP = 5.0f      // 风速每拍最大变化 ±5%（执行器速率限制，治振荡关键）
+private const val FAN_MIN_PCT = 7f     // 风速下限（与固件 FAN_DUTY_FLOOR 对齐）
+private const val FAN_MAX_PCT = 99f    // 风速上限（与固件 FAN_DUTY_CEIL 对齐）
+
 /**
  * 实时监控面板
  *
@@ -146,6 +154,7 @@ fun MonitorScreen(
     var followFanTarget by remember { mutableStateOf<Float?>(null) } // 诊断：跟随中的风速目标
     var fanSending by remember { mutableStateOf(false) }      // 发送门控（防止连发/并发）
     var fanManualOverride by remember { mutableStateOf(false) } // 手动覆盖风速曲线（双变量解耦：只停风速跟随，温度曲线照跟）
+    var fanAuto by remember { mutableStateOf(false) }        // 自动风速（RoR 自适应）：风速 = 曲线基准 + RoR 偏差修正
 
     // ===== 豆袋互联状态 =====
     var showBeanBagSync by remember { mutableStateOf(false) }     // 出豆后弹同步扣库存对话框
@@ -475,6 +484,7 @@ fun MonitorScreen(
     // 注意：循环内必须从 curvePoints（SnapshotStateList）实时读最新点，
     // 不能引用 fullCurve —— 那是组合时的快照，会让协程拿旧数据冻结控制
     LaunchedEffect(followMode, activeProfile, useRealDevice) {
+        var rorEma = 0f   // 实时 RoR 的 EMA 平滑（自动风速用），effect 作用域内持续
         while (followMode && useRealDevice && activeProfile != null) {
             delay(2000)
             val profile = activeProfile ?: break
@@ -526,12 +536,32 @@ fun MonitorScreen(
 
             // 风速曲线跟随：模板带风速锚点才动；变化 ≥1% 才写（同 SV 去重）
             // 双变量解耦：手动覆盖风速（fanManualOverride）只暂停风速曲线下发，温度曲线照常跟
-            val fanT = if (profile.fanAnchors.isNotEmpty())
+            // 自动风速（fanAuto）：风速 = 曲线基准 + RoR 偏差修正（当前 RoR 偏离目标 RoR 时调风拉回）
+            val fanBase = if (profile.fanAnchors.isNotEmpty())
                 RoastMath.fanTargetAt(profile.fanAnchors, tEff)
             else null
-            followFanTarget = fanT
-            if (fanT != null && !fanManualOverride && !fanSending && fanT != fanLastSent) {
-                setFanSpeed(fanT)
+            var targetFan = fanBase
+            if (fanAuto && fanBase != null && !fanManualOverride) {
+                val targetRor = RoastMath.profileRoRAt(profile.points, tEff)
+                // 30 秒窗口 + 重度 EMA（α=0.15）：空锅/实豆 RoR 都是噪声大户，必须当趋势跟踪而非瞬时值
+                val rawRor = RoastMath.lastRoR(curvePoints.toList(), 30f)
+                if (targetRor != null && rawRor != null) {
+                    rorEma = if (rorEma == 0f) rawRor else rorEma * 0.85f + rawRor * 0.15f
+                    val e = rorEma - targetRor
+                    if (kotlin.math.abs(e) > FAN_DEADZONE) {
+                        val delta = (FAN_KP * e).coerceIn(-FAN_LIMIT, FAN_LIMIT)
+                        targetFan = (fanBase + delta).coerceIn(FAN_MIN_PCT, FAN_MAX_PCT)
+                        // 变化率限制：每拍最多走 ±FAN_RAMP（执行器速率限制，防极限振荡）
+                        val last = fanLastSent
+                        if (last != null) {
+                            targetFan = targetFan.coerceIn(last - FAN_RAMP, last + FAN_RAMP)
+                        }
+                    }
+                }
+            }
+            followFanTarget = targetFan
+            if (targetFan != null && !fanManualOverride && !fanSending && targetFan != fanLastSent) {
+                setFanSpeed(targetFan)
             }
         }
     }
@@ -924,6 +954,27 @@ fun MonitorScreen(
                         }
                     }
                     Spacer(Modifier.height(4.dp))
+
+                    // 自动风速（RoR 自适应）开关：跟随中且模板带风速曲线时可用；手动覆盖时禁用
+                    if (followMode && activeProfile?.fanAnchors?.isNotEmpty() == true) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                L10n.get("monitor.fan_auto"),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Switch(
+                                checked = fanAuto,
+                                onCheckedChange = { fanAuto = it },
+                                enabled = !fanManualOverride,
+                            )
+                        }
+                        Spacer(Modifier.height(2.dp))
+                    }
                     Slider(
                         value = fanSpeed,
                         onValueChange = { fanSpeed = it },

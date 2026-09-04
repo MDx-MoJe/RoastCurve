@@ -80,6 +80,33 @@ object RoastMath {
     }
 
     /**
+     * 模板曲线在 t 时刻的目标 RoR（升温速率）：对模板温度点算 RoR（含 EMA 平滑）后插值
+     * 语义与 profileTargetAt 一致：开头之前取首点，超出末尾返回 null
+     * 用于 RoR 自适应风速的目标基准
+     */
+    fun profileRoRAt(points: List<CurvePoint>, t: Float): Float? {
+        if (points.isEmpty()) return null
+        val withR = withRor(points)
+        return profileTargetAt(withR.map { CurvePoint(it.timeSeconds, it.ror) }, t)
+    }
+
+    /**
+     * 最后一点的实时 RoR（中心差分窗口），轻量版：只算曲线尾部一个点
+     * 跟随控制器每拍调用，避免对全曲线重算
+     */
+    fun lastRoR(points: List<CurvePoint>, windowSeconds: Float = 15f): Float? {
+        if (points.size < 3) return null
+        val last = points.last()
+        val leftIdx = points.binarySearchBy(last.timeSeconds - windowSeconds) { it.timeSeconds }
+            .let { if (it < 0) -it - 1 else it }
+            .coerceAtLeast(0)
+        val left = points[leftIdx]
+        val dt = last.timeSeconds - left.timeSeconds
+        if (dt < 1f) return null
+        return ((last.bt - left.bt) / dt) * 60f
+    }
+
+    /**
      * 从曲线采样点提取风速锚点（存为模板用）：
      * 取 fanDuty 非空且风速变化 ≥2% 的点 + 首点，压缩成稀疏锚点列表
      */

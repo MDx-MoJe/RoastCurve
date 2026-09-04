@@ -231,6 +231,7 @@ object EnBuilt {
         "monitor.fan_target" to "Curve {value}%",
         "monitor.fan_manual" to "Manual {value}%",
         "monitor.fan_resume" to "Resume Curve",
+        "monitor.fan_auto" to "Auto Fan (RoR)",
         "monitor.fan_err" to "Fan control failed: {message}",
         "anchor.temp_tab" to "Temp Curve",
         "anchor.fan_tab" to "Fan Curve",
