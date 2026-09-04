@@ -284,3 +284,45 @@ app.s7,分享 {filename},Share {filename},ShareText.android.kt,19
 app.s8,app外部分区/{name},App external storage/{name},ShareText.android.kt,42
 app.s10,透传设备持续无响应：可能已被其他程序占用，或设备刚重启尚未就绪,"Passthrough device unresponsive: may be in use by another program, or the device is still booting up",TransparentChannel.kt,66
 app.s11,SV 写入失败（设备无响应）,SV write failed (device not responding),TransparentChannel.kt,142
+anchor.fan_tab,风速,Fan,AnchorEditorScreen.kt,138
+anchor.temp_tab,温度,Temperature,AnchorEditorScreen.kt,133
+common.back2,返回,Back,SettingsScreen.kt,47
+common.cancel,取消,Cancel,MonitorScreen.kt,1142
+common.import,导入,Import,MonitorScreen.kt,1237
+common.settings,设置,Settings,MonitorScreen.kt,652
+manual.s70,七、语言包,7. Language Packs,ManualScreen.kt,95
+manual.s71,设置页「语言 / Language」可选择简体中文或 English；点「导入语言包」可从 zip 文件载入社区翻译，导入后点「应用」生效。,"On the Settings page, Language lets you pick Simplified Chinese or English. Tap Import Language Pack to load a community translation from a zip file, then tap Apply to activate it.",ManualScreen.kt,96
+manual.s72,内置中文为基准语言；英文与语言包缺词时自动回退中文，不影响使用。,"Built-in Chinese is the base language; missing keys fall back to Chinese, so the app remains usable.",ManualScreen.kt,97
+manual.setting_autoconnect,启动时自动连接,Auto-connect on launch,ManualScreen.kt,90
+manual.setting_autofollow,入豆自动开始跟随,Auto-follow on charge,ManualScreen.kt,89
+manual.setting_darkmode,深烘模式（显示二爆）,Dark roast mode (2nd crack),ManualScreen.kt,92
+manual.setting_lookahead,跟随前瞻,Lookahead,ManualScreen.kt,91
+manual.setting_lookahead_desc,SV 提前参考 N 秒后的目标值，补偿炉子热惯性（0=关闭）,SV references the target N seconds ahead to compensate for roaster thermal inertia (0=off),ManualScreen.kt,91
+manual.title,使用手册,User Manual,ManualScreen.kt,40
+monitor.diag,目标 {tgt}°C · SV {sv} · 时钟 {clk}s,Target {tgt}°C · SV {sv} · clock {clk}s,MonitorScreen.kt,845
+monitor.fan_auto,自动风速（RoR 自适应）,Auto Fan (RoR-adaptive),MonitorScreen.kt,970
+monitor.fan_err,风速写入失败：{message},Fan write failed: {message},MonitorScreen.kt,192
+monitor.fan_resume,恢复风速跟随,Resume fan follow,MonitorScreen.kt,953
+monitor.fan_title,风速,Fan Speed,MonitorScreen.kt,935
+monitor.import_failed,模板导入失败：{msg},Profile import failed: {msg},MonitorScreen.kt,357
+phase.development,发展,Development,RoastPhaseStats.kt,85
+phase.drying,脱水,Drying,RoastPhaseStats.kt,83
+phase.maillard,美拉德,Maillard,RoastPhaseStats.kt,84
+settings.apply,应用,Apply,LanguageCard.kt,107
+settings.current_lang,当前语言,Current language,LanguageCard.kt,38
+settings.export_current,导出当前,Export current,LanguageCard.kt,74
+settings.export_zip,导出 zip,Export zip,SettingsScreen.kt,115
+settings.import_pack,导入语言包,Import language pack,LanguageCard.kt,65
+settings.language_section,语言 / Language,Language,SettingsScreen.kt,208
+settings.s43,自动风速下限,Auto Fan Floor,,
+settings.s44,自动模式下风速不低于此值，保证豆子翻滚（流化）。过低会积热局部焦化，按设备实测调（7~60%）,In auto mode fan never drops below this,,
+monitor.fan_manual,手动 {value}%,Manual {value}%,MonitorScreen.kt,944
+monitor.fan_target,目标 {value}%,Target {value}%,MonitorScreen.kt,944
+monitor.s83,读取豆袋生豆失败：豆袋可能未安装、版本过旧，或被系统限制后台。,"Failed to read BeanBag green beans: not installed, too old, or restricted from running in background.",MonitorScreen.kt,1262
+monitor.s84,可稍后到历史记录详情页「补录到豆袋」重试，或先在系统设置允许豆袋后台运行。,"Retry later via Records → detail → Backfill to BeanBag, or allow BeanBag to run in background in system settings.",MonitorScreen.kt,1262
+monitor.s85,重试,Retry,MonitorScreen.kt,1262
+monitor.s86,选批次并填入豆前称好的生豆克重，扣减生豆库存。熟豆冷却称重后到记录详情页补录（自动算失重率）。,"Pick a batch and enter the green bean weight measured before charging. After the roast cools and is weighed, backfill the roasted beans from the record detail page (weight loss auto-calculated).",MonitorScreen.kt,1262
+monitor.s87,熟豆待称重：冷却后到历史记录详情页补录入库，将自动计算失重率。,"Roasted beans pending: weigh after cooling, then backfill from the record detail page — weight loss is auto-calculated.",MonitorScreen.kt,1340
+detail.s31,熟豆已保存，可补录到豆袋,Roast saved — backfill to BeanBag,RoastDetailScreen.kt,350
+detail.s32,读取豆袋生豆批次…,Loading BeanBag green beans…,RoastDetailScreen.kt,427
+detail.s33,重试,Retry,RoastDetailScreen.kt,430

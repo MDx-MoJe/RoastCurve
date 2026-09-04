@@ -31,10 +31,21 @@ class AndroidBeanBagBridge(private val context: Context) : BeanBagBridge {
         private const val EXTRA_ROAST_DATE = "roast_date"
     }
 
-    override suspend fun listGreenBeans(): List<GreenBeanSummary> = withContext(Dispatchers.IO) {
+    override suspend fun listGreenBeans(): Result<List<GreenBeanSummary>> = withContext(Dispatchers.IO) {
         try {
-            val cursor: Cursor? = context.contentResolver.query(CONTENT_URI, null, null, null, null)
-            cursor?.use { c ->
+            val cursor: Cursor? = try {
+                context.contentResolver.query(CONTENT_URI, null, null, null, null)
+            } catch (se: SecurityException) {
+                // 权限未授或 ROM 拦截：让用户去系统设置授权/允许后台
+                return@withContext Result.failure(IllegalStateException("豆袋互联权限被拒绝，请到系统设置允许豆袋后台运行后重试"))
+            } catch (e: android.content.pm.PackageManager.NameNotFoundException) {
+                return@withContext Result.failure(IllegalStateException("豆袋未安装"))
+            }
+            if (cursor == null) {
+                // provider 不存在：豆袋未安装或版本过旧（无 bridge provider）
+                return@withContext Result.failure(IllegalStateException("豆袋未安装或版本过旧（需 3.0.13+）"))
+            }
+            cursor.use { c ->
                 val idCol = c.getColumnIndexOrThrow("_id")
                 val nameCol = c.getColumnIndexOrThrow("name")
                 val gramsCol = c.getColumnIndexOrThrow("remainingGrams")
@@ -49,9 +60,10 @@ class AndroidBeanBagBridge(private val context: Context) : BeanBagBridge {
                         )
                     }
                 }
-            } ?: emptyList()
+            }.let { Result.success(it) }
         } catch (e: Exception) {
-            emptyList()   // 豆袋未安装 / 无权限 → 列表为空，UI 显示不可用态
+            // 其它未知错误（进程拉起失败/超时等）：携带原因
+            Result.failure(IllegalStateException("读取豆袋失败：${e.message ?: e.javaClass.simpleName}"))
         }
     }
 

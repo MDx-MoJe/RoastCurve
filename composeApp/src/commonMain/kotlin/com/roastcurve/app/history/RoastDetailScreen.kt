@@ -263,11 +263,14 @@ private fun WeightLossCard(record: RoastRecord) {
     var chargeText by remember { mutableStateOf(if (record.beanWeight > 0f) record.beanWeight.toInt().toString() else "") }
     var dropText by remember { mutableStateOf(if (record.dropWeight > 0f) record.dropWeight.toInt().toString() else "") }
     var saved by remember { mutableStateOf(false) }
+    var showBackfill by remember { mutableStateOf(false) }   // 填完重量后触发补录到豆袋
 
     val charge = chargeText.toFloatOrNull()
     val drop = dropText.toFloatOrNull()
     val loss = if (charge != null && charge > 0f && drop != null && drop > 0f && drop <= charge)
         RoastMath.calculateWeightLoss(charge, drop) else null
+    // 熟豆重已填且已保存 → 提示可就地补录
+    val canBackfill = saved && drop != null && drop > 0f
 
     Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
@@ -336,7 +339,25 @@ private fun WeightLossCard(record: RoastRecord) {
                      style = MaterialTheme.typography.labelSmall,
                      color = MaterialTheme.colorScheme.error)
             }
+            // 熟豆称重已保存 → 就地补录到豆袋（默认只补熟豆，熟豆名/克重已带出）
+            if (canBackfill) {
+                HorizontalDivider(Modifier.padding(vertical = 6.dp))
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(L10n.get("detail.s31"),
+                         style = MaterialTheme.typography.labelSmall,
+                         color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TextButton(onClick = { showBackfill = true }) { Text(L10n.get("detail.s19")) }
+                }
+            }
         }
+    }
+
+    if (showBackfill) {
+        BeanBagSyncDialog(record = record, bridge = remember { beanBagBridge() }) { showBackfill = false }
     }
 }
 
@@ -395,12 +416,21 @@ private fun BeanBagSyncDialog(
     var roastedName by remember { mutableStateOf(record.beanName) }
     var roastedGramsText by remember { mutableStateOf(record.dropWeight.takeIf { it > 0f }?.toInt()?.toString() ?: "") }
     var beans by remember { mutableStateOf<List<GreenBeanSummary>?>(null) }
+    var beanLoadError by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     var done by remember { mutableStateOf(false) }
     var msg by remember { mutableStateOf<String?>(null) }
 
+    suspend fun loadBeans() {
+        beanLoadError = null
+        beans = null
+        val r = bridge.listGreenBeans()
+        val list = r.getOrNull()
+        if (list != null) beans = list
+        else beanLoadError = r.exceptionOrNull()?.message
+    }
     LaunchedEffect(onlyRoasted) {
-        if (!onlyRoasted && beans == null) beans = bridge.listGreenBeans()
+        if (!onlyRoasted && beans == null && beanLoadError == null) loadBeans()
     }
 
     AlertDialog(
@@ -414,7 +444,12 @@ private fun BeanBagSyncDialog(
                 }
                 if (!onlyRoasted) {
                     when {
-                        beans == null -> Text("读取豆袋生豆批次…")
+                        beans == null && beanLoadError == null -> Text(L10n.get("detail.s32"))
+                        beanLoadError != null -> Column {
+                            Text(beanLoadError!!, style = MaterialTheme.typography.bodySmall,
+                                 color = MaterialTheme.colorScheme.error)
+                            TextButton(onClick = { scope.launch { loadBeans() } }) { Text(L10n.get("detail.s33")) }
+                        }
                         beans!!.isEmpty() -> Text(L10n.get("detail.s22"))
                         else -> {
                             LazyColumn(modifier = Modifier.heightIn(max = 160.dp)) {

@@ -557,6 +557,10 @@ fun MonitorScreen(
                             targetFan = targetFan.coerceIn(last - FAN_RAMP, last + FAN_RAMP)
                         }
                     }
+                    // 自动风速工艺下限：低于流化阈值的豆子不翻滚会积热局部焦化，
+                    // 且豆堆静止时 RoR 读数失真（反馈失效）。放在斜率限制之后，
+                    // 下限抬升不受每拍限速拖慢（安全优先于平滑）。
+                    targetFan = targetFan.coerceAtLeast(settings.fanAutoFloorPct.toFloat())
                 }
             }
             followFanTarget = targetFan
@@ -1238,36 +1242,52 @@ fun MonitorScreen(
             )
         }
 
-        // ===== 豆袋同步：出豆后同步扣生豆库存 + 熟豆入库 =====
+        // ===== 豆袋同步：出豆后同步扣生豆库存（熟豆入库改为事后到详情页补录，称重更准） =====
         if (showBeanBagSync) {
             val bridge = remember { beanBagBridge() }
             var beans by remember { mutableStateOf<List<GreenBeanSummary>?>(null) }
+            var loadError by remember { mutableStateOf<String?>(null) }   // 读取失败原因（区别于真空列表）
             var selectedId by remember { mutableStateOf<Long?>(null) }
             var gramsText by remember { mutableStateOf("") }
-            var roastedNameText by remember { mutableStateOf("") }   // 熟豆名（默认填当前豆名）
-            var roastedGramsText by remember { mutableStateOf("") }  // 熟豆克重（默认填失重率估算值）
             var pushing by remember { mutableStateOf(false) }
             var resultMsg by remember { mutableStateOf<String?>(null) }
             var success by remember { mutableStateOf(false) }
 
-            LaunchedEffect(Unit) {
-                beans = bridge.listGreenBeans()
-                // 预填：熟豆名用当前记录名，熟豆重用出豆克重（无则按 15% 失重率估算）
-                val rec = sessionId?.let { runCatching { RoastStore().load(it) }.getOrNull() }
-                roastedNameText = rec?.beanName.orEmpty()
-                val dw = rec?.dropWeight ?: 0f
-                val bw = rec?.beanWeight ?: 0f
-                roastedGramsText = if (dw > 0f) dw.toInt().toString()
-                    else if (bw > 0f) (bw * 0.85f).toInt().toString()
-                    else ""
+            // 读取生豆：首次失败自动重试 2 次（间隔 400ms），仍失败才报错
+            suspend fun loadBeans() {
+                loadError = null
+                beans = null
+                var lastErr: String? = null
+                for (attempt in 0..2) {
+                    val r = bridge.listGreenBeans()
+                    val list = r.getOrNull()
+                    if (list != null) { beans = list; return }
+                    lastErr = r.exceptionOrNull()?.message
+                    if (attempt < 2) delay(400)
+                }
+                loadError = lastErr ?: L10n.get("monitor.s83")
             }
+            LaunchedEffect(Unit) { loadBeans() }
 
             AlertDialog(
                 onDismissRequest = { if (!pushing) showBeanBagSync = false },
                 title = { Text(L10n.get("monitor.s60")) },
                 text = {
                     when {
-                        beans == null -> Text(L10n.get("monitor.s61"))
+                        beans == null && loadError == null -> Text(L10n.get("monitor.s61"))
+                        loadError != null && beans?.isEmpty() != false -> Column {
+                            Text(L10n.get("monitor.s83"),  // 读取失败原因 + 引导
+                                 style = MaterialTheme.typography.bodySmall,
+                                 color = MaterialTheme.colorScheme.error)
+                            Spacer(Modifier.height(6.dp))
+                            Text(L10n.get("monitor.s84"),
+                                 style = MaterialTheme.typography.bodySmall,
+                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(4.dp))
+                            TextButton(onClick = { scope.launch { loadBeans() } }) {
+                                Text(L10n.get("monitor.s85"))  // 重试
+                            }
+                        }
                         beans!!.isEmpty() -> Column {
                             Text(L10n.get("monitor.s62"))
                             Spacer(Modifier.height(6.dp))
@@ -1276,7 +1296,7 @@ fun MonitorScreen(
                                  color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         else -> Column {
-                            Text(L10n.get("monitor.s64"),
+                            Text(L10n.get("monitor.s86"),  // 只扣生豆，熟豆事后补录
                                  style = MaterialTheme.typography.bodySmall,
                                  color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(8.dp))
@@ -1311,24 +1331,6 @@ fun MonitorScreen(
                                 singleLine = true,
                                 enabled = !success,
                             )
-                            Spacer(Modifier.height(6.dp))
-                            OutlinedTextField(
-                                value = roastedNameText,
-                                onValueChange = { roastedNameText = it },
-                                label = { Text(L10n.get("monitor.s67")) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                enabled = !success,
-                            )
-                            Spacer(Modifier.height(6.dp))
-                            OutlinedTextField(
-                                value = roastedGramsText,
-                                onValueChange = { roastedGramsText = it.filter { ch -> ch.isDigit() || ch == '.' } },
-                                label = { Text(L10n.get("monitor.s68")) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                enabled = !success,
-                            )
                             resultMsg?.let { msg ->
                                 Spacer(Modifier.height(6.dp))
                                 Text(
@@ -1356,21 +1358,8 @@ fun MonitorScreen(
                                     when (res) {
                                         is BridgeResult.Ok -> {
                                             success = true
-                                            resultMsg = "✓ ${res.message}"
-                                            // 熟豆入库：有克重才追送（与生豆扣减同一幂等键体系，独立前缀）
-                                            val rg = roastedGramsText.toDoubleOrNull() ?: 0.0
-                                            if (rg > 0) {
-                                                when (val r2 = bridge.addRoasted(
-                                                    roastId = rid,
-                                                    beanName = roastedNameText.trim(),
-                                                    roastedGrams = rg,
-                                                    roastLevel = "",
-                                                    roastDateEpochMs = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
-                                                )) {
-                                                    is BridgeResult.Ok -> resultMsg = "✓ ${res.message}\n✓ ${r2.message}"
-                                                    is BridgeResult.Err -> resultMsg += L10n.get("monitor.s70", "message" to (r2.message ?: ""))
-                                                }
-                                            }
+                                            // 只扣生豆；熟豆称重后到历史详情页补录入库
+                                            resultMsg = "✓ ${res.message}\n" + L10n.get("monitor.s87")
                                         }
                                         is BridgeResult.Err -> resultMsg = L10n.get("monitor.s71", "message" to (res.message ?: ""))
                                     }

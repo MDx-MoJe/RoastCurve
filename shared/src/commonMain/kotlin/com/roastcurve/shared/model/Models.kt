@@ -67,6 +67,7 @@ data class Settings(
     val consentVersion: Int = 0,               // 已同意的隐私政策版本（0 = 从未同意，需弹窗）
     val langBuiltin: String = "zh-CN",         // 语言：内置语言代码（zh-CN / en）
     val langPackFile: String = "",             // 语言包文件名（非空=使用导入的语言包）
+    val fanAutoFloorPct: Int = 30,             // 自动风速下限%：低于流化阈值的豆子不翻滚会积热局部焦化（可调 7~60）
 )
 
 /**

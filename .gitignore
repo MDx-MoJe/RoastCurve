@@ -27,3 +27,6 @@ signing.properties
 # ===== iOS Xcode 用户数据 =====
 xcuserdata/
 *.xcuserstate
+
+# ===== 发布产物目录（APK/固件走 Releases 附件，不进 git）=====
+/release-*/

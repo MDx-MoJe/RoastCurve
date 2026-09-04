@@ -5,8 +5,12 @@ package com.roastcurve.shared.bridge
  * iOS 端返回空列表 / 失败桩，待 iOS 版互联可用后升级。
  */
 interface BeanBagBridge {
-    /** 列出豆袋里的生豆批次（id / 名称 / 剩余克重） */
-    suspend fun listGreenBeans(): List<GreenBeanSummary>
+    /**
+     * 列出豆袋里的生豆批次（id / 名称 / 剩余克重）。
+     * 返回 Result：失败时携带可读错误原因（未安装/版本过旧/权限被拒/进程无法拉起等），
+     * UI 据此区分展示，而非一律显示"读不到"。
+     */
+    suspend fun listGreenBeans(): Result<List<GreenBeanSummary>>
 
     /**
      * 推送一炉烘焙消耗。

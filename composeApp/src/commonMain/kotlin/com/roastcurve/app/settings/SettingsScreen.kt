@@ -297,7 +297,7 @@ fun SettingsScreen(
                                     draftText = settings.lookaheadSec.toString()
                                     editingLookahead = true
                                 },
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.labelLarge,
                         )
                     }
                     OutlinedButton(
@@ -307,6 +307,75 @@ fun SettingsScreen(
                             onUpdate(next); scope.launch { SettingsStore().save(next) }
                         },
                     ) { Text("+1") }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // ===== 自动风速下限 =====
+        Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(L10n.get("settings.s43"), style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        L10n.get("settings.s44"),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    OutlinedButton(
+                        onClick = {
+                            val v = (settings.fanAutoFloorPct - 5).coerceAtLeast(7)
+                            val next = settings.copy(fanAutoFloorPct = v)
+                            onUpdate(next); scope.launch { SettingsStore().save(next) }
+                        },
+                    ) { Text("−5") }
+                    var editingFanFloor by remember { mutableStateOf(false) }
+                    var fanFloorDraft by remember { mutableStateOf("") }
+                    if (editingFanFloor) {
+                        OutlinedTextField(
+                            value = fanFloorDraft,
+                            onValueChange = { fanFloorDraft = it.filter { ch -> ch.isDigit() } },
+                            label = { Text("%") },
+                            singleLine = true,
+                            modifier = Modifier.width(90.dp).padding(horizontal = 4.dp),
+                            textStyle = MaterialTheme.typography.titleMedium,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        )
+                        TextButton(onClick = {
+                            val v = fanFloorDraft.toIntOrNull()?.coerceIn(7, 60)
+                            if (v != null) {
+                                val next = settings.copy(fanAutoFloorPct = v)
+                                onUpdate(next); scope.launch { SettingsStore().save(next) }
+                            }
+                            editingFanFloor = false
+                        }) { Text("OK") }
+                    } else {
+                        Text(
+                            "${settings.fanAutoFloorPct}%",
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .clickable {
+                                    fanFloorDraft = settings.fanAutoFloorPct.toString()
+                                    editingFanFloor = true
+                                },
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            val v = (settings.fanAutoFloorPct + 5).coerceAtMost(60)
+                            val next = settings.copy(fanAutoFloorPct = v)
+                            onUpdate(next); scope.launch { SettingsStore().save(next) }
+                        },
+                    ) { Text("+5") }
                 }
             }
         }
