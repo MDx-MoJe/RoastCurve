@@ -89,8 +89,16 @@ fun AnchorEditorScreen(
     }
     // 曲线类型：false=温度曲线，true=风速曲线
     var editFan by remember { mutableStateOf(false) }
+    // 行编辑器稳定 id 计数器：新锚点发新 id，保证 remember key 不随数据值变化（修输入框联动清空 bug）
+    var nextRowId by remember { mutableStateOf(0) }
+    fun nextAnchorId(): Int = nextRowId++
     // 当前激活的锚点列表：用 state 持有列表引用，切模式时同步切换
     var anchors by remember { mutableStateOf<SnapshotStateList<AnchorPoint>>(tempAnchors) }
+    // 每个锚点的行编辑器稳定 id（与各自列表同序）：初始锚点按序分配
+    val tempIds = remember { SnapshotStateList<Int>().apply { repeat(tempAnchors.size) { add(nextAnchorId()) } } }
+    val fanIds = remember { SnapshotStateList<Int>().apply { repeat(fanAnchors.size) { add(nextAnchorId()) } } }
+    // 当前激活列表对应的行 id 列表（与 anchors 同步切换）
+    val curIds = if (editFan) fanIds else tempIds
     var saveMsg by remember { mutableStateOf(false) }
 
     Column(
@@ -139,7 +147,10 @@ fun AnchorEditorScreen(
                 var dragSession by remember { mutableStateOf<AnchorPoint?>(null) }
                 ProfilePreviewCanvas(
                     anchors = anchors.toList(),
-                    onAdd = { t, b -> anchors.add(AnchorPoint(timeSeconds = t, bt = b, label = if (editFan) "" else guessStage(b))) },
+                    onAdd = { t, b ->
+                        anchors.add(AnchorPoint(timeSeconds = t, bt = b, label = if (editFan) "" else guessStage(b)))
+                        curIds.add(nextAnchorId())
+                    },
                     onMove = { target, t, b ->
                         val cur = dragSession ?: target.also { dragSession = it }
                         val i = anchors.indexOfFirst { it === cur }
@@ -183,13 +194,17 @@ fun AnchorEditorScreen(
 
         val sortedIdx = anchors.withIndex().sortedBy { it.value.timeSeconds }.toList()
         sortedIdx.forEach { (origIdx, p) ->
-            AnchorRow(
-                point = p,
-                onUpdate = { np -> anchors[origIdx] = np },
-                onDelete = { if (anchors.size > 2) anchors.removeAt(origIdx) },
-                valueUnit = if (editFan) "%" else "°C",
-                valueMax = if (editFan) 100f else 500f,
-            )
+            // key(rowId)：行按稳定 id 跟踪，时间改动导致排序变化时状态不错位
+            key(curIds[origIdx]) {
+                AnchorRow(
+                    rowId = curIds[origIdx],
+                    point = p,
+                    onUpdate = { np -> anchors[origIdx] = np },
+                    onDelete = { if (anchors.size > 2) { anchors.removeAt(origIdx); curIds.removeAt(origIdx) } },
+                    valueUnit = if (editFan) "%" else "°C",
+                    valueMax = if (editFan) 100f else 500f,
+                )
+            }
             Spacer(Modifier.height(6.dp))
         }
         Text(L10n.get("anchor.s7"), style = MaterialTheme.typography.labelSmall,
@@ -208,9 +223,12 @@ fun AnchorEditorScreen(
                     val bt = ((last?.bt ?: 25f) + 8f).coerceAtMost(260f)
                     anchors.add(AnchorPoint(timeSeconds = t, bt = bt, label = guessStage(bt)))
                 }
+                curIds.add(nextAnchorId())
             },
             modifier = Modifier.fillMaxWidth(),
         ) { Text(L10n.get("anchor.s8")) }
+        // 列表新增按钮（画布点击加锚点已单独发 id，这里只管按钮路径）
+        LaunchedEffect(anchors.size) { while (curIds.size < anchors.size) curIds.add(nextAnchorId()) }
 
         Spacer(Modifier.height(16.dp))
 
@@ -260,17 +278,22 @@ fun AnchorEditorScreen(
 /** 单个锚点编辑行：名称 + 时间(秒) + 温度(°C) + 删除 */
 @Composable
 private fun AnchorRow(
+    rowId: Int,
     point: AnchorPoint,
     onUpdate: (AnchorPoint) -> Unit,
     onDelete: () -> Unit,
     valueUnit: String = "°C",
     valueMax: Float = 500f,
 ) {
-    // 文本框内容跟随数据，但允许中间态自由输入：
-    // 用本地状态托管字符串，外部数据变化时同步
-    var lText by remember(point.label) { mutableStateOf(point.label) }
-    var tText by remember(point.timeSeconds.toInt()) { mutableStateOf(formatSec(point.timeSeconds)) }
-    var cText by remember(point.bt.toInt()) { mutableStateOf(point.bt.toInt().toString()) }
+    // 文本框内容与数据的双向同步（bug 修复）：
+    // remember key 只用行稳定 id（rowId），绝不用数据值（否则删字符→值变→key 变→全部输入框重置清空）。
+    // 数据→显示方向：仅当外部真实修改（画布拖动/画布新增）与显示框解析值不同时才覆盖文本。
+    var lText by remember(rowId) { mutableStateOf(point.label) }
+    var tText by remember(rowId) { mutableStateOf(formatSec(point.timeSeconds)) }
+    var cText by remember(rowId) { mutableStateOf(point.bt.toInt().toString()) }
+    LaunchedEffect(point.label) { if (point.label != parseLabel(lText)) lText = point.label }
+    LaunchedEffect(point.timeSeconds) { if (point.timeSeconds != (parseNum(tText) ?: -1f)) tText = formatSec(point.timeSeconds) }
+    LaunchedEffect(point.bt) { if (point.bt != (parseNum(cText) ?: -1f)) cText = point.bt.toInt().toString() }
 
     Surface(shape = MaterialTheme.shapes.small, tonalElevation = 1.dp) {
         Row(
@@ -485,6 +508,9 @@ private fun formatSec(sec: Float): String = sec.toInt().toString()
 /** 解析正数；非法输入返回 null（保留中间态不强制写回） */
 private fun parseNum(s: String): Float? =
     s.trim().toFloatOrNull()?.takeIf { it >= 0f }
+
+/** 名称解析：与写入侧 take(6) 截断对称，未变化时避免外部写回覆盖 */
+private fun parseLabel(s: String): String = s.take(6)
 
 private fun defaultName(): String {
     val d = kotlinx.datetime.Clock.System.now()
