@@ -34,6 +34,7 @@
 #include <Preferences.h>
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
+#include "webui_gzip.h"   // Web UI gzip 体（webui/index.html 生成）
 #include <ArduinoOTA.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
@@ -122,43 +123,43 @@ struct SafeConfig {
 SafeConfig cfg = { true, DEF_WD_GRACE_S, DEF_SAFE_SV, DEF_SAFE_FAN,
                    true, DEF_SAFE_OFF_MIN, false, DEF_SIM_RAMP, DEF_AMBIENT };
 
-#line 123 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 124 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCfg();
-#line 143 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 144 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool saveCfg();
-#line 177 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 178 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool modbusTransaction(const uint8_t* pdu, size_t pduLen, uint8_t* rspPdu, size_t& rspLen);
-#line 218 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 219 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool heaterRead(uint16_t reg, uint16_t& value);
-#line 232 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 233 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool heaterWriteSv(uint16_t value);
-#line 240 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 241 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void heaterPoll();
-#line 296 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 297 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void watchdogTick();
-#line 341 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 342 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void triggerWatchdog();
-#line 365 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 366 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 uint16_t crc16(const uint8_t* buf, size_t len);
-#line 379 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 380 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool mbapToRtu(const uint8_t* frame, size_t frameLen);
-#line 399 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 400 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void rtuToMbap(WiFiClient& out, const uint8_t* reqHeader, uint16_t waitMs);
-#line 482 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 483 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len);
-#line 600 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 601 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void startBleConfig();
-#line 647 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 648 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 String readLine(uint32_t timeoutMs);
-#line 662 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 663 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCreds();
-#line 669 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 670 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void ensureWifi();
-#line 786 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 814 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void setup();
-#line 824 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 852 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loop();
-#line 123 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 124 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCfg() {
   nvs15.begin(NVS_NS15, false);
   cfg.wdEnabled      = nvs15.getUChar("wdEn", DEF_WD_ENABLED) != 0;
@@ -757,6 +758,33 @@ void handleStatus() {
     nvs.clear();
     delay(200);
     ESP.restart();
+    return;
+  }
+
+  // Web UI 首页：gzip HTML（浏览器自动解压）
+  if (reqLine.startsWith("GET / ") || reqLine.startsWith("GET /?")) {
+    sc.print("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n");
+    sc.print("Content-Encoding: gzip\r\n");
+    sc.print("Cache-Control: no-cache\r\n");
+    char cl[48];
+    snprintf(cl, sizeof(cl), "Content-Length: %u\r\n", WEBUI_GZIP_LEN);
+    sc.print(cl);
+    sc.print("Connection: close\r\n\r\n");
+    sc.flush();
+    // PROGMEM 分块写（512B/块，避免 TCP 缓冲溢出）
+    uint8_t buf[512];
+    for (unsigned int off = 0; off < WEBUI_GZIP_LEN; off += sizeof(buf)) {
+      unsigned int n = WEBUI_GZIP_LEN - off;
+      if (n > sizeof(buf)) n = sizeof(buf);
+      memcpy_P(buf, WEBUI_GZIP + off, n);
+      size_t w = 0;
+      while (w < n) {
+        w += sc.write(buf + w, n - w);
+        yield();
+      }
+      yield();
+    }
+    sc.flush(); delay(2); sc.stop();
     return;
   }
 

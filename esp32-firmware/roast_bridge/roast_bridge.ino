@@ -32,6 +32,7 @@
 #include <Preferences.h>
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
+#include "webui_gzip.h"   // Web UI gzip 体（webui/index.html 生成）
 #include <ArduinoOTA.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
@@ -718,6 +719,33 @@ void handleStatus() {
     nvs.clear();
     delay(200);
     ESP.restart();
+    return;
+  }
+
+  // Web UI 首页：gzip HTML（浏览器自动解压）
+  if (reqLine.startsWith("GET / ") || reqLine.startsWith("GET /?")) {
+    sc.print("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n");
+    sc.print("Content-Encoding: gzip\r\n");
+    sc.print("Cache-Control: no-cache\r\n");
+    char cl[48];
+    snprintf(cl, sizeof(cl), "Content-Length: %u\r\n", WEBUI_GZIP_LEN);
+    sc.print(cl);
+    sc.print("Connection: close\r\n\r\n");
+    sc.flush();
+    // PROGMEM 分块写（512B/块，避免 TCP 缓冲溢出）
+    uint8_t buf[512];
+    for (unsigned int off = 0; off < WEBUI_GZIP_LEN; off += sizeof(buf)) {
+      unsigned int n = WEBUI_GZIP_LEN - off;
+      if (n > sizeof(buf)) n = sizeof(buf);
+      memcpy_P(buf, WEBUI_GZIP + off, n);
+      size_t w = 0;
+      while (w < n) {
+        w += sc.write(buf + w, n - w);
+        yield();
+      }
+      yield();
+    }
+    sc.flush(); delay(2); sc.stop();
     return;
   }
 

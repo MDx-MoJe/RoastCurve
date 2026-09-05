@@ -325,6 +325,7 @@
  /Users/mdx/Documents/Arduino/libraries/ArduinoJson/src/ArduinoJson.h \
  /Users/mdx/Documents/Arduino/libraries/ArduinoJson/src/ArduinoJson.hpp \
  /Users/mdx/Documents/Arduino/libraries/ArduinoJson/src/ArduinoJson/Configuration.hpp \
+ /Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/webui_gzip.h \
  /Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/ArduinoOTA/src/ArduinoOTA.h \
  /Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Update/src/Update.h \
  /Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/cores/esp32/MD5Builder.h \

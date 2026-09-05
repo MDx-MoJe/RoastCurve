@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>烤豆 · RoastBridge</title>
+<style>
+:root{
+  --bg:#14100d; --card:#1e1815; --card2:#262019; --line:#3a2f26;
+  --tx:#e8ddd0; --tx2:#a8988a; --dim:#6b5d50;
+  --orange:#d98a4a; --blue:#5aa7c4; --red:#e05545; --green:#7ba86f;
+  --yellow:#d9b44a;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  background:var(--bg); color:var(--tx);
+  font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;
+  padding-top:env(safe-area-inset-top);
+  min-height:100vh; display:flex; flex-direction:column;
+  user-select:none; -webkit-user-select:none;
+}
+header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; border-bottom:1px solid var(--line);
+}
+header h1{font-size:17px; font-weight:600}
+header h1 span{color:var(--orange)}
+#badge{
+  font-size:11px; padding:4px 10px; border-radius:20px;
+  background:var(--card2); color:var(--tx2); border:1px solid var(--line);
+}
+#badge.ok{color:var(--green); border-color:var(--green)}
+#badge.bad{color:var(--red); border-color:var(--red)}
+#badge.wd{color:var(--yellow); border-color:var(--yellow); animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.4}}
+#banner{
+  display:none; margin:10px 12px 0; padding:10px 14px;
+  border-radius:10px; font-size:13px; line-height:1.5;
+  background:rgba(224,85,69,.12); border:1px solid var(--red); color:var(--red);
+}
+#banner.yellow{background:rgba(217,180,74,.1); border-color:var(--yellow); color:var(--yellow)}
+#banner button{
+  margin-left:8px; padding:4px 14px; border-radius:16px; font-size:12px;
+  background:var(--yellow); color:#1a1509; border:0; font-weight:600;
+}
+main{flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:10px}
+.tempbar{display:flex; gap:10px}
+.tcard{
+  flex:1; background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:10px 14px;
+}
+.tcard .lbl{font-size:11px; color:var(--tx2); margin-bottom:2px}
+.tcard .val{font-size:30px; font-weight:700; font-variant-numeric:tabular-nums}
+.tcard.pv .val{color:var(--orange)}
+.tcard.sv .val{color:var(--blue)}
+.tcard .unit{font-size:13px; color:var(--dim); font-weight:400}
+#chartCard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px}
+#chart{width:100%; height:240px; display:block}
+.legend{display:flex; gap:16px; padding:6px 4px 0; font-size:11px; color:var(--tx2)}
+.legend i{display:inline-block; width:16px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle}
+.row{display:flex; gap:10px}
+.card{flex:1; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 14px}
+.card .lbl{font-size:11px; color:var(--tx2); margin-bottom:8px}
+.card .big{font-size:20px; font-weight:700}
+#holderTag{font-size:13px; font-weight:600}
+#holderTag.me{color:var(--green)}
+#holderTag.app{color:var(--blue)}
+#holderTag.none{color:var(--dim)}
+#takeBtn{
+  margin-top:8px; width:100%; padding:9px; border-radius:10px; border:1px solid var(--orange);
+  background:transparent; color:var(--orange); font-size:13px; font-weight:600;
+}
+#takeBtn:disabled{opacity:.35}
+#svRow{display:flex; align-items:center; gap:10px}
+#svSlider{flex:1; -webkit-appearance:none; height:34px; background:transparent}
+#svSlider::-webkit-slider-runnable-track{height:6px; border-radius:3px; background:var(--line)}
+#svSlider::-webkit-slider-thumb{
+  -webkit-appearance:none; width:26px; height:26px; border-radius:50%;
+  background:var(--blue); margin-top:-10px; box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+#svSend{
+  padding:9px 16px; border-radius:10px; border:0; background:var(--blue); color:#0c1a21;
+  font-size:14px; font-weight:700;
+}
+#svSlider:disabled{opacity:.3}
+#svSend:disabled{opacity:.3}
+#stopBtn{
+  width:100%; padding:16px; border-radius:14px; border:1px solid var(--red);
+  background:rgba(224,85,69,.15); color:var(--red); font-size:17px; font-weight:800; letter-spacing:2px;
+}
+#stopBtn:active{background:var(--red); color:#fff}
+footer{padding:8px 16px calc(10px + env(safe-area-inset-bottom)); text-align:center; font-size:11px; color:var(--dim)}
+#hint{display:none; padding:6px 16px; font-size:12px; color:var(--yellow); text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>烤豆<span>·</span>桥接器</h1>
+  <div id="badge">连接中…</div>
+</header>
+<div id="hint">iOS 锁屏会断开监控：设置 → 显示与亮度 → 自动锁定 → 永不</div>
+<div id="banner"></div>
+<main>
+  <div class="tempbar">
+    <div class="tcard pv"><div class="lbl">豆温 PV</div><div class="val" id="pv">--<span class="unit">°C</span></div></div>
+    <div class="tcard sv"><div class="lbl">设定 SV</div><div class="val" id="sv">--<span class="unit">°C</span></div></div>
+  </div>
+  <div id="chartCard">
+    <canvas id="chart"></canvas>
+    <div class="legend">
+      <span><i style="background:var(--orange)"></i>PV 豆温</span>
+      <span><i style="background:var(--blue)"></i>SV 设定</span>
+      <span id="legRoR"><i style="background:var(--green)"></i>RoR</span>
+      <span id="legSim" style="display:none"><i style="background:var(--yellow)"></i>SIM</span>
+    </div>
+  </div>
+  <div class="row">
+    <div class="card">
+      <div class="lbl">当前主控</div>
+      <div class="big" id="holderTag" class="none">—</div>
+      <button id="takeBtn" onclick="takeover()">接管控制</button>
+    </div>
+    <div class="card">
+      <div class="lbl">RoR 升温速率</div>
+      <div class="big" id="ror">--<span style="font-size:12px;color:var(--dim)"> °C/分</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="lbl">设定温度 SV（主控可用）</div>
+    <div id="svRow">
+      <input type="range" id="svSlider" min="30" max="260" value="70" disabled>
+      <button id="svSend" onclick="applySv()" disabled>下发</button>
+    </div>
+  </div>
+  <button id="stopBtn" onclick="estop()">■ 急 停</button>
+</main>
+<footer>RoastBridge <span id="fver"></span> · <span id="fup"></span></footer>
+
+<script>
+"use strict";
+var WSURL = "ws://" + location.hostname + ":8897";
+var ws = null, isHolder = false, cfgInfo = null;
+var hist = [];            // {t, pv, sv}
+var rorHist = [];         // {t, ror}
+var MAXPTS = 600;         // 10 分钟 @1Hz
+var lastDataTs = 0;
+var pvPrev = null, tPrev = null;
+
+var $ = function(id){ return document.getElementById(id); };
+var canvas = $("chart"), ctx = canvas.getContext("2d");
+
+function badge(cls, txt){ $("badge").className = cls; $("badge").textContent = txt; }
+function fmt(v){ return v === null || v === undefined || isNaN(v) ? "--" : Math.round(v); }
+function setSvUI(){
+  var dis = !isHolder;
+  $("svSlider").disabled = dis; $("svSend").disabled = dis;
+  $("takeBtn").disabled = isHolder;
+  $("takeBtn").textContent = isHolder ? "✓ 本页是主控" : "接管控制";
+  var h = $("holderTag");
+  h.className = "big " + (isHolder ? "me" : "none");
+  h.id = "holderTag";
+  h.textContent = isHolder ? "本网页" : "—";
+}
+function holderText(h){
+  return h === "web" ? "本网页" : h === "app" ? "安卓 App" : "无";
+}
+function showBanner(html, yellow){
+  var b = $("banner");
+  if (!html){ b.style.display = "none"; return; }
+  b.style.display = "block";
+  b.className = yellow ? "yellow" : "";
+  b.innerHTML = html;
+}
+function takeover(){ send({type:"takeover"}); }
+function estop(){
+  if (!confirm("确认急停？\n\n设定温度将降至 " + (cfgInfo ? cfgInfo.safeSv : 70) + "°C，风机转安全转速。"))
+    return;
+  send({type:"estop"});
+}
+function applySv(){
+  var v = parseInt($("svSlider").value, 10);
+  if (isNaN(v)) return;
+  if (!confirm("确认把设定温度改为 " + v + "°C？")) return;
+  send({type:"sv_set", value:v});
+}
+
+// ---------- WebSocket ----------
+function connect(){
+  try{ ws = new WebSocket(WSURL); }catch(e){ badge("bad", "连接失败"); return; }
+  ws.onopen = function(){
+    badge("ok", "已连接");
+    send({type:"get_config"});
+    setInterval(function(){ send({type:"ping"}); }, 5000);
+  };
+  ws.onmessage = function(ev){
+    var m;
+    try{ m = JSON.parse(ev.data); }catch(e){ return; }
+    if (m.type === "state") onState(m);
+    else if (m.type === "config") onConfig(m);
+  };
+  ws.onclose = function(){ badge("bad", "连接断开"); showBanner("连接已断开，正在重连…", true); isHolder = false; setSvUI(); };
+  ws.onerror = function(){ try{ ws.close(); }catch(e){} };
+}
+function send(o){
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify(o));
+}
+
+function onState(m){
+  lastDataTs = Date.now();
+  $("pv").innerHTML = fmt(m.pv) + '<span class="unit">°C</span>';
+  $("sv").innerHTML = fmt(m.sv) + '<span class="unit">°C</span>';
+  $("fver").textContent = "v" + m.ver;
+  $("fup").textContent = "运行 " + Math.floor(m.uptime/60) + " 分";
+  $("legSim").style.display = m.mode === "sim" ? "inline" : "none";
+  isHolder = (m.holder === "web");
+  setSvUI();
+  var tag = $("holderTag");
+  tag.className = "big " + (isHolder ? "me" : (m.holder === "app" ? "app" : "none"));
+  tag.textContent = m.holder === "web" ? "本网页" : m.holder === "app" ? "安卓 App" : "无";
+
+  // 横幅逻辑
+  if (m.safe){
+    showBanner("⚠ 安全模式生效中：SV 已压至 " + m.sv + "°C，风机 " + m.fan +
+      "%。确认锅炉状态后，用下方 SV 滑块显式恢复。");
+  } else if (m.wd_remaining !== undefined && m.wd_remaining !== null){
+    showBanner("⏳ 主控失联，<b>" + m.wd_remaining + "s</b> 后进入安全模式（保温 " +
+      (cfgInfo ? cfgInfo.safeSv : 70) + "°C）<button onclick='takeover()'>立即接管</button>", true);
+  } else {
+    showBanner(null);
+  }
+
+  // 曲线数据
+  var now = m.uptime;
+  hist.push({t:now, pv:m.pv, sv:m.sv});
+  if (hist.length > MAXPTS) hist.shift();
+  // RoR：60 秒窗口差分
+  if (pvPrev !== null && tPrev !== null && now > tPrev){
+    var dt = now - tPrev;
+    if (dt >= 5){
+      var ror = (m.pv - pvPrev) / dt * 60;
+      rorHist.push({t:now, r:ror});
+      if (rorHist.length > MAXPTS) rorHist.shift();
+      $("ror").innerHTML = (ror >= 0 ? "+" : "") + ror.toFixed(1) +
+        '<span style="font-size:12px;color:var(--dim)"> °C/分</span>';
+      pvPrev = m.pv; tPrev = now;
+    }
+  } else { pvPrev = m.pv; tPrev = now; }
+  draw();
+}
+
+function onConfig(m){
+  cfgInfo = m.watchdog ? {safeSv:m.watchdog.safe_sv, safeFan:m.watchdog.safe_fan} : null;
+}
+
+// ---------- 画布 ----------
+function draw(){
+  var dpr = window.devicePixelRatio || 1;
+  var w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== w * dpr){ canvas.width = w * dpr; canvas.height = h * dpr; }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  var padL = 34, padR = 10, padT = 8, padB = 18;
+  var cw = w - padL - padR, ch = h - padT - padB;
+  if (hist.length < 2) return;
+
+  var t0 = hist[0].t, t1 = hist[hist.length-1].t;
+  if (t1 - t0 < 30) t1 = t0 + 30;   // 至少 30 秒窗口
+  var lo = 20, hi = 100;
+  for (var i = 0; i < hist.length; i++){
+    lo = Math.min(lo, hist[i].pv, hist[i].sv);
+    hi = Math.max(hi, hist[i].pv, hist[i].sv);
+  }
+  var pad = (hi - lo) * 0.1 + 2; lo -= pad; hi += pad;
+  function X(t){ return padL + (t - t0) / (t1 - t0) * cw; }
+  function Y(v){ return padT + (1 - (v - lo) / (hi - lo)) * ch; }
+
+  // 网格 + 刻度
+  ctx.strokeStyle = "rgba(255,255,255,.06)"; ctx.fillStyle = "#6b5d50";
+  ctx.font = "10px -apple-system"; ctx.lineWidth = 1;
+  for (var g = 0; g <= 4; g++){
+    var v = lo + (hi - lo) * g / 4;
+    var y = Y(v);
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+    ctx.fillText(Math.round(v), 4, y + 3);
+  }
+
+  function line(key, color, width){
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath();
+    var started = false;
+    for (var i = 0; i < hist.length; i++){
+      var x = X(hist[i].t), y = Y(hist[i][key]);
+      if (!started){ ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  // 时间轴标注（相对秒）
+  ctx.fillStyle = "#6b5d50";
+  ctx.fillText("-" + Math.round(t1 - t0) + "s", padL, h - 5);
+  ctx.fillText("now", w - padR - 20, h - 5);
+
+  line("sv", getCss("--blue"), 1.5);
+  line("pv", getCss("--orange"), 2.5);
+}
+function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+setInterval(function(){
+  // 断流检测：3 秒无 state 且 ws 还开着 = 半死链路，强制重连
+  if (ws && ws.readyState === 1 && Date.now() - lastDataTs > 4000 && lastDataTs > 0){
+    try{ ws.close(); }catch(e){}
+  }
+  draw();
+}, 1000);
+
+// iOS 锁屏重连：visibilitychange 回来时检查并重连
+document.addEventListener("visibilitychange", function(){
+  if (!document.hidden && (!ws || ws.readyState > 1)){ connect(); }
+});
+setSvUI();
+connect();
+</script>
+</body>
+</html>
