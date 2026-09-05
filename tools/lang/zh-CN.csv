@@ -326,3 +326,10 @@ monitor.s87,熟豆待称重：冷却后到历史记录详情页补录入库，�
 detail.s31,熟豆已保存，可补录到豆袋,Roast saved — backfill to BeanBag,RoastDetailScreen.kt,350
 detail.s32,读取豆袋生豆批次…,Loading BeanBag green beans…,RoastDetailScreen.kt,427
 detail.s33,重试,Retry,RoastDetailScreen.kt,430
+settings.m1,温控器参数（Modbus）,Thermostat Params (Modbus),SettingsScreen.kt,1
+settings.m2,自定义温控器寄存器与通讯参数,Custom register map & serial params,SettingsScreen.kt,1
+settings.m3,兼容其他品牌 Modbus 温控器；改动后重新连接生效。参数错误会导致读不到温度,For third-party Modbus thermostats. Takes effect on reconnect. Wrong values = no temperature,SettingsScreen.kt,1
+settings.m4,PV 寄存器地址,PV Register,SettingsScreen.kt,1
+settings.m5,SV 寄存器地址,SV Register,SettingsScreen.kt,1
+settings.m6,波特率,Baud Rate,SettingsScreen.kt,1
+settings.m7,从站地址,Slave ID,SettingsScreen.kt,1

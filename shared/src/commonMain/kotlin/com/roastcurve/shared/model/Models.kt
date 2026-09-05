@@ -68,6 +68,10 @@ data class Settings(
     val langBuiltin: String = "zh-CN",         // 语言：内置语言代码（zh-CN / en）
     val langPackFile: String = "",             // 语言包文件名（非空=使用导入的语言包）
     val fanAutoFloorPct: Int = 30,             // 自动风速下限%：低于流化阈值的豆子不翻滚会积热局部焦化（可调 7~60）
+    val modbusPvReg: Int = 0x0000,             // 温控器 PV 寄存器地址（台泉 TC4S=0x0000，其他品牌按手册改）
+    val modbusSvReg: Int = 0x0002,             // 温控器 SV 寄存器地址（台泉 TC4S=0x0002）
+    val modbusBaud: Int = 1200,                // 温控器通讯波特率（桥接器 RS485 侧）
+    val modbusSlaveId: Int = 1,                // Modbus 从站地址（1~247）
 )
 
 /**

@@ -28,6 +28,8 @@ class ModbusTcpChannel(
     private val port: Int = 8899,
     private val slaveId: Int = ModbusTcp.Tc4s.DEFAULT_SLAVE_ID,
     private val pollIntervalMs: Long = 1000L,
+    private val pvRegister: Int = ModbusTcp.Tc4s.PV_ADDRESS,  // PV 寄存器地址（可配，兼容其他品牌温控器）
+    private val svRegister: Int = ModbusTcp.Tc4s.SV_ADDRESS,  // SV 寄存器地址（可配）
 ) : DeviceChannel {
 
     private val selector = SelectorManager(Dispatchers.IO)
@@ -124,7 +126,7 @@ class ModbusTcpChannel(
             transactionId = nextTransId(),
             slaveId = slaveId,
             functionCode = ModbusTcp.FUNCTION_READ_HOLDING,
-            startAddress = 0x0000,
+            startAddress = pvRegister,
             quantity = 3,
         )
         out.writeFully(request, 0, request.size)
@@ -204,7 +206,7 @@ class ModbusTcpChannel(
         when (command.type) {
             CommandType.PID_SETPOINT -> {
                 val ok = transactionMutex.withLock {
-                    writeSingleRegister(ModbusTcp.Tc4s.SV_ADDRESS, command.value.toInt())
+                    writeSingleRegister(svRegister, command.value.toInt())
                 }
                 if (!ok) throw ModbusException("SV 写入失败（设备无响应）")
             }

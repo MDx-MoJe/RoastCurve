@@ -388,7 +388,12 @@ fun MonitorScreen(
                 for (attempt in 1..3) {
                     try {
                         ch = when (linkType) {
-                            LinkType.MODBUS_TCP -> ModbusTcpChannel(name = L10n.get("monitor.s6"), host = host)
+                            LinkType.MODBUS_TCP -> ModbusTcpChannel(
+                                name = L10n.get("monitor.s6"), host = host,
+                                slaveId = settings.modbusSlaveId,
+                                pvRegister = settings.modbusPvReg,
+                                svRegister = settings.modbusSvReg,
+                            )
                             LinkType.TCP_TRANSPARENT -> TransparentChannel(
                                 name = L10n.get("monitor.s6"),
                                 transport = TcpByteTransport(host = host, port = 8899),

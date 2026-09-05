@@ -48,7 +48,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.6.0";
+constexpr const char* FIRMWARE_VERSION = "1.6.2";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -88,6 +88,11 @@ constexpr uint8_t  DEF_SIM_ENABLED       = 0;
 // SIM 模拟锅炉参数
 constexpr uint8_t  DEF_SIM_RAMP          = 12;   // °C/min 满功率爬温斜率
 constexpr uint8_t  DEF_AMBIENT           = 25;   // 环境温度
+// Modbus 通讯参数（可配：支持其他品牌温控器换寄存器表）
+constexpr uint16_t DEF_REG_PV            = 0x0000; // PV 豆温寄存器（台泉 TC4S 实测值）
+constexpr uint16_t DEF_REG_SV            = 0x0002; // SV 设定寄存器
+constexpr uint32_t DEF_MODBUS_BAUD       = 1200;   // 自动收发模块最稳档
+constexpr uint8_t  DEF_MODBUS_SLAVE      = 1;      // 从站地址
 
 // NVS 命名空间
 constexpr const char* NVS_NS = "roastbridge";
@@ -122,61 +127,67 @@ struct SafeConfig {
   bool     simEnabled;
   uint8_t  simRamp;
   uint8_t  ambient;
+  // Modbus 通讯参数（v1.6.2 可配：兼容其他品牌温控器）
+  uint16_t regPv;
+  uint16_t regSv;
+  uint32_t baud;
+  uint8_t  slaveId;
 };
 SafeConfig cfg = { true, DEF_WD_GRACE_S, DEF_SAFE_SV, DEF_SAFE_FAN,
-                   true, DEF_SAFE_OFF_MIN, false, DEF_SIM_RAMP, DEF_AMBIENT };
+                   true, DEF_SAFE_OFF_MIN, false, DEF_SIM_RAMP, DEF_AMBIENT,
+                   DEF_REG_PV, DEF_REG_SV, DEF_MODBUS_BAUD, DEF_MODBUS_SLAVE };
 
-#line 127 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 138 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCfg();
-#line 147 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 162 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool saveCfg();
-#line 181 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 200 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool modbusTransaction(const uint8_t* pdu, size_t pduLen, uint8_t* rspPdu, size_t& rspLen);
-#line 222 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 241 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool heaterRead(uint16_t reg, uint16_t& value);
-#line 236 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 255 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool heaterWriteSv(uint16_t value);
-#line 244 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 263 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void heaterPoll();
-#line 302 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 321 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void followStart(uint16_t count, const uint8_t* pts);
-#line 315 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 334 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void followStop(bool done);
-#line 324 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 343 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void followTick();
-#line 381 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 400 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void watchdogTick();
-#line 427 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 446 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void triggerWatchdog();
-#line 451 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 470 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 uint16_t crc16(const uint8_t* buf, size_t len);
-#line 465 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 484 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool mbapToRtu(const uint8_t* frame, size_t frameLen);
-#line 485 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 504 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void rtuToMbap(WiFiClient& out, const uint8_t* reqHeader, uint16_t waitMs);
-#line 544 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 563 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void apSaveAndReboot(const String& ssid, const String& pass);
-#line 556 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 575 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void apLoop();
-#line 653 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 672 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void startApConfig();
-#line 666 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 685 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void stopApConfig();
-#line 716 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 735 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len);
-#line 882 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 914 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void startBleConfig();
-#line 937 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 969 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 String readLine(uint32_t timeoutMs);
-#line 952 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 984 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCreds();
-#line 959 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 991 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void ensureWifi();
-#line 1103 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 1135 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void setup();
-#line 1141 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 1173 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loop();
-#line 127 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 138 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCfg() {
   nvs15.begin(NVS_NS15, false);
   cfg.wdEnabled      = nvs15.getUChar("wdEn", DEF_WD_ENABLED) != 0;
@@ -188,6 +199,10 @@ void loadCfg() {
   cfg.simEnabled     = nvs15.getUChar("simEn", DEF_SIM_ENABLED) != 0;
   cfg.simRamp        = nvs15.getUChar("simRamp", DEF_SIM_RAMP);
   cfg.ambient        = nvs15.getUChar("amb", DEF_AMBIENT);
+  cfg.regPv          = nvs15.getUShort("regPv", DEF_REG_PV);
+  cfg.regSv          = nvs15.getUShort("regSv", DEF_REG_SV);
+  cfg.baud           = nvs15.getULong("baud", DEF_MODBUS_BAUD);
+  cfg.slaveId        = nvs15.getUChar("slave", DEF_MODBUS_SLAVE);
   nvs15.end();
   if (cfg.graceS < 5 || cfg.graceS > 600) cfg.graceS = DEF_WD_GRACE_S;
   if (cfg.safeSv < 20 || cfg.safeSv > 150) cfg.safeSv = DEF_SAFE_SV;
@@ -208,6 +223,10 @@ bool saveCfg() {
   nvs15.putUChar("simEn",   cfg.simEnabled ? 1 : 0);
   nvs15.putUChar("simRamp", cfg.simRamp);
   nvs15.putUChar("amb",     cfg.ambient);
+  nvs15.putUShort("regPv",  cfg.regPv);
+  nvs15.putUShort("regSv",  cfg.regSv);
+  nvs15.putULong("baud",    cfg.baud);
+  nvs15.putUChar("slave",   cfg.slaveId);
   nvs15.end();
   return true;
 }
@@ -235,7 +254,7 @@ bool modbusTransaction(const uint8_t* pdu, size_t pduLen, uint8_t* rspPdu, size_
   if (cfg.simEnabled) { rspLen = 0; return false; }  // SIM 模式不碰总线
 
   uint8_t rtu[260];
-  rtu[0] = 0x01;  // 从站地址（TC4S 固定 1）
+  rtu[0] = cfg.slaveId;
   memcpy(rtu + 1, pdu, pduLen);
   uint16_t crc = crc16(rtu, pduLen + 1);
   rtu[pduLen + 1] = crc & 0xFF;
@@ -271,11 +290,11 @@ bool modbusTransaction(const uint8_t* pdu, size_t pduLen, uint8_t* rspPdu, size_
   return true;
 }
 
-// 读保持寄存器（TC4S：PV=0x0000 SV=0x0002，uint16 大端整数）
+// 读保持寄存器（默认台泉 TC4S：PV=0x0000 SV=0x0002；地址 NVS 可配）
 bool heaterRead(uint16_t reg, uint16_t& value) {
   if (cfg.simEnabled) {
     // SIM 后端：SV 寄存器返回 sim.sv，PV 返回 sim.pv
-    value = (reg == 0x0002) ? (uint16_t)sim.sv : (uint16_t)sim.pv;
+    value = (reg == cfg.regSv) ? (uint16_t)sim.sv : (uint16_t)sim.pv;
     return true;
   }
   uint8_t pdu[4] = { 0x03, (uint8_t)(reg >> 8), (uint8_t)(reg & 0xFF), 0x00 };
@@ -285,10 +304,10 @@ bool heaterRead(uint16_t reg, uint16_t& value) {
   return true;
 }
 
-// 写单寄存器（SV = 0x0002）
+// 写单寄存器（SV 地址走配置）
 bool heaterWriteSv(uint16_t value) {
   if (cfg.simEnabled) { sim.sv = value; return true; }
-  uint8_t pdu[5] = { 0x06, 0x00, 0x02, (uint8_t)(value >> 8), (uint8_t)(value & 0xFF) };
+  uint8_t pdu[5] = { 0x06, (uint8_t)(cfg.regSv >> 8), (uint8_t)(cfg.regSv & 0xFF), (uint8_t)(value >> 8), (uint8_t)(value & 0xFF) };
   uint8_t rsp[64]; size_t rspLen = 0;
   return modbusTransaction(pdu, 4, rsp, rspLen) && rspLen >= 2;
 }
@@ -316,9 +335,9 @@ void heaterPoll() {
   uint32_t now = millis();
   if (now - lastPoll < 1000) return;
   uint16_t v;
-  if (heaterRead(0x0000, v)) { heater.pv = v & 0xFF; lastPoll = now; failCount = 0; heater.link = true; heater.lastPoll = now; }
+  if (heaterRead(cfg.regPv, v)) { heater.pv = v & 0xFF; lastPoll = now; failCount = 0; heater.link = true; heater.lastPoll = now; }
   else if (++failCount >= 5) heater.link = false;
-  if (heaterRead(0x0002, v)) heater.sv = v & 0xFF;
+  if (heaterRead(cfg.regSv, v)) heater.sv = v & 0xFF;
 }
 
 // ==================== v1.5 会话仲裁 ====================
@@ -863,6 +882,9 @@ void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
         w["safe_off_enabled"] = cfg.safeOffEnabled; w["safe_off_minutes"] = cfg.safeOffMin;
         c["sim"]["enabled"] = cfg.simEnabled;
         c["sim"]["ramp"] = cfg.simRamp; c["sim"]["ambient"] = cfg.ambient;
+        JsonObject m = c.createNestedObject("modbus");
+        m["reg_pv"] = cfg.regPv; m["reg_sv"] = cfg.regSv;
+        m["baud"] = cfg.baud; m["slave_id"] = cfg.slaveId;
         serializeJson(c, out);
         ws.sendTXT(num, out);
       } else if (strcmp(type_, "set_config") == 0) {
@@ -887,6 +909,16 @@ void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
           if (!s["ambient"].isNull()) cfg.ambient = s["ambient"] | DEF_AMBIENT;
           if (cfg.simRamp < 1 || cfg.simRamp > 60) cfg.simRamp = DEF_SIM_RAMP;
           if (cfg.ambient < 0 || cfg.ambient > 60) cfg.ambient = DEF_AMBIENT;
+        }
+        // Modbus 参数：改后需重启生效（rs485.begin 在 setup）
+        JsonObject mb = doc["modbus"].as<JsonObject>();
+        if (!mb.isNull()) {
+          if (!mb["reg_pv"].isNull()) cfg.regPv = mb["reg_pv"] | DEF_REG_PV;
+          if (!mb["reg_sv"].isNull()) cfg.regSv = mb["reg_sv"] | DEF_REG_SV;
+          if (!mb["baud"].isNull()) cfg.baud = mb["baud"] | DEF_MODBUS_BAUD;
+          if (!mb["slave_id"].isNull()) cfg.slaveId = mb["slave_id"] | DEF_MODBUS_SLAVE;
+          if (cfg.baud < 300 || cfg.baud > 115200) cfg.baud = DEF_MODBUS_BAUD;
+          if (cfg.slaveId < 1 || cfg.slaveId > 247) cfg.slaveId = DEF_MODBUS_SLAVE;
         }
         saveCfg();
         Serial.printf("[配置] sim=%d safeSv=%u safeFan=%u\n", cfg.simEnabled, cfg.safeSv, cfg.safeFan);
@@ -1158,14 +1190,14 @@ void setup() {
   WiFi.setSleep(false);
   pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_BOOT, INPUT_PULLUP);
-  rs485.begin(MODBUS_BAUD, SERIAL_8N1, PIN_485_RX, PIN_485_TX);
+  loadCfg();  // 提前：串口波特率来自配置
+  rs485.begin(cfg.baud, SERIAL_8N1, PIN_485_RX, PIN_485_TX);
 
   ledcAttach(PIN_FAN_PWM, FAN_PWM_FREQ, FAN_PWM_BITS);
   ledcWrite(PIN_FAN_PWM, 0);
   fanSpeed = 0;
   Serial.printf("[风] PWM 引脚 GPIO%d，频率 %uHz\n", PIN_FAN_PWM, (unsigned)FAN_PWM_FREQ);
   loadCreds();
-  loadCfg();
   ensureWifi();
   server.begin();
   server.setNoDelay(true);
@@ -1187,7 +1219,7 @@ void setup() {
 
   Serial.printf("[TCP] 监听端口 %u\n", TCP_PORT);
   Serial.printf("[WS] 监听端口 %u\n", 8897);
-  Serial.printf("[RS485] 波特率 %u, 8N1\n", (unsigned)MODBUS_BAUD);
+  Serial.printf("[RS485] 波特率 %lu, 8N1, 从站 %u\n", (unsigned long)cfg.baud, cfg.slaveId);
   Serial.printf("[SIM] 模式=%d\n", cfg.simEnabled);
 }
 

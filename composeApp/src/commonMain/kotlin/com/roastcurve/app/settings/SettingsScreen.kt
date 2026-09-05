@@ -244,6 +244,52 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
 
+        // ===== 温控器参数（Modbus 兼容配置）=====
+        Text(L10n.get("settings.m1"), style = MaterialTheme.typography.labelMedium,
+             color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(4.dp))
+        Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Text(L10n.get("settings.m2"), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    L10n.get("settings.m3"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                ModbusRegRow(
+                    label = L10n.get("settings.m4"),
+                    value = settings.modbusPvReg,
+                    format = { "0x" + it.toString(16).uppercase().padStart(4, '0') },
+                    step = 1, min = 0, max = 0xFFFF,
+                    onChange = { v -> settings.copy(modbusPvReg = v) }, onUpdate = onUpdate,
+                )
+                ModbusRegRow(
+                    label = L10n.get("settings.m5"),
+                    value = settings.modbusSvReg,
+                    format = { "0x" + it.toString(16).uppercase().padStart(4, '0') },
+                    step = 1, min = 0, max = 0xFFFF,
+                    onChange = { v -> settings.copy(modbusSvReg = v) }, onUpdate = onUpdate,
+                )
+                ModbusRegRow(
+                    label = L10n.get("settings.m6"),
+                    value = settings.modbusBaud,
+                    format = { it.toString() },
+                    step = 100, min = 300, max = 115200,
+                    onChange = { v -> settings.copy(modbusBaud = v) }, onUpdate = onUpdate,
+                )
+                ModbusRegRow(
+                    label = L10n.get("settings.m7"),
+                    value = settings.modbusSlaveId,
+                    format = { it.toString() },
+                    step = 1, min = 1, max = 247,
+                    onChange = { v -> settings.copy(modbusSlaveId = v) }, onUpdate = onUpdate,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
         // ===== 跟随前瞻 =====
         Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
             Row(
@@ -321,9 +367,9 @@ fun SettingsScreen(
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(L10n.get("settings.s43"), style = MaterialTheme.typography.bodyLarge)
+                    Text(L10n.get("settings.m4"), style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        L10n.get("settings.s44"),
+                        L10n.get("settings.m5"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -478,7 +524,7 @@ fun SettingsScreen(
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
                 Text(L10n.get("settings.s39"), style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    L10n.get("settings.s40"),
+                    L10n.get("settings.m1"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -494,9 +540,9 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-                Text(L10n.get("settings.s41"), style = MaterialTheme.typography.bodyLarge)
+                Text(L10n.get("settings.m2"), style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    L10n.get("settings.s42"),
+                    L10n.get("settings.m3"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -505,3 +551,52 @@ fun SettingsScreen(
     }
 }
 
+
+/**
+ * 温控器参数行：label + [-] 值 [+] 步进编辑
+ * onChange 返回新 Settings 副本，onUpdate 落盘
+ */
+@Composable
+private fun ModbusRegRow(
+    label: String,
+    value: Int,
+    format: (Int) -> String,
+    step: Int,
+    min: Int,
+    max: Int,
+    onChange: (Int) -> Settings,
+    onUpdate: (Settings) -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium)
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            OutlinedButton(
+                onClick = {
+                    val next = onChange((value - step).coerceAtLeast(min))
+                    onUpdate(next)
+                    scope.launch { SettingsStore().save(next) }
+                },
+                enabled = value - step >= min,
+            ) { Text("-") }
+            Text(
+                format(value),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 10.dp),
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+            )
+            OutlinedButton(
+                onClick = {
+                    val next = onChange((value + step).coerceAtMost(max))
+                    onUpdate(next)
+                    scope.launch { SettingsStore().save(next) }
+                },
+                enabled = value + step <= max,
+            ) { Text("+") }
+        }
+    }
+}
