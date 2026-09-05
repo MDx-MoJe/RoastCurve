@@ -48,7 +48,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.5.0";
+constexpr const char* FIRMWARE_VERSION = "1.6.0";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -135,29 +135,35 @@ bool heaterRead(uint16_t reg, uint16_t& value);
 bool heaterWriteSv(uint16_t value);
 #line 241 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void heaterPoll();
-#line 297 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 299 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+void followStart(uint16_t count, const uint8_t* pts);
+#line 312 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+void followStop(bool done);
+#line 321 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+void followTick();
+#line 378 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void watchdogTick();
-#line 342 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 424 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void triggerWatchdog();
-#line 366 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 448 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 uint16_t crc16(const uint8_t* buf, size_t len);
-#line 380 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 462 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool mbapToRtu(const uint8_t* frame, size_t frameLen);
-#line 400 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 482 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void rtuToMbap(WiFiClient& out, const uint8_t* reqHeader, uint16_t waitMs);
-#line 483 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 565 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len);
-#line 601 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 709 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void startBleConfig();
-#line 648 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 756 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 String readLine(uint32_t timeoutMs);
-#line 663 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 771 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCreds();
-#line 670 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 778 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void ensureWifi();
-#line 814 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 922 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void setup();
-#line 852 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 960 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loop();
 #line 124 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCfg() {
@@ -315,6 +321,87 @@ enum class WdState : uint8_t { ARMED, COUNTDOWN, SAFE_MODE, OFF_COUNTDOWN };
 WdState wdState = WdState::ARMED;
 uint32_t wdStateSince = 0;
 
+// ==================== v1.6 跟随引擎（固件侧查表式跟随）====================
+// 客户端把锚点曲线预采样成等间隔目标数组上传，固件逐拍查表写 SV。
+//   - 跟随运行时固件是"事实控制者"：看门狗挂起，sv_set 拒绝，App 的 FC06 写 SV 回 Busy 异常
+//   - 脱轨熔断：|PV - 目标| > 15°C 持续 30s → 停跟随 + 进入安全模式
+//   - 曲线走完自动结束，SV 停在最后目标值
+constexpr uint16_t FOLLOW_MAX_POINTS = 720;   // 5s 间隔 × 720 = 60 分钟
+constexpr uint8_t  FOLLOW_INTERVAL_S = 5;
+constexpr uint8_t  FOLLOW_ABORT_DIFF = 15;    // °C
+constexpr uint32_t FOLLOW_ABORT_MS   = 30000;
+
+struct FollowEngine {
+  bool     on;
+  uint8_t  pts[FOLLOW_MAX_POINTS];
+  uint16_t count;
+  uint32_t t0;
+  int16_t  lastWritten;
+  uint32_t abortSince;
+};
+FollowEngine follow = { false, {0}, 0, 0, -1, 0 };
+
+void followStart(uint16_t count, const uint8_t* pts) {
+  if (count == 0 || count > FOLLOW_MAX_POINTS) return;
+  memcpy(follow.pts, pts, count);
+  follow.count = count;
+  follow.on = true;
+  follow.t0 = millis();
+  follow.lastWritten = -1;
+  follow.abortSince = 0;
+  // 跟随启动 = 固件接管控制，取消未决倒计时
+  if (wdState == WdState::COUNTDOWN) wdState = WdState::ARMED;
+  Serial.printf("[跟随] 启动 %u 点（%u 秒）\n", count, count * FOLLOW_INTERVAL_S);
+}
+
+void followStop(bool done) {
+  follow.on = false;
+  // 跟随结束恢复看门狗武装：若主控已失联，倒计时重新起算
+  if (wdState == WdState::COUNTDOWN || wdState == WdState::OFF_COUNTDOWN) {
+    wdStateSince = millis();
+  }
+  Serial.printf("[跟随] %s\n", done ? "曲线走完自动结束" : "手动停止");
+}
+
+void followTick() {
+  if (!follow.on) return;
+  uint32_t elapsed = (millis() - follow.t0) / 1000;
+  uint16_t idx = elapsed / FOLLOW_INTERVAL_S;
+  if (idx >= follow.count) {
+    followStop(true);
+    broadcastState();
+    return;
+  }
+  uint8_t target = follow.pts[idx];
+  // 最小步长过滤：与上次写入差 ≥1° 才写（省总线流量，与 App 语义一致）
+  if (follow.lastWritten < 0 || abs((int)target - (int)follow.lastWritten) >= 1) {
+    if (heaterWriteSv(target)) follow.lastWritten = target;
+  }
+  // 脱轨熔断
+  int16_t diff = (int16_t)heater.pv - (int16_t)target;
+  if (abs(diff) > FOLLOW_ABORT_DIFF) {
+    if (follow.abortSince == 0) {
+      follow.abortSince = millis();
+    } else if (millis() - follow.abortSince >= FOLLOW_ABORT_MS) {
+      Serial.printf("[跟随] 脱轨熔断 PV=%u 目标=%u\n", heater.pv, target);
+      follow.on = false;
+      // 直接进安全模式
+      wdState = WdState::SAFE_MODE;
+      wdStateSince = millis();
+      heaterWriteSv(cfg.safeSv);
+      heater.sv = cfg.safeSv;
+      ledcWrite(PIN_FAN_PWM, (uint16_t)cfg.safeFan * 255 / 100);
+      fanSpeed = cfg.safeFan;
+      broadcastState();
+      return;
+    }
+  } else {
+    follow.abortSince = 0;
+  }
+  heater.sv = target;  // 广播显示当前跟随目标
+}
+
+
 void broadcastState();
 
 void setHolder(Holder h) {
@@ -334,6 +421,7 @@ void setHolder(Holder h) {
 
 // 看门狗状态机推进（每 loop 调用）
 void watchdogTick() {
+  if (follow.on) return;  // 跟随运行中看门狗挂起（跟随自带脱轨熔断）
   if (!cfg.wdEnabled || holder != Holder::NONE) {
     if (holder != Holder::NONE && wdState != WdState::ARMED) {
       // 主控在位，COUNTDOWN/OFF_COUNTDOWN 自动取消（SAFE_MODE 粘性，不自动退出）
@@ -545,11 +633,13 @@ void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
       strncpy(diagLastType, type_, sizeof(diagLastType) - 1);
       diagLastType[sizeof(diagLastType) - 1] = 0;
       if (strcmp(type_, "takeover") == 0) {
+        if (follow.on) return;  // 跟随运行中不接受接管（跟随由启动者管理）
         wsHolder = true; wsHolderNum = num;
         setHolder(Holder::WEB);
       } else if (strcmp(type_, "sv_set") == 0) {
-        // 只有主控能写 SV（粘性安全模式也靠显式 sv_set 退出）
+        // 只有主控能写 SV（粘性安全模式也靠显式 sv_set 退出）；跟随中拒绝
         if (!(wsHolder && wsHolderNum == num)) { /* 非主控拒绝 */ return; }
+        if (follow.on) return;
         uint16_t v = doc["value"] | 0;
         if (v <= 260) {
           bool ok = heaterWriteSv(v);
@@ -558,8 +648,24 @@ void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
             broadcastState();
           }
         }
+      } else if (strcmp(type_, "follow_start") == 0) {
+        // 跟随曲线启动：{type, points:[60,65,72,...]}（5s 间隔预采样）
+        if (!(wsHolder && wsHolderNum == num)) return;  // 主控专用
+        JsonArray arr = doc["points"].as<JsonArray>();
+        if (arr.isNull() || arr.size() == 0 || arr.size() > FOLLOW_MAX_POINTS) return;
+        uint8_t pts[FOLLOW_MAX_POINTS];
+        uint16_t n = 0;
+        for (uint8_t v : arr) { if (n >= FOLLOW_MAX_POINTS) break; pts[n++] = v; }
+        followStart(n, pts);
+        broadcastState();
+      } else if (strcmp(type_, "follow_stop") == 0) {
+        if (follow.on) {
+          followStop(false);
+          broadcastState();
+        }
       } else if (strcmp(type_, "estop") == 0) {
-        // 任何角色可用：立即安全模式参数（estop 不改会话状态，只压温度）
+        // 任何角色可用：急停 = 终止跟随 + 压温度到安全值
+        if (follow.on) followStop(false);
         heaterWriteSv(cfg.safeSv);
         heater.sv = cfg.safeSv;  // 立即刷新缓存
         ledcWrite(PIN_FAN_PWM, (uint16_t)cfg.safeFan * 255 / 100);
@@ -624,6 +730,14 @@ void broadcastState() {
   d["mode"] = cfg.simEnabled ? "sim" : "hw";
   d["link"] = heater.link;
   d["safe"] = (wdState == WdState::SAFE_MODE || wdState == WdState::OFF_COUNTDOWN);
+  d["follow"] = follow.on;
+  if (follow.on) {
+    d["f_elapsed"] = (millis() - follow.t0) / 1000;
+    d["f_total"] = follow.count * FOLLOW_INTERVAL_S;
+    uint16_t idx = ((millis() - follow.t0) / 1000) / FOLLOW_INTERVAL_S;
+    if (idx >= follow.count) idx = follow.count - 1;
+    d["f_target"] = follow.pts[idx];
+  }
   const char* holderStr = holder == Holder::APP ? "app" : holder == Holder::WEB ? "web" : "none";
   d["holder"] = holderStr;
   if (wdState == WdState::COUNTDOWN) {
@@ -894,6 +1008,7 @@ void loop() {
   ws.loop();
   heaterPoll();
   watchdogTick();
+  followTick();  // v1.6 跟随引擎（查表写 SV + 脱轨熔断）
   // 状态广播：1Hz 节流（事件触发的广播除外）
   {
     static uint32_t lastBcast = 0;
