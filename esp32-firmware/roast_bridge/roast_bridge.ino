@@ -66,6 +66,9 @@ constexpr uint16_t FAN_DUTY_CEIL     = 252;
 constexpr int      PIN_BOOT       = 0;
 constexpr int      PIN_LED        = 48;
 
+// BLE→AP 配网降级：长按清凭据后先 BLE（App 兼容），10 分钟无配网自动转 AP（iOS 主路径）
+uint32_t apAfter = 0;
+
 // 时序参数
 constexpr uint32_t RSP_FIRST_TIMEOUT_MS = 800;
 constexpr uint32_t RSP_GAP_TIMEOUT_MS   = 30;
@@ -666,6 +669,7 @@ void stopApConfig() {
   WiFi.softAPdisconnect(true);
   apMode = false;
 }
+
 static const BLEUUID NUS_SERVICE_UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
 static const BLEUUID NUS_TX_UUID("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
 static const BLEUUID NUS_RX_UUID("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
@@ -918,6 +922,14 @@ void startBleConfig() {
     setStatusLed(90, 0, 90, true);
     delay(10);
     yield();
+    // BLE 宽限窗口：apAfter 非 0 且超时 → 自动转 AP 配网（iOS 主路径接管）
+    if (apAfter != 0 && millis() > apAfter) {
+      Serial.println("[配网] BLE 10 分钟无配网，转 AP 配网");
+      BLEDevice::deinit(false);
+      apAfter = 0;
+      startApConfig();
+      return;
+    }
   }
 }
 
@@ -946,7 +958,7 @@ void loadCreds() {
 // ==================== WiFi ====================
 void ensureWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
-  if (storedSsid.isEmpty()) { startApConfig(); return; }  // 无凭据 → AP 配网（iOS 友好主路径）
+  if (storedSsid.isEmpty()) { startBleConfig(); }  // 无凭据 → BLE 配网（App 路径，保留）
   if (storedSsid.isEmpty()) return;
   Serial.print("[WiFi] 连接中 ");
   WiFi.mode(WIFI_STA);
@@ -1146,11 +1158,12 @@ void loop() {
     if (digitalRead(PIN_BOOT) == LOW) {
       if (bootPressStart == 0) bootPressStart = millis();
       else if (millis() - bootPressStart > 3000) {
-        Serial.println("[配网] BOOT 键长按，清除凭据并进入 AP 配网");
+        Serial.println("[配网] BOOT 键长按，清除凭据；先试 BLE（App），10 分钟内未配自动转 AP");
         bootPressStart = 0;
         nvs.begin(NVS_NS, false); nvs.clear(); nvs.end();
         storedSsid = ""; storedPass = "";
-        startApConfig();
+        apAfter = millis() + 600000UL;  // 10 分钟 BLE 窗口，超时转 AP
+        startBleConfig();
       }
     } else {
       bootPressStart = 0;

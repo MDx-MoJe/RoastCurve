@@ -68,6 +68,9 @@ constexpr uint16_t FAN_DUTY_CEIL     = 252;
 constexpr int      PIN_BOOT       = 0;
 constexpr int      PIN_LED        = 48;
 
+// BLE→AP 配网降级：长按清凭据后先 BLE（App 兼容），10 分钟无配网自动转 AP（iOS 主路径）
+uint32_t apAfter = 0;
+
 // 时序参数
 constexpr uint32_t RSP_FIRST_TIMEOUT_MS = 800;
 constexpr uint32_t RSP_GAP_TIMEOUT_MS   = 30;
@@ -123,57 +126,57 @@ struct SafeConfig {
 SafeConfig cfg = { true, DEF_WD_GRACE_S, DEF_SAFE_SV, DEF_SAFE_FAN,
                    true, DEF_SAFE_OFF_MIN, false, DEF_SIM_RAMP, DEF_AMBIENT };
 
-#line 124 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 127 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCfg();
-#line 144 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 147 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool saveCfg();
-#line 178 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 181 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool modbusTransaction(const uint8_t* pdu, size_t pduLen, uint8_t* rspPdu, size_t& rspLen);
-#line 219 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 222 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool heaterRead(uint16_t reg, uint16_t& value);
-#line 233 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 236 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool heaterWriteSv(uint16_t value);
-#line 241 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 244 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void heaterPoll();
-#line 299 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 302 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void followStart(uint16_t count, const uint8_t* pts);
-#line 312 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 315 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void followStop(bool done);
-#line 321 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 324 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void followTick();
-#line 378 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 381 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void watchdogTick();
-#line 424 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 427 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void triggerWatchdog();
-#line 448 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 451 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 uint16_t crc16(const uint8_t* buf, size_t len);
-#line 462 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 465 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 bool mbapToRtu(const uint8_t* frame, size_t frameLen);
-#line 482 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 485 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void rtuToMbap(WiFiClient& out, const uint8_t* reqHeader, uint16_t waitMs);
-#line 541 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 544 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void apSaveAndReboot(const String& ssid, const String& pass);
-#line 553 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 556 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void apLoop();
-#line 650 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 653 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void startApConfig();
-#line 663 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 666 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void stopApConfig();
-#line 712 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 716 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len);
-#line 878 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 882 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void startBleConfig();
-#line 925 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 937 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 String readLine(uint32_t timeoutMs);
-#line 940 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 952 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCreds();
-#line 947 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 959 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void ensureWifi();
-#line 1091 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 1103 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void setup();
-#line 1129 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 1141 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loop();
-#line 124 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 127 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCfg() {
   nvs15.begin(NVS_NS15, false);
   cfg.wdEnabled      = nvs15.getUChar("wdEn", DEF_WD_ENABLED) != 0;
@@ -719,6 +722,7 @@ void stopApConfig() {
   WiFi.softAPdisconnect(true);
   apMode = false;
 }
+
 static const BLEUUID NUS_SERVICE_UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
 static const BLEUUID NUS_TX_UUID("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
 static const BLEUUID NUS_RX_UUID("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
@@ -971,6 +975,14 @@ void startBleConfig() {
     setStatusLed(90, 0, 90, true);
     delay(10);
     yield();
+    // BLE 宽限窗口：apAfter 非 0 且超时 → 自动转 AP 配网（iOS 主路径接管）
+    if (apAfter != 0 && millis() > apAfter) {
+      Serial.println("[配网] BLE 10 分钟无配网，转 AP 配网");
+      BLEDevice::deinit(false);
+      apAfter = 0;
+      startApConfig();
+      return;
+    }
   }
 }
 
@@ -999,7 +1011,7 @@ void loadCreds() {
 // ==================== WiFi ====================
 void ensureWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
-  if (storedSsid.isEmpty()) { startApConfig(); return; }  // 无凭据 → AP 配网（iOS 友好主路径）
+  if (storedSsid.isEmpty()) { startBleConfig(); }  // 无凭据 → BLE 配网（App 路径，保留）
   if (storedSsid.isEmpty()) return;
   Serial.print("[WiFi] 连接中 ");
   WiFi.mode(WIFI_STA);
@@ -1199,11 +1211,12 @@ void loop() {
     if (digitalRead(PIN_BOOT) == LOW) {
       if (bootPressStart == 0) bootPressStart = millis();
       else if (millis() - bootPressStart > 3000) {
-        Serial.println("[配网] BOOT 键长按，清除凭据并进入 AP 配网");
+        Serial.println("[配网] BOOT 键长按，清除凭据；先试 BLE（App），10 分钟内未配自动转 AP");
         bootPressStart = 0;
         nvs.begin(NVS_NS, false); nvs.clear(); nvs.end();
         storedSsid = ""; storedPass = "";
-        startApConfig();
+        apAfter = millis() + 600000UL;  // 10 分钟 BLE 窗口，超时转 AP
+        startBleConfig();
       }
     } else {
       bootPressStart = 0;
