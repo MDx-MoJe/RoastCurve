@@ -58,10 +58,10 @@ Live monitor dashboard: dual-pane layout with real-time bean temperature / time 
 
 ## Downloads
 
-Grab the APK and ESP32 firmware `.bin` from the download page (kept in sync on both platforms):
+Grab the APK and ESP32 firmware `.bin` from the **Releases / 发行版** page of this repository:
 
-- **GitHub**: [Releases](https://github.com/MDx-MoJe/RoastCurve/releases)
-- **Gitee (faster in China)**: [发行版 / Releases](https://gitee.com/MDx-MoJe/roast-curve/releases)
+- **APK**: Android install package
+- **Firmware .bin**: ESP32 bridge firmware (see esp32-firmware/)
 
 ## Build
 

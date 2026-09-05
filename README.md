@@ -99,10 +99,7 @@ RoastCurve/
 
 ## 下载
 
-不想自己构建？直接下载现成的：
-
-
-- **Gitee（国内推荐，更快）**：[发行版](https://gitee.com/MDx-MoJe/roast-curve/releases)
+不想自己构建？直接下载现成的（发布包见本仓库「Releases / 发行版」页面）：
 
 - **APK**：Android 直接安装
 - **固件 .bin**：ESP32 桥接器刷写文件（配合 esp32-firmware/ 使用）
