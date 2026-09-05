@@ -79,6 +79,25 @@ class GpioConfigClient(host: String) {
         null
     }
 
+    /**
+     * 探测桥接器：区分「旧固件（HTTP 通但无 ver 字段，≤v1.4）」与「连不上（HTTP 不通）」
+     * @return (version?, httpReachable) — version=null 且 reachable=true 表示旧固件
+     */
+    suspend fun probe(): Pair<String?, Boolean> {
+        return try {
+            val body = client.get("$base/status").bodyAsText()
+            val i = body.indexOf("\"ver\":\"")
+            if (i < 0) Pair(null, true)
+            else {
+                val j = i + 8
+                val k = body.indexOf('"', j)
+                Pair(if (k < 0) null else body.substring(j, k), true)
+            }
+        } catch (e: Exception) {
+            Pair(null, false)
+        }
+    }
+
     /** 写配置（tx/rx/fan 互斥由固件校验）。true=固件接受（需重启生效） */
     suspend fun save(tx: Int, rx: Int, fan: Int): Boolean = try {
         client.get("$base/gpiocfg?tx=$tx&rx=$rx&fan=$fan")

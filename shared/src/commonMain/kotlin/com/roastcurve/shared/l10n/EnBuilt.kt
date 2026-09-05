@@ -117,6 +117,7 @@ object EnBuilt {
         "gpio.upgrade_body" to "Current firmware v{cur}. GPIO pin config requires firmware v1.8.1+ (current version does not support it).",
         "gpio.upgrade_step" to "Upgrade the bridge firmware to v1.8.1+ (latest v1.8.3 recommended) via USB + Arduino CLI/IDE — see esp32-firmware/ in the repo. This page will work after upgrading.",
         "gpio.upgrade_title" to "⚠ Bridge firmware too old",
+        "gpio.ver_unknown" to "old (no version field)",
         "history.s1" to "Delete this record?",
         "history.s2" to "{id}\\nCannot be undone",
         "history.s3" to "Roast Records",

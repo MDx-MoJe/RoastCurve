@@ -117,6 +117,7 @@ object ZhSourceGenerated {
         "gpio.upgrade_body" to "当前固件 v{cur}。GPIO 引脚配置需要固件 v1.8.1 及以上（当前不支持改引脚）。",
         "gpio.upgrade_step" to "请将桥接器固件升级到 v1.8.1+（推荐最新 v1.8.3）：USB 连接后用 Arduino CLI / IDE 刷写，或参考仓库 esp32-firmware 目录说明。升级后此页自动可用。",
         "gpio.upgrade_title" to "桥接器固件版本过低",
+        "gpio.ver_unknown" to "旧版（无版本号）",
         "history.s1" to "删除这条记录？",
         "history.s2" to "{id}\\n删除后无法恢复",
         "history.s3" to "烘焙记录",
