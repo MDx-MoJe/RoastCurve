@@ -13,6 +13,7 @@ import com.roastcurve.app.profile.AnchorEditorScreen
 import com.roastcurve.app.platform.exitApplication
 import com.roastcurve.app.settings.SettingsScreen
 import com.roastcurve.app.settings.BleConfigScreen
+import com.roastcurve.app.settings.ModbusConfigScreen
 import com.roastcurve.design.RoastCurveTheme
 import com.roastcurve.shared.model.RoastRecord
 import com.roastcurve.shared.model.Settings
@@ -27,6 +28,7 @@ sealed interface Screen {
     data object Settings : Screen
     data object Manual : Screen
     data object BleConfig : Screen
+    data object ModbusConfig : Screen
     data class Detail(val record: RoastRecord) : Screen
     data class Editor(val profile: com.roastcurve.shared.model.RoastProfile?) : Screen
 }
@@ -59,6 +61,7 @@ fun App() {
                     is Screen.Detail -> ({ screen = Screen.History })
                     Screen.Manual -> ({ screen = Screen.Settings })
                     Screen.BleConfig -> ({ screen = Screen.Settings })
+                    Screen.ModbusConfig -> ({ screen = Screen.Settings })
                     else -> ({ screen = Screen.Monitor })
                 }
                 onDispose { }
@@ -105,6 +108,7 @@ fun App() {
                                 onUpdate = { settings = it },
                                 onOpenManual = { screen = Screen.Manual },
                                 onOpenBleConfig = { screen = Screen.BleConfig },
+                                onOpenModbusConfig = { screen = Screen.ModbusConfig },
                                 onBack = { screen = Screen.Monitor },
                             )
                             is Screen.Manual -> ManualScreen(
@@ -116,6 +120,11 @@ fun App() {
                                     hostRefreshKey++
                                     screen = Screen.Settings
                                 },
+                            )
+                            is Screen.ModbusConfig -> ModbusConfigScreen(
+                                settings = settings,
+                                onUpdate = { settings = it },
+                                onBack = { screen = Screen.Settings },
                             )
                             is Screen.Editor -> AnchorEditorScreen(
                                 initial = s.profile,

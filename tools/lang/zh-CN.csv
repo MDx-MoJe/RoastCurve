@@ -333,3 +333,13 @@ settings.m4,PV 寄存器地址,PV Register,SettingsScreen.kt,1
 settings.m5,SV 寄存器地址,SV Register,SettingsScreen.kt,1
 settings.m6,波特率,Baud Rate,SettingsScreen.kt,1
 settings.m7,从站地址,Slave ID,SettingsScreen.kt,1
+settings.m2,自定义 PV/SV 寄存器与波特率（兼容其他品牌温控器）,Custom PV/SV registers & baud (3rd-party thermostats),SettingsScreen.kt,1
+modbus.s1,温控器参数（Modbus）,Thermostat Params (Modbus),ModbusConfigScreen.kt,1
+modbus.s2,这些参数决定如何与温控器通讯。默认为台泉 TC4S（0x0000/0x0002/1200/从站1），一般不用改。更换其他品牌 Modbus 温控器时，按该品牌手册填。填错会导致读不到温度。,"These control how the bridge talks to your thermostat. Defaults target Taichuan TC4S (0x0000/0x0002/1200/slave 1); usually no change needed. For other Modbus thermostats, fill per their manual. Wrong values mean no temperature.",ModbusConfigScreen.kt,1
+modbus.s3,PV 寄存器地址（实际温度）,PV Register (actual temp),ModbusConfigScreen.kt,1
+modbus.s4,SV 寄存器地址（设定温度）,SV Register (set temp),ModbusConfigScreen.kt,1
+modbus.s5,波特率,Baud Rate,ModbusConfigScreen.kt,1
+modbus.s6,从站地址,Slave ID,ModbusConfigScreen.kt,1
+modbus.s7,⚠ 改动需重新连接后生效。寄存器地址填错时温控器会无响应（读不到温度），改回正确值即可。,⚠ Takes effect after reconnect. Wrong register = no response (no temperature).,ModbusConfigScreen.kt,1
+modbus.s8,恢复默认（台泉 TC4S）,Reset to Default (TC4S),ModbusConfigScreen.kt,1
+modbus.s9,一键恢复：PV=0x0000 SV=0x0002 波特率=1200 从站=1。,One-tap: PV=0x0000 SV=0x0002 baud=1200 slave=1.,ModbusConfigScreen.kt,1
