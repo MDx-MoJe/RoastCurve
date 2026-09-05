@@ -357,16 +357,26 @@ function connect(){
 function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
 /* ================== 会话录制 ================== */
+var recClockTimer = null;
 function recStart(){
   if (rec && rec.active) return;
   hist = [];
   rec = { id:"rb_"+Date.now(), active:true, startedAt:Date.now(), t0:0, chargePv:null,
-          pts:[], events:[], name:null, dropped:false, fanPts:[], fanDuty:0 };
+          pts:[], events:[], name:null, dropped:false, fanPts:[], fanDuty:0, _clock:0 };
   lastEvn = -1;
   $("legRec").style.display = "inline";
   badge("rec","记录中");
   renderRecDock();
   showBanner(null);
+  // 独立时钟：不依赖 WS 推送，250ms 刷新一次
+  clearInterval(recClockTimer);
+  recClockTimer = setInterval(function(){
+    if (!rec || !rec.active){ clearInterval(recClockTimer); return; }
+    var elapsed = (Date.now() - rec.startedAt)/1000;
+    rec._clock = elapsed;
+    $("recTime").textContent = fmtClock(elapsed);
+    updatePhases(elapsed);
+  }, 250);
 }
 function recTick(elapsedSec, pv, sv, fan){
   if (!rec || !rec.active) return;
@@ -384,7 +394,10 @@ function recAddEvent(ev, elapsedSec, pv){
 function recDump(){
   if (!rec) return;
   rec.active = false;
+  clearInterval(recClockTimer);
+  recClockTimer = null;
   $("legRec").style.display = "none";
+  $("recTime").textContent = "0:00";
   badge("ok","已连接");
   saveRecord(rec);
   rec = null;
@@ -418,7 +431,17 @@ function markEv(code, btn){
 /* 顶部记录状态行按钮 */
 function renderRecDock(){
   var e = $("evLog");
-  if (!rec) { if(e) e.style.display="none"; return; }
+  var hint = $("recHint");
+  var saveBtn = $("btnSaveRec");
+  var active = !!(rec && rec.active);
+  if (!rec){ if(e) e.style.display="none"; if(hint) hint.textContent="点「入豆」开始记录"; if(saveBtn) saveBtn.style.display="none"; return; }
+  if (active){
+    if (hint) hint.textContent = "烘焙记录中… " + fmtClock((Date.now()-rec.startedAt)/1000);
+    if (saveBtn) saveBtn.style.display = "inline-block";
+  } else {
+    if (hint) hint.textContent = "已保存到记录";
+    if (saveBtn) saveBtn.style.display = "none";
+  }
   var list = rec.events || [];
   if (!list.length){ if(e) e.style.display="none"; return; }
   e.style.display = "block";
@@ -486,12 +509,10 @@ function onState(m){
       pvPrev = m.pv; tPrev = now;
     }
   } else { pvPrev = m.pv; tPrev = now; }
-  // 录制：入豆后按系统秒走
+  // 录制采样：数据点由 WS state 喂入；时钟由 recClockTimer 独立驱动
   if (rec && rec.active){
-    var elapsed = (Date.now() - rec.startedAt)/1000;
+    var elapsed = rec._clock || ((Date.now() - rec.startedAt)/1000);
     recTick(elapsed, m.pv, m.sv, m.fan||0);
-    $("recTime").textContent = fmtClock(elapsed);
-    updatePhases(elapsed);
   }
   draw();
 }
