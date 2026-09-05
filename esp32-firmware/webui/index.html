@@ -291,11 +291,11 @@ footer{display:none}
       <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 2px 8px">
         <span style="font-weight:700">烘焙记录</span>
         <span style="display:flex;gap:6px">
-          <button onclick="exportAll()" style="font-size:12px;padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">导出全部</button>
+          <button onclick="exportAll()" style="font-size:12px;padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">导出全部 (zip)</button>
           <button onclick="document.getElementById('fileImport').click()" style="font-size:12px;padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">导入</button>
         </span>
       </div>
-      <input type="file" id="fileImport" accept=".json" style="display:none" onchange="importData(this)">
+      <input type="file" id="fileImport" accept=".zip,.json,application/zip,application/json" style="display:none" onchange="importData(this)">
       <div id="recList"><div class="emptyBox">还没有烘焙记录<br><br>连上桥接器 → 点「入豆」开始记录，<br>「出豆」后自动保存在本机浏览器</div></div>
     </div>
   </div>
@@ -640,6 +640,83 @@ function renderRecList(){
   }).join("");
 }
 /* ================== 导出 / 导入 ================== */
+/* ================== 极简 ZIP 工具（STORE 无压缩，格式合规，遵守 zip 容器铁律）================== */
+var CRC_TABLE = (function(){
+  var t = new Int32Array(256);
+  for (var n = 0; n < 256; n++){
+    var c = n;
+    for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c;
+  }
+  return t;
+})();
+function crc32(data){
+  var c = -1;
+  for (var i = 0; i < data.length; i++) c = CRC_TABLE[(c ^ data[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function str2bytes(s){ var out = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) out[i] = s.charCodeAt(i) & 0xFF; return out; }
+function u16(v){ return [v & 0xFF, (v >>> 8) & 0xFF]; }
+function u32(v){ return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+function concatBytes(a, b){ var o = new Uint8Array(a.length + b.length); o.set(a); o.set(b, a.length); return o; }
+/* 打包 {name, data(Uint8Array)}[] → Blob(zip, STORE) */
+function zipStoreBlob(files){
+  var chunks = [], central = [];
+  var offset = 0;
+  files.forEach(function(f){
+    var nameB = str2bytes(f.name);
+    var crc = crc32(f.data);
+    var local = [];
+    // Local file header: sig 0x04034b50 ver20 flag0 method0 mtime/mdate0
+    local = local.concat(u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0));
+    local = local.concat(u32(crc), u32(f.data.length), u32(f.data.length), u16(nameB.length), u16(0));
+    chunks.push(new Uint8Array(local), nameB, f.data);
+    var cen = [];
+    cen = cen.concat(u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0));
+    cen = cen.concat(u32(crc), u32(f.data.length), u32(f.data.length), u16(nameB.length), u16(0), u16(0), u16(0), u16(0));
+    cen = cen.concat(u32(0), u32(offset));
+    central.push(new Uint8Array(cen), nameB);
+    offset += 30 + nameB.length + f.data.length;
+  });
+  var centralSize = central.reduce(function(s, c){ return s + c.length; }, 0);
+  var eocd = u32(0x06054b50).concat(u16(0), u16(0), u16(files.length), u16(files.length), u32(centralSize), u32(offset), u16(0));
+  central.forEach(function(c){ chunks.push(c); });   // ← 关键：central directory 必须写进文件
+  chunks.push(new Uint8Array(eocd));
+  var full = chunks[0];
+  for (var i = 1; i < chunks.length; i++) full = concatBytes(full, chunks[i]);
+  var blob = new Blob([full], {type:"application/zip"});
+  return blob;
+}
+/* 解 STORE zip → {name: Uint8Array}；遇 DEFLATE 条目抛错提示 */
+function unzipStore(buf){
+  var dv = new DataView(buf);
+  var out = {};
+  var pos = 0;
+  while (pos + 4 <= buf.byteLength && dv.getUint32(pos, true) === 0x04034b50){
+    var method = dv.getUint16(pos + 8, true);
+    var csize = dv.getUint32(pos + 18, true);
+    var usize = dv.getUint32(pos + 22, true);
+    var nlen = dv.getUint16(pos + 26, true);
+    var elen = dv.getUint16(pos + 28, true);
+    var name = '';
+    for (var i = 0; i < nlen; i++) name += String.fromCharCode(dv.getUint8(pos + 30 + i));
+    var dataStart = pos + 30 + nlen + elen;
+    if (method !== 0) throw new Error("zip 内含压缩条目（" + name + "），请用未压缩 zip 或直接选 json");
+    out[name] = new Uint8Array(buf, dataStart, usize);
+    pos = dataStart + csize;
+  }
+  return out;
+}
+/* 下载 Blob */
+function downloadBlob(filename, blob){
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); document.body.removeChild(a); }, 500);
+}
+function jsonToBytes(obj){ return str2bytes(JSON.stringify(obj, null, 2)); }
+
 function download(filename, text){
   var a = document.createElement("a");
   a.href = "data:application/json;charset=utf-8,"+encodeURIComponent(text);
@@ -649,14 +726,16 @@ function download(filename, text){
 function exportAll(){
   var list = loadRecords();
   if (!list.length){ alert("没有可导出的记录"); return; }
-  download("roastcurve_backup_"+new Date().toISOString().slice(0,10)+".json",
-    JSON.stringify({app:"roastcurve-web", type:"backup", version:1, records:list, exportedAt:new Date().toISOString()}, null, 2));
+  var payload = jsonToBytes({app:"roastcurve-web", type:"backup", version:1, records:list, exportedAt:new Date().toISOString()});
+  var blob = zipStoreBlob([{name:"backup.json", data:payload}]);
+  downloadBlob("roastcurve_backup_"+new Date().toISOString().slice(0,10)+".zip", blob);
 }
 function exportOne(i){
   var list = loadRecords();
   var r = list[i];
-  download("roastcurve_"+r.name.replace(/[^\w\u4e00-\u9fa5-]+/g,"_")+".json",
-    JSON.stringify({app:"roastcurve-web", type:"record", version:1, record:r, exportedAt:new Date().toISOString()}, null, 2));
+  var payload = jsonToBytes({app:"roastcurve-web", type:"record", version:1, record:r, exportedAt:new Date().toISOString()});
+  var blob = zipStoreBlob([{name:"record.json", data:payload}]);
+  downloadBlob("roastcurve_"+(r.name||"record").replace(/[^\w\u4e00-\u9fa5-]+/g,"_")+".zip", blob);
 }
 function importData(input){
   var f = input.files[0];
@@ -664,7 +743,27 @@ function importData(input){
   var reader = new FileReader();
   reader.onload = function(){
     try{
-      var data = JSON.parse(reader.result);
+      var bytes = new Uint8Array(reader.result);
+      var text = null;
+      // 尝试 zip 解包（内找固定名 json），失败则当裸文本
+      if (bytes.length > 4 && bytes[0] === 0x50 && bytes[1] === 0x4b){  // 'PK'
+        try{
+          var files = unzipStore(bytes.buffer);
+          var jsKey = null;
+          if (files["backup.json"]) jsKey = "backup.json";
+          else if (files["record.json"]) jsKey = "record.json";
+          else { var keys = Object.keys(files).filter(function(k){ return /\.json$/.test(k); }); if (keys.length) jsKey = keys[0]; }
+          if (!jsKey) throw new Error("zip 里没有 json");
+          text = new TextDecoder("utf-8").decode(files[jsKey]);
+        }catch(ze){
+          // 可能是 DEFLATE 压缩的 zip，尝试二进制转文本失败则报错
+          alert("zip 解析失败：" + ze.message);
+          input.value = ""; return;
+        }
+      } else {
+        text = new TextDecoder("utf-8").decode(bytes);
+      }
+      var data = JSON.parse(text);
       var records = data.records ? data.records : (data.record ? [data.record] : []);
       if (!records.length){ alert("文件里没有烘焙记录"); return; }
       var cur = loadRecords();
@@ -677,7 +776,7 @@ function importData(input){
       alert("导入 "+records.length+" 条记录");
     }catch(e){ alert("文件解析失败："+e.message); }
   };
-  reader.readAsText(f);
+  reader.readAsArrayBuffer(f);
   input.value = "";
 }
 /* ================== 记录详情（浮层）================== */
