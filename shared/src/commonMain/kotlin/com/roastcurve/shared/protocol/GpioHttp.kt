@@ -58,6 +58,20 @@ class GpioConfigClient(host: String) {
     private val client: HttpClient = createFanHttpClient()
     private val base = "http://$host:8898"
 
+    /** 读桥接器固件版本（/status 的 ver 字段）；失败返回 null */
+    suspend fun fetchVersion(): String? {
+        return try {
+            val body = client.get("$base/status").bodyAsText()
+            val i = body.indexOf("\"ver\":\"")
+            if (i < 0) return null
+            val j = i + 8
+            val k = body.indexOf('"', j)
+            if (k < 0) null else body.substring(j, k)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /** 读当前配置；失败返回 null */
     suspend fun fetch(): GpioConfig? = try {
         parseGpioConfig(client.get("$base/gpiocfg").bodyAsText())

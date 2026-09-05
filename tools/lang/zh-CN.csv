@@ -363,3 +363,7 @@ gpio.retry,重试,Retry,GpioConfigScreen.kt,1
 gpio.err_host,未找到桥接器地址。请先在监控页连接桥接器。,No bridge address. Connect to the bridge from Monitor first.,GpioConfigScreen.kt,1
 gpio.err_fetch,读取桥接器配置失败（需固件 v1.8.1+）。请确认已连接且固件已更新。,Failed to read bridge config (requires firmware v1.8.1+). Check connection & firmware.,GpioConfigScreen.kt,1
 gpio.err_save,保存失败。请确认桥接器在线后重试。,Save failed. Make sure the bridge is online and retry.,GpioConfigScreen.kt,1
+gpio.err_conn,无法连接桥接器。请确认已在监控页连接（桥接器需在线）。,Cannot reach the bridge. Make sure it is connected from Monitor.,GpioConfigScreen.kt,1
+gpio.upgrade_title,桥接器固件版本过低,⚠ Bridge firmware too old,GpioConfigScreen.kt,1
+gpio.upgrade_body,当前固件 v{cur}。GPIO 引脚配置需要固件 v1.8.1 及以上（当前不支持改引脚）。,Current firmware v{cur}. GPIO pin config requires firmware v1.8.1+ (current version does not support it).,GpioConfigScreen.kt,1
+gpio.upgrade_step,请将桥接器固件升级到 v1.8.1+（推荐最新 v1.8.3）：USB 连接后用 Arduino CLI / IDE 刷写，或参考仓库 esp32-firmware 目录说明。升级后此页自动可用。,Upgrade the bridge firmware to v1.8.1+ (latest v1.8.3 recommended) via USB + Arduino CLI/IDE — see esp32-firmware/ in the repo. This page will work after upgrading.,GpioConfigScreen.kt,1

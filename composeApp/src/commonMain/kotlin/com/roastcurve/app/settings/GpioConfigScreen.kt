@@ -29,13 +29,26 @@ fun GpioConfigScreen(
 
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    var firmwareVersion by remember { mutableStateOf<String?>(null) }  // 探测到的固件版本
     var pinTx by remember { mutableStateOf(17) }
     var pinRx by remember { mutableStateOf(18) }
     var pinFan by remember { mutableStateOf(2) }
     var pool by remember { mutableStateOf<List<Int>>(emptyList()) }
     var saved by remember { mutableStateOf(false) }
 
-    // 进入即拉取当前配置
+    /** 版本号比较："1.8.3" >= "1.8.1" → true（按 . 分段数字比） */
+    fun versionAtLeast(v: String?, min: String): Boolean {
+        if (v == null) return false
+        val a = v.split('.').mapNotNull { it.toIntOrNull() }
+        val b = min.split('.').mapNotNull { it.toIntOrNull() }
+        for (i in 0 until maxOf(a.size, b.size)) {
+            val x = a.getOrElse(i) { 0 }; val y = b.getOrElse(i) { 0 }
+            if (x != y) return x > y
+        }
+        return true
+    }
+
+    // 进入：先探测固件版本 → 够新才拉配置；旧固件给明确升级引导
     LaunchedEffect(host) {
         if (host.isBlank()) {
             error = L10n.get("gpio.err_host")
@@ -44,12 +57,20 @@ fun GpioConfigScreen(
         }
         loading = true
         error = null
-        val cfg = client?.fetch()
-        if (cfg == null) {
-            error = L10n.get("gpio.err_fetch")
+        val ver = client?.fetchVersion()
+        firmwareVersion = ver
+        if (ver == null) {
+            error = L10n.get("gpio.err_conn")   // 连不上桥接器（含旧固件无 /status 之外的情况）
+        } else if (!versionAtLeast(ver, "1.8.1")) {
+            error = null   // 走 needUpgrade 视图
         } else {
-            pinTx = cfg.pinTx; pinRx = cfg.pinRx; pinFan = cfg.pinFan
-            pool = cfg.pool
+            val cfg = client?.fetch()
+            if (cfg == null) {
+                error = L10n.get("gpio.err_fetch")
+            } else {
+                pinTx = cfg.pinTx; pinRx = cfg.pinRx; pinFan = cfg.pinFan
+                pool = cfg.pool
+            }
         }
         loading = false
     }
@@ -98,9 +119,56 @@ fun GpioConfigScreen(
                 OutlinedButton(onClick = {
                     error = null; loading = true
                     scope.launch {
-                        val cfg = client?.fetch()
-                        if (cfg == null) { error = L10n.get("gpio.err_fetch") }
-                        else { pinTx = cfg.pinTx; pinRx = cfg.pinRx; pinFan = cfg.pinFan; pool = cfg.pool }
+                        val ver = client?.fetchVersion()
+                        firmwareVersion = ver
+                        if (ver == null) { error = L10n.get("gpio.err_conn") }
+                        else if (!versionAtLeast(ver, "1.8.1")) { /* needUpgrade 视图 */ }
+                        else {
+                            val cfg = client?.fetch()
+                            if (cfg == null) { error = L10n.get("gpio.err_fetch") }
+                            else { pinTx = cfg.pinTx; pinRx = cfg.pinRx; pinFan = cfg.pinFan; pool = cfg.pool }
+                        }
+                        loading = false
+                    }
+                }) { Text(L10n.get("gpio.retry")) }
+            }
+            firmwareVersion != null && !versionAtLeast(firmwareVersion, "1.8.1") -> {
+                // 固件太旧：明确升级引导（GPIO 可配是 v1.8.1+ 的 /gpiocfg 端点）
+                Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.errorContainer) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                        Text(
+                            L10n.get("gpio.upgrade_title"),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            L10n.get("gpio.upgrade_body", "cur" to (firmwareVersion ?: "?")),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    L10n.get("gpio.upgrade_step"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(onClick = {
+                    error = null; loading = true
+                    scope.launch {
+                        val ver = client?.fetchVersion()
+                        firmwareVersion = ver
+                        if (ver == null) { error = L10n.get("gpio.err_conn") }
+                        else if (!versionAtLeast(ver, "1.8.1")) { /* 仍旧 */ }
+                        else {
+                            val cfg = client?.fetch()
+                            if (cfg == null) { error = L10n.get("gpio.err_fetch") }
+                            else { pinTx = cfg.pinTx; pinRx = cfg.pinRx; pinFan = cfg.pinFan; pool = cfg.pool }
+                            loading = false; return@launch
+                        }
                         loading = false
                     }
                 }) { Text(L10n.get("gpio.retry")) }
