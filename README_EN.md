@@ -45,7 +45,7 @@ Live monitor dashboard: dual-pane layout with real-time bean temperature / time 
 
 ## Latest Release (2026-09-05)
 
-**App v1.3.17** · **Bridge firmware v1.8.0** · **Web UI overhaul**
+**App v1.3.20** · **Bridge firmware v1.8.3** · **Web UI overhaul**
 
 - **Follow mode is now autonomous**: removed the deviation fuse (empty-drum false trips); the curve runs to completion then settles SV to 25°C / fan 25%. App: settle values adjustable in Settings → Follow-End Settle (SV 20–120°C, fan 0–100%). Safety net: hard interrupt only if PV ≥250°C for 5s
 - **Web UI (browser console)**: full monitoring & control without the app. Roast data is now **sampled by the firmware** (every 5s, up to 120 min) — refresh / lock-screen / device switch never loses the curve; the page auto-recovers timer, events and history
@@ -54,7 +54,7 @@ Live monitor dashboard: dual-pane layout with real-time bean temperature / time 
 - **Lock-screen / disconnect deadlock fixed**: after the controlling page drops, a fresh page can now take over or stop the running follow (previously stuck until emergency stop)
 - **Watchdog countdown overflow fixed** (no more 4294967096s phantom)
 
-**Notes**: update App + firmware together (follow semantics must match). 4MB flash boards are unsupported since v1.4 — use 8MB (`default_8MB`) or 16MB (recommended). Web UI and App are separate follow entries — use only one at a time.
+**Notes**: update App + firmware together (follow semantics must match). 4MB flash boards are unsupported since v1.4 — use 8MB (`default_8MB`) or 16MB (recommended). Web UI and App are separate follow entries — use only one at a time. **GPIO pin config requires firmware v1.8.1+** — the App/Web UI shows an upgrade guide for older firmware.
 
 ## Downloads
 
