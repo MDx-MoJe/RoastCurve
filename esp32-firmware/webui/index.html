@@ -200,8 +200,9 @@ footer{display:none}
 <body>
 <header>
   <h1>烤豆<span>·</span>桥接器</h1>
-  <div class="headBtns">
-    <button id="btnSettings">设置</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="badge" style="font-size:11px;padding:4px 10px;border-radius:20px;background:var(--card2);color:var(--tx2);border:1px solid var(--line)">连接中…</span>
+    <button id="btnSettings" style="font-size:12px;padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">设置</button>
   </div>
 </header>
 <div id="banner"></div>
@@ -314,7 +315,11 @@ var recorderTimer = null;
 var lastDataTs = 0, pvPrev = null, tPrev = null, lastRor = null;
 var fanLastSent = 0;
 /* ================== 通用 ================== */
-function badge(cls, txt){ $("badge").className = cls; $("badge").textContent = txt; }
+function badge(cls, txt){
+  var el = $("badge");
+  if (!el) return;
+  el.className = cls; el.textContent = txt;
+}
 function fmt(v){ return v === null || v === undefined || isNaN(v) ? "--" : Math.round(v); }
 function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 function fmtClock(sec){ sec = Math.floor(sec); var m=Math.floor(sec/60), s=sec%60; return m+":"+(s<10?"0":"")+s; }
@@ -357,7 +362,6 @@ function connect(){
 function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
 /* ================== 会话录制 ================== */
-var recClockTimer = null;
 function recStart(){
   if (rec && rec.active) return;
   hist = [];
@@ -368,15 +372,6 @@ function recStart(){
   badge("rec","记录中");
   renderRecDock();
   showBanner(null);
-  // 独立时钟：不依赖 WS 推送，250ms 刷新一次
-  clearInterval(recClockTimer);
-  recClockTimer = setInterval(function(){
-    if (!rec || !rec.active){ clearInterval(recClockTimer); return; }
-    var elapsed = (Date.now() - rec.startedAt)/1000;
-    rec._clock = elapsed;
-    $("recTime").textContent = fmtClock(elapsed);
-    updatePhases(elapsed);
-  }, 250);
 }
 function recTick(elapsedSec, pv, sv, fan){
   if (!rec || !rec.active) return;
@@ -394,8 +389,6 @@ function recAddEvent(ev, elapsedSec, pv){
 function recDump(){
   if (!rec) return;
   rec.active = false;
-  clearInterval(recClockTimer);
-  recClockTimer = null;
   $("legRec").style.display = "none";
   $("recTime").textContent = "0:00";
   badge("ok","已连接");
@@ -421,7 +414,7 @@ function markEv(code, btn){
     else return;  // 未起表只允许入豆
   }
   send({type:"event", ev:code});
-  var elapsed = (Date.now() - rec.startedAt)/1000;
+  var elapsed = rec._clock || ((Date.now() - rec.startedAt)/1000);
   recAddEvent(code, Math.round(elapsed), curPv);
   var old = btn.textContent;
   btn.textContent = "✓";
@@ -450,13 +443,11 @@ function renderRecDock(){
   }).join(" · ");
 }
 function renderEvents(list){
-  // 固件事件回执（并入当前会话记录去重）
-  if (rec && rec.active && list && list.length){
-    list.forEach(function(x){
-      if (!rec.events.some(function(r){ return r.ev===x.ev && Math.abs(r.t-x.t)<1; }))
-        rec.events.push({ev:x.ev, t:x.t, pv:x.pv});
-    });
-  }
+  // 固件事件回执仅用于 badge 计数同步，不并入本炉记录：
+  // 固件事件时间轴是板子 uptime，与本地入豆零点的炉内时间不同系，
+  // 混入会导致时间戳错乱（如「入豆 3:02」）
+  // 本炉事件由 markEv 本地记录（炉内时钟）
+  if (!rec || !rec.active) { lastEvn = (list&&list.length)? list.length : 0; }
   renderRecDock();
 }
 /* ================== 状态处理 ================== */
@@ -894,6 +885,15 @@ function boot(){
   connect();
   setInterval(function(){
     if (ws && ws.readyState===1 && Date.now()-lastDataTs>4000 && lastDataTs>0){ try{ ws.close(); }catch(e){} }
+    // 录制时钟：挂主循环，1 秒走表（不依赖 WS 也不被独立定时器节流）
+    if (rec && rec.active){
+      var elapsed = (Date.now() - rec.startedAt)/1000;
+      rec._clock = elapsed;
+      $("recTime").textContent = fmtClock(elapsed);
+      updatePhases(elapsed);
+      var hint = $("recHint");
+      if (hint && hint.textContent.indexOf("烘焙记录中") === 0) hint.textContent = "烘焙记录中… " + fmtClock(elapsed);
+    }
     draw();
   }, 1000);
   document.addEventListener("visibilitychange", function(){
