@@ -55,7 +55,7 @@ def do_ota(ip, port, password, filename, timeout=120):
     print(f"[2] 收到挑战 nonce_len={len(nonce)}")
 
     # 3. 挑战响应（精确复刻 espota.py 的 PBKDF2-HMAC-SHA256 握手）
-    cnonce_text = "%s%u%s%s" % (filename, size, file_md5, remote_addr)
+    cnonce_text = "%s%u%s%s" % (filename, size, file_md5, addr[0])
     cnonce = hashlib.sha256(cnonce_text.encode()).hexdigest()
     password_hash = hashlib.sha256(password.encode()).hexdigest()
     salt = nonce + ":" + cnonce

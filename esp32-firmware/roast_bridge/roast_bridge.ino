@@ -301,12 +301,16 @@ uint32_t wdStateSince = 0;
 // ==================== v1.6 跟随引擎（固件侧查表式跟随）====================
 // 客户端把锚点曲线预采样成等间隔目标数组上传，固件逐拍查表写 SV。
 //   - 跟随运行时固件是"事实控制者"：看门狗挂起，sv_set 拒绝，App 的 FC06 写 SV 回 Busy 异常
-//   - 脱轨熔断：|PV - 目标| > 15°C 持续 30s → 停跟随 + 进入安全模式
-//   - 曲线走完自动结束，SV 停在最后目标值
+//   - PV 硬上限保护：探头损坏/失控时防止炉子带飞
+//   - 曲线走完自动结束，SV 回落到跟随结束值（不再停在终点干烧）
 constexpr uint16_t FOLLOW_MAX_POINTS = 720;   // 5s 间隔 × 720 = 60 分钟
 constexpr uint8_t  FOLLOW_INTERVAL_S = 5;
-constexpr uint8_t  FOLLOW_ABORT_DIFF = 15;    // °C
-constexpr uint32_t FOLLOW_ABORT_MS   = 30000;
+// 曲线走完的回落目标（出豆后收尾：降温 + 低风），独立于看门狗保温值
+constexpr uint8_t  FOLLOW_END_SV     = 25;    // °C（MDx 2026-09-05 定：走完回落 25）
+constexpr uint8_t  FOLLOW_END_FAN    = 25;    // %
+// 跟随中的 PV 绝对硬上限（防探头损坏/加热失控把炉子带飞；仅跟随无人值守时启用）
+constexpr uint16_t FOLLOW_HARD_MAX   = 250;   // °C
+constexpr uint32_t FOLLOW_HARD_MS    = 5000;  // 超限持续 5s 才中断（防瞬态误报）
 
 struct FollowEngine {
   bool     on;
@@ -314,9 +318,10 @@ struct FollowEngine {
   uint16_t count;
   uint32_t t0;
   int16_t  lastWritten;
-  uint32_t abortSince;
+  uint32_t hardSince;   // PV 超硬上限的起始时刻（0=未超限）
+  bool     notifyDone;  // 走完/超限中断后待广播的一次性“已结束回落”标志
 };
-FollowEngine follow = { false, {0}, 0, 0, -1, 0 };
+FollowEngine follow = { false, {0}, 0, 0, -1, 0, false };
 
 void followStart(uint16_t count, const uint8_t* pts) {
   if (count == 0 || count > FOLLOW_MAX_POINTS) return;
@@ -325,7 +330,7 @@ void followStart(uint16_t count, const uint8_t* pts) {
   follow.on = true;
   follow.t0 = millis();
   follow.lastWritten = -1;
-  follow.abortSince = 0;
+  follow.hardSince = 0;
   // 跟随启动 = 固件接管控制，取消未决倒计时
   if (wdState == WdState::COUNTDOWN) wdState = WdState::ARMED;
   Serial.printf("[跟随] 启动 %u 点（%u 秒）\n", count, count * FOLLOW_INTERVAL_S);
@@ -333,11 +338,20 @@ void followStart(uint16_t count, const uint8_t* pts) {
 
 void followStop(bool done) {
   follow.on = false;
+  if (done) {
+    // 曲线正常走完：回落到结束收尾值（25°C/25% 风），不干烧不保温
+    heaterWriteSv(FOLLOW_END_SV);
+    heater.sv = FOLLOW_END_SV;   // 立即刷新缓存，广播不滞后
+    ledcWrite(PIN_FAN_PWM, (uint16_t)FOLLOW_END_FAN * 255 / 100);
+    fanSpeed = FOLLOW_END_FAN;
+    follow.notifyDone = true;    // 广播一次“已结束回落”给前端
+    Serial.printf("[跟随] 曲线走完，回落 SV=%u 风机=%u%%\n", FOLLOW_END_SV, FOLLOW_END_FAN);
+  }
   // 跟随结束恢复看门狗武装：若主控已失联，倒计时重新起算
   if (wdState == WdState::COUNTDOWN || wdState == WdState::OFF_COUNTDOWN) {
     wdStateSince = millis();
   }
-  Serial.printf("[跟随] %s\n", done ? "曲线走完自动结束" : "手动停止");
+  if (!done) Serial.println("[跟随] 手动停止");
 }
 
 void followTick() {
@@ -349,31 +363,30 @@ void followTick() {
     broadcastState();
     return;
   }
-  uint8_t target = follow.pts[idx];
-  // 最小步长过滤：与上次写入差 ≥1° 才写（省总线流量，与 App 语义一致）
-  if (follow.lastWritten < 0 || abs((int)target - (int)follow.lastWritten) >= 1) {
-    if (heaterWriteSv(target)) follow.lastWritten = target;
-  }
-  // 脱轨熔断
-  int16_t diff = (int16_t)heater.pv - (int16_t)target;
-  if (abs(diff) > FOLLOW_ABORT_DIFF) {
-    if (follow.abortSince == 0) {
-      follow.abortSince = millis();
-    } else if (millis() - follow.abortSince >= FOLLOW_ABORT_MS) {
-      Serial.printf("[跟随] 脱轨熔断 PV=%u 目标=%u\n", heater.pv, target);
+  // PV 绝对硬上限：仅防探头损坏/加热失控把炉子带飞（真实烘焙 PV 不会到这）
+  if (heater.pv >= FOLLOW_HARD_MAX) {
+    if (follow.hardSince == 0) {
+      follow.hardSince = millis();
+      Serial.printf("[跟随] PV=%u 超硬上限 %u，5s 后强制中断\n", heater.pv, FOLLOW_HARD_MAX);
+    } else if (millis() - follow.hardSince >= FOLLOW_HARD_MS) {
+      Serial.printf("[跟随] PV=%u 超限中断（加热失控/探头异常）\n", heater.pv);
       follow.on = false;
-      // 直接进安全模式
-      wdState = WdState::SAFE_MODE;
-      wdStateSince = millis();
-      heaterWriteSv(cfg.safeSv);
-      heater.sv = cfg.safeSv;
-      ledcWrite(PIN_FAN_PWM, (uint16_t)cfg.safeFan * 255 / 100);
-      fanSpeed = cfg.safeFan;
+      follow.notifyDone = true;   // 前端显示中断回落原因
+      // 回落到跟随结束值（不是保温，因为这是收尾场景）
+      heaterWriteSv(FOLLOW_END_SV);
+      heater.sv = FOLLOW_END_SV;
+      ledcWrite(PIN_FAN_PWM, (uint16_t)FOLLOW_END_FAN * 255 / 100);
+      fanSpeed = FOLLOW_END_FAN;
       broadcastState();
       return;
     }
   } else {
-    follow.abortSince = 0;
+    follow.hardSince = 0;
+  }
+  uint8_t target = follow.pts[idx];
+  // 最小步长过滤：与上次写入差 ≥1° 才写（省总线流量，与 App 语义一致）
+  if (follow.lastWritten < 0 || abs((int)target - (int)follow.lastWritten) >= 1) {
+    if (heaterWriteSv(target)) follow.lastWritten = target;
   }
   heater.sv = target;  // 广播显示当前跟随目标
 }
@@ -398,7 +411,7 @@ void setHolder(Holder h) {
 
 // 看门狗状态机推进（每 loop 调用）
 void watchdogTick() {
-  if (follow.on) return;  // 跟随运行中看门狗挂起（跟随自带脱轨熔断）
+  if (follow.on) return;  // 跟随运行中看门狗挂起（曲线自主执行，无需外部干预）
   if (!cfg.wdEnabled || holder != Holder::NONE) {
     if (holder != Holder::NONE && wdState != WdState::ARMED) {
       // 主控在位，COUNTDOWN/OFF_COUNTDOWN 自动取消（SAFE_MODE 粘性，不自动退出）
@@ -897,6 +910,13 @@ void broadcastState() {
     if (idx >= follow.count) idx = follow.count - 1;
     d["f_target"] = follow.pts[idx];
   }
+  // 跟随结束回落的一次性通知（发一帧后清）
+  if (follow.notifyDone) {
+    d["f_done"] = true;
+    d["f_end_sv"] = FOLLOW_END_SV;
+    d["f_end_fan"] = FOLLOW_END_FAN;
+    follow.notifyDone = false;
+  }
   d["evn"] = evCount;  // 事件数（0 表示无）
   const char* holderStr = holder == Holder::APP ? "app" : holder == Holder::WEB ? "web" : "none";
   d["holder"] = holderStr;
@@ -1178,7 +1198,7 @@ void loop() {
   ws.loop();
   heaterPoll();
   watchdogTick();
-  followTick();  // v1.6 跟随引擎（查表写 SV + 脱轨熔断）
+  followTick();  // v1.6 跟随引擎（查表写 SV，走完回落 25°C/25%，PV 超 250°C 硬中断）
   // 状态广播：1Hz 节流（事件触发的广播除外）
   {
     static uint32_t lastBcast = 0;

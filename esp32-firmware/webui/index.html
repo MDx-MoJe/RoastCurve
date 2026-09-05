@@ -262,6 +262,7 @@ footer{display:none}
       </div>
       <div style="display:flex;gap:8px;margin-top:6px">
         <button onclick="importAlog()" style="flex:1;font-size:12px;padding:6px 10px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">📥 导入曲线（.alog）</button>
+        <button onclick="openTplDrawer()" style="flex:1;font-size:12px;padding:6px 10px;border-radius:50px;border:1px solid var(--primary);background:transparent;color:var(--primary)">🖌 绘制曲线</button>
         <button onclick="manageTpls()" style="flex:1;font-size:12px;padding:6px 10px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">🗂 管理模板</button>
       </div>
       <div id="followInfo"></div>
@@ -508,6 +509,17 @@ function onState(m){
   isHolder = (m.holder === "web");
   followOn = !!m.follow;
   setSvUI();
+  // 跟随结束回落的一次性提示（曲线走完 / 超限中断）
+  if (m.f_done){
+    var fi = $("followInfo");
+    if (fi){
+      fi.style.display = "block";
+      var es = (m.f_end_sv !== undefined ? m.f_end_sv : 25);
+      var ef = (m.f_end_fan !== undefined ? m.f_end_fan : 25);
+      fi.innerHTML = "<b style='color:var(--ok)'>✓ 曲线已结束</b> · 已回落 SV " + es + "°C · 风机 " + ef + "%" +
+        "<br><span style='font-size:11px'>可重新选择模板启动，或切手动用 SV 滑块控制</span>";
+    }
+  }
   var tag = $("holderTag");
   tag.className = "big "+(isHolder?"me":(m.holder==="app"?"app":"none"));
   tag.textContent = m.holder==="web"?"本网页":(m.holder==="app"?"安卓 App":"无");
@@ -1176,8 +1188,7 @@ function refreshFollowSelect(){
   var sel = document.getElementById("followSel");
   if (!sel) return;
   var html = '<option value="ramp">示例：线性爬温 25→200°C</option>' +
-             '<option value="soak">示例：爬温+恒温 150°C</option>' +
-             '<option value="dram">示例：陡峭曲线（熔断演示）</option>';
+             '<option value="soak">示例：爬温+恒温 150°C</option>';
   var tpls = loadTpls();
   if (tpls.length){
     tpls.forEach(function(t, i){
@@ -1310,7 +1321,7 @@ function followToggle(){
   }
   // 内置示例
   pts = buildCurve(val);
-  var label = val === "ramp" ? "线性爬温" : val === "soak" ? "爬温+恒温" : "陡峭演示";
+  var label = val === "ramp" ? "线性爬温" : "爬温+恒温";
   send({type:"follow_start", points:pts});
   showFollowInfo(label, pts.length);
 }
@@ -1324,9 +1335,195 @@ function buildCurve(kind){
   function seg(f,t,m){ var n=Math.round(m*60/5); for(var j=1;j<=n;j++) pts.push(Math.round(f+(t-f)*j/n)); }
   if(kind==="ramp"){ for(i=0;i<5;i++) pts.push(25); seg(25,200,7.5); }
   else if(kind==="soak"){ for(i=0;i<3;i++) pts.push(25); seg(25,150,4); for(i=0;i<60;i++) pts.push(150); }
-  else if(kind==="dram"){ for(i=0;i<3;i++) pts.push(30); for(i=0;i<60;i++) pts.push(220); }
   return pts.slice(0,720);
 }
+
+/* ================== 模板自绘器（轻量：点加锚点 / 拖动调点 / 点已选删点）================== */
+var tplDraw = null;  // {anchors:[], sel:-1, drag:-1, maxT:1200, canvas, ctx, name}
+function openTplDrawer(){
+  if (followOn){ alert("跟随运行中请先停止，再绘制曲线"); return; }
+  // 初始 3 锚点：起点室温 / 中段 / 终点（典型 12min 到 205°C）
+  var anchors = [
+    {t:0, bt:25},
+    {t:360, bt:140},
+    {t:720, bt:205}
+  ];
+  var name = "手绘曲线 " + (loadTpls().length + 1);
+  var html =
+    '<div style="font-weight:700;margin-bottom:4px">🖌 绘制豆温曲线</div>' +
+    '<div style="font-size:11px;color:var(--tx2);margin-bottom:2px">目标豆温 BT（跟随中温控器沿此升温 · 点空白加锚点 / 拖动调点 / 点已选中锚点删除）</div>' +
+    '<div style="font-size:11px;color:var(--tx2);margin-bottom:8px">曲线为线性插值，锚点间温度随时间匀速变化</div>' +
+    '<canvas id="tplCv" style="width:100%;height:230px;border-radius:12px;background:var(--card2);border:1px solid var(--line);touch-action:none"></canvas>' +
+    '<div id="tplCur" style="font-size:12px;color:var(--tx);margin-top:6px;min-height:16px"></div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:8px">' +
+      '<input id="tplName" value="' + name + '" style="flex:1;min-width:0;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;color:var(--tx);font-size:14px">' +
+      '<span id="tplCount" style="font-size:11px;color:var(--tx2);white-space:nowrap"></span>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;margin-top:12px">' +
+      '<button id="tplCancel" style="flex:1;padding:9px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">取消</button>' +
+      '<button id="tplSave" style="flex:1;padding:9px;border-radius:50px;border:0;background:var(--primary);color:var(--bg);font-weight:700">存为模板</button>' +
+    '</div>';
+  showSheet(html);
+  var cv = document.getElementById("tplCv");
+  var d = tplDraw = {
+    anchors: anchors, sel: -1, drag: -1, maxT: 1200,  // 默认 20 分钟上限
+    cv: cv, ctx: cv.getContext("2d"),
+    name: document.getElementById("tplName"),
+    count: document.getElementById("tplCount")
+  };
+  cv.addEventListener("pointerdown", onTplDown);
+  cv.addEventListener("pointermove", onTplMove);
+  cv.addEventListener("pointerup", onTplUp);
+  cv.addEventListener("pointercancel", onTplUp);
+  document.getElementById("tplCancel").onclick = closeTopOverlay;
+  document.getElementById("tplSave").onclick = saveDrawnTpl;
+  d.name.addEventListener("input", function(){ if(d){ d.name.value = d.name.value.replace(/[<>]/g,""); } });
+  drawTplCanvas();
+}
+function tplXY(e){
+  var d = tplDraw; if (!d) return null;
+  var r = d.cv.getBoundingClientRect();
+  var x = (e.clientX - r.left) / r.width;
+  var y = (e.clientY - r.top) / r.height;
+  var t = Math.max(0, Math.min(d.maxT, Math.round(x * d.maxT / 5) * 5));   // 5s 对齐（跟随粒度）
+  var bt = Math.max(5, Math.min(250, Math.round((1 - y) * 250 / 5) * 5));  // 5°C 对齐
+  return {t:t, bt:bt};
+}
+function onTplDown(e){
+  var d = tplDraw; if (!d) return;
+  var p = tplXY(e); if (!p) return;
+  e.preventDefault();
+  // 命中已有锚点（15px 容差）？
+  var hit = -1, best = 30;
+  var rect = d.cv.getBoundingClientRect();
+  d.anchors.forEach(function(a, i){
+    var ax = rect.left + a.t / d.maxT * d.cv.clientWidth, ay = rect.top + (1 - a.bt / 250) * d.cv.clientHeight;
+    var dx = e.clientX - ax, dy = e.clientY - ay;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < best){ best = dist; hit = i; }
+  });
+  if (hit >= 0){
+    if (d.sel === hit){  // 再点已选中 → 删除
+      d.anchors.splice(hit, 1); d.sel = -1;
+      if (d.anchors.length < 2) d.anchors = [{t:0, bt:25}, {t:600, bt:200}];  // 保底至少 2 点
+      drawTplCanvas(); return;
+    }
+    d.sel = hit; d.drag = hit;
+    drawTplCanvas(); return;
+  }
+  // 空白处加锚点
+  d.anchors.push({t:p.t, bt:p.bt});
+  d.sel = d.anchors.length - 1; d.drag = d.sel;
+  drawTplCanvas();
+}
+function onTplMove(e){
+  var d = tplDraw; if (!d || d.drag < 0) return;
+  var p = tplXY(e); if (!p) return;
+  e.preventDefault();
+  var a = d.anchors[d.drag];
+  if (!a) return;
+  // 拖动时间钳位到相邻锚点之间（保持时间单调）
+  var sortedIdx = d.anchors.map(function(x,i){ return i; }).sort(function(i,j){ return d.anchors[i].t - d.anchors[j].t; });
+  var pos = sortedIdx.indexOf(d.drag);
+  var tMin = pos > 0 ? d.anchors[sortedIdx[pos-1]].t : 0;
+  var tMax = pos < sortedIdx.length-1 ? d.anchors[sortedIdx[pos+1]].t : d.maxT;
+  a.t = Math.max(tMin, Math.min(tMax, p.t));
+  a.bt = p.bt;
+  drawTplCanvas();
+}
+function onTplUp(){ var d = tplDraw; if (d) d.drag = -1; }
+function drawTplCanvas(){
+  var d = tplDraw; if (!d) return;
+  var cv = d.cv, ctx = d.ctx;
+  var w = cv.clientWidth, h = cv.clientHeight, dpr = window.devicePixelRatio || 1;
+  if (cv.width !== w*dpr){ cv.width = w*dpr; cv.height = h*dpr; }
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  // 阶段色带（脱水/美拉德/发展，半透明）
+  ctx.fillStyle = "rgba(90,140,90,.10)"; ctx.fillRect(0, 0, w*.45, h);
+  ctx.fillStyle = "rgba(200,160,60,.10)"; ctx.fillRect(w*.45, 0, w*.30, h);
+  ctx.fillStyle = "rgba(150,90,50,.12)"; ctx.fillRect(w*.75, 0, w*.25, h);
+  // 网格
+  ctx.strokeStyle = getCss("--gridLine"); ctx.fillStyle = getCss("--gridText");
+  ctx.font = "10px -apple-system"; ctx.lineWidth = 1;
+  for (var t = 0; t <= d.maxT; t += 120){
+    var gx = t / d.maxT * w;
+    ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,h); ctx.stroke();
+    ctx.fillText(Math.round(t/60) + "m", gx+3, h-4);
+  }
+  for (var gb = 0; gb <= 250; gb += 50){
+    var gy = (1 - gb/250) * h;
+    ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(w,gy); ctx.stroke();
+    ctx.fillText(gb + "°", 3, gy-2);
+  }
+  // 锚点折线
+  var sorted = d.anchors.slice().sort(function(a,b){ return a.t - b.t; });
+  if (sorted.length >= 2){
+    ctx.strokeStyle = getCss("--accent"); ctx.lineWidth = 2.5; ctx.lineJoin="round";
+    ctx.beginPath();
+    sorted.forEach(function(a, i){
+      var px = a.t/d.maxT*w, py = (1 - a.bt/250)*h;
+      if (i === 0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    });
+    ctx.stroke();
+  }
+  // 锚点圆点 + 数值标签
+  var labels = [];   // {x,y,up,text} 记录标签位置做简单碰撞
+  sorted.forEach(function(a){
+    var orig = d.anchors.indexOf(a);
+    var px = a.t/d.maxT*w, py = (1 - a.bt/250)*h;
+    var isSel = orig === d.sel;
+    // 圆点
+    ctx.beginPath(); ctx.arc(px, py, isSel ? 7.5 : 5.5, 0, 7);
+    ctx.fillStyle = isSel ? getCss("--primary") : getCss("--accentLight");
+    ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = isSel ? getCss("--err") : getCss("--primary"); ctx.stroke();
+    // 标签（每点都显示：温度/时间；选中加粗描边）
+    var tlabel = fmtClock(a.t);
+    var txt = fmt(a.bt) + "° " + tlabel;
+    ctx.font = (isSel ? "bold " : "") + "9px -apple-system";
+    ctx.textAlign = "center";
+    var tw = ctx.measureText(txt).width;
+    var above = (py > 40);   // 靠上方的点标签放下面，防溢出顶边
+    var ly = above ? py - 12 : py + 18;
+    ctx.fillStyle = isSel ? getCss("--err") : getCss("--tx2");
+    ctx.fillText(txt, px, ly);
+    ctx.textAlign = "left";
+    labels.push({px:px, ly:ly, tw:tw});
+  });
+  // 详情行：当前选中/拖动的锚点
+  var curTxt = "";
+  if (d.sel >= 0 && d.anchors[d.sel]){
+    var c = d.anchors[d.sel];
+    curTxt = "锚点 " + (d.sel+1) + " · " + fmtClock(c.t) + " · " + fmt(c.bt) + "°C" + (d.drag >= 0 ? " （拖动中）" : "（再点删除）");
+  }
+  var curEl = document.getElementById("tplCur");
+  if (curEl) curEl.innerHTML = curTxt ? "<b style='color:var(--primary)'>●</b> " + curTxt : '<span style="color:var(--tx2)">点击曲线添加锚点，拖动可调整</span>';
+  d.count.innerHTML = d.anchors.length + " 点 · 总时长 " + fmtClock(sorted[sorted.length-1].t);
+}
+function saveDrawnTpl(){
+  var d = tplDraw; if (!d) return;
+  var name = d.name.value.trim() || ("手绘曲线 " + (loadTpls().length+1));
+  var sorted = d.anchors.slice().sort(function(a,b){ return a.t - b.t; });
+  if (sorted.length < 2){ alert("至少需要 2 个锚点"); return; }
+  var tpl = {
+    id: "tpl_" + Date.now(),
+    name: name,
+    src: "drawn",
+    createdAt: Date.now(),
+    maxT: d.maxT,
+    // 锚点即模板数据；跟随端 anchorsToFollowPoints 线性插值。首点常为入豆室温
+    anchors: sorted.map(function(a){ return {t:a.t, bt:a.bt, label:(a.t===0?"入豆":"")}; })
+  };
+  var list = loadTpls(); list.unshift(tpl); saveTpls(list);
+  closeTopOverlay();
+  alert("已保存模板「" + name + "」（" + sorted.length + " 锚点）");
+  refreshFollowSelect();
+  var sel = document.getElementById("followSel");
+  if (sel) sel.value = "tpl_0";
+  tplDraw = null;
+}
+
 boot();
 </script>
 </body>
