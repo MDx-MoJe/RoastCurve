@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * 内置使用手册：结构化展示烘焙流程、事件术语、设置说明与注意事项。
- * 内容与 docs/使用手册.md 对齐，App 内随时可查。
+ * 内容对应 docs/完整用户指导手册.md 的 App 操作部分，App 内随时可查。
  */
 @Composable
 fun ManualScreen(
