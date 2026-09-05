@@ -268,6 +268,7 @@ footer{display:none}
       <span style="font-size:11px;color:var(--tx2)" id="recHint">点「入豆」开始记录</span>
       <span style="flex:1"></span>
       <button id="btnSaveRec" onclick="manualSave()" style="display:none;font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid var(--primary);background:transparent;color:var(--primary)">保存本炉</button>
+      <button id="btnSaveTpl" onclick="saveAsTemplate()" style="display:none;font-size:12px;padding:6px 14px;border-radius:20px;border:1px solid var(--primary);background:transparent;color:var(--primary)">存为模板</button>
       <button id="btnNextRoast" onclick="resetForNext()" style="display:none;font-size:12px;padding:6px 14px;border-radius:20px;border:0;background:var(--primary);color:var(--bg);font-weight:700">开始下一炉</button>
     </div>
     <div class="evbar" id="evDock">
@@ -396,6 +397,7 @@ function recDump(){
   $("recTime").textContent = "0:00";
   badge("ok","已连接");
   saveRecord(rec);
+  lastSavedRec = rec;
   lastRoastEvents = rec.events || [];
   rec = null;
   hist = [];
@@ -428,6 +430,8 @@ function markEv(code, btn){
 /* 顶部记录状态行按钮 */
 var roastEnded = false;   // 上一炉已结束（出豆/手动保存后），等待「开始下一炉」
 var lastRoastEvents = []; // 上炉事件快照（rec 清空后仍可显示）
+var lastSavedRec = null;  // 最后保存的完整记录（存为模板用）
+var LS_TPL = "roastcurve_profiles_v1";
 function renderRecDock(){
   var e = $("evLog");
   var hint = $("recHint");
@@ -451,6 +455,8 @@ function renderRecDock(){
     if(hint) hint.textContent = "✓ 本炉已保存到记录，可以开始下一炉";
     if(saveBtn) saveBtn.style.display = "none";
     if(nextBtn) nextBtn.style.display = "inline-block";
+    var stBtn = $("btnSaveTpl");
+    if (stBtn) stBtn.style.display = lastSavedRec && lastSavedRec.pts && lastSavedRec.pts.length > 10 ? "inline-block" : "none";
   }
   var list = roastEnded ? lastRoastEvents : ((rec && rec.events) || []);
   if (!list.length){ if(e) e.style.display="none"; return; }
@@ -471,6 +477,7 @@ function resetForNext(){
   var hint = $("recHint"); if (hint) hint.textContent = "点「入豆」开始记录";
   var saveBtn = $("btnSaveRec"); if (saveBtn) saveBtn.style.display = "none";
   var nb = $("btnNextRoast"); if (nb) nb.style.display = "none";
+  var stb = $("btnSaveTpl"); if (stb) stb.style.display = "none";
   $("ror").innerHTML = "--";
   $("legRec").style.display = "none";
   draw();
@@ -991,12 +998,222 @@ function boot(){
     if (!document.hidden && (!ws || ws.readyState>1)) connect();
   });
 }
-function fillFollowSelect(){
-  var sel = $("followSel");
-  sel.innerHTML = '<option value="ramp">线性爬温 25→200°C（8 分钟）</option>'+
-                  '<option value="soak">爬温+恒温 150°C×5（约 10 分钟）</option>'+
-                  '<option value="dram">陡峭曲线（熔断演示）</option>';
+/* ================== 模板系统 ================== */
+function loadTpls(){ try{ return JSON.parse(localStorage.getItem(LS_TPL))||[]; }catch(e){ return []; } }
+function saveTpls(t){ localStorage.setItem(LS_TPL, JSON.stringify(t)); }
+function saveAsTemplate(){
+  var r = lastSavedRec;
+  if (!r || !r.pts || r.pts.length < 10){ alert("当前没有可用的完整记录"); return; }
+  var name = prompt("模板名称（例如：耶加雪菲 中烘）", r.name || ("模板" + (loadTpls().length+1)));
+  if (!name) return;
+  name = name.trim();
+  if (!name) return;
+  var tpl = {
+    id: "tpl_" + Date.now(),
+    name: name,
+    src: "record",
+    createdAt: Date.now(),
+    // 出豆处截断 + 5s 重采样（对齐跟随 5s 粒度，避免 1s 数据过大）
+    points: downsampleCurve(r.pts, 5),
+    anchors: (r.events || []).filter(function(e){ return ["CHARGE","DRY","FCs","FCe","SCs","SCe","DROP"].indexOf(e.ev) >= 0; })
+              .map(function(e){ return {t:e.t, bt:e.pv, label:EV_NAMES[e.ev]||e.ev}; })
+  };
+  var list = loadTpls(); list.unshift(tpl); saveTpls(list);
+  alert("已保存模板「" + name + "」（" + tpl.points.length + " 点）");
+  refreshFollowSelect();
 }
+function downsampleCurve(pts, step){
+  var out = []; var next = 0;
+  for (var i = 0; i < pts.length; i++){
+    if (pts[i].t >= next){ out.push({t:Math.round(pts[i].t), pv:Math.round(pts[i].pv)}); next += step; }
+  }
+  return out;
+}
+/* 记录点 → 跟随 5s 目标数组（含首尾封齐） */
+function curveToFollowPoints(pts){
+  if (!pts || !pts.length) return [];
+  var out = [];
+  var t0 = pts[0].t, t1 = pts[pts.length-1].t;
+  // 取温度：按时间线性插值在 pts 上
+  for (var t = 0; t <= t1; t += 5){
+    // 找区间
+    var v;
+    if (t <= t0) v = pts[0].pv;
+    else if (t >= t1) v = pts[pts.length-1].pv;
+    else {
+      var a = pts[0];
+      for (var i = 0; i < pts.length; i++){ if (pts[i].t >= t){ break; } a = pts[i]; }
+      var b = pts[i] || a;
+      var span = (b.t - a.t) || 1;
+      v = a.pv + (b.pv - a.pv) * (t - a.t) / span;
+    }
+    out.push(Math.max(0, Math.min(250, Math.round(v))));
+  }
+  return out;
+}
+/* 模板锚点 → 5s 目标（锚点间线性） */
+function anchorsToFollowPoints(anchors){
+  if (!anchors || anchors.length < 2) return [];
+  var sorted = anchors.slice().sort(function(a,b){ return a.t - b.t; });
+  var t1 = sorted[sorted.length-1].t;
+  var out = [];
+  for (var t = 0; t <= t1; t += 5){
+    var i = 0;
+    while (i < sorted.length-1 && sorted[i+1].t < t) i++;
+    var a = sorted[i], b = sorted[i+1] || a;
+    var span = (b.t - a.t) || 1;
+    var v = a.bt + (b.bt - a.bt) * (t - a.t) / span;
+    out.push(Math.max(0, Math.min(250, Math.round(v))));
+  }
+  return out;
+}
+/* 跟随选择器填充：内置示例 + 用户模板 */
+function refreshFollowSelect(){
+  var sel = document.getElementById("followSel");
+  if (!sel) return;
+  var html = '<option value="ramp">示例：线性爬温 25→200°C</option>' +
+             '<option value="soak">示例：爬温+恒温 150°C</option>' +
+             '<option value="dram">示例：陡峭曲线（熔断演示）</option>';
+  var tpls = loadTpls();
+  tpls.forEach(function(t, i){
+    html += '<option value="tpl_' + i + '">★ ' + t.name + '</option>';
+  });
+  if (tpls.length) html += '<option value="tpl_del">— 管理模板…</option>';
+  else html += '<option value="tpl_imp" disabled>本地无模板（可导入 .alog）</option>';
+  html += '<option value="tpl_imp">导入 .alog 曲线…</option>';
+  sel.innerHTML = html;
+}
+function fillFollowSelect(){ refreshFollowSelect(); }
+
+/* ================== .alog 导入 ================== */
+function importAlog(){
+  var input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".alog,.txt,.json";
+  input.onchange = function(){
+    var f = input.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){ parseAndAddAlog(reader.result, f.name); };
+    reader.readAsText(f);
+  };
+  input.click();
+}
+function floatList(content, key){
+  // 匹配 'key': [v1, v2, ...]（可跨行，只截前若干）
+  var m = content.match(new RegExp("'" + key + "'\\s*:\\s*\\[([\\s\\S]*?)\\]"));
+  if (!m) return [];
+  var nums = m[1].match(/-?\d+(?:\.\d+)?/g) || [];
+  return nums.map(parseFloat);
+}
+function floatField(content, key){
+  var m = content.match(new RegExp("'" + key + "'\\s*:\\s*([-\\d.]+)"));
+  return m ? parseFloat(m[1]) : null;
+}
+function alogTitle(content){
+  var m = content.match(/'title':\s*'([^']*)'/);
+  if (!m) return null;
+  // 处理 \uXXXX
+  try{ return m[1].replace(/\\u([0-9a-fA-F]{4})/g, function(a,b){ return String.fromCharCode(parseInt(b,16)); }); }catch(e){ return m[1]; }
+}
+function parseAndAddAlog(content, fname){
+  var timex = floatList(content, "timex");
+  var bt = floatList(content, "temp1");
+  if (!timex.length || bt.length < 20 || bt.length < 10){
+    alert("解析失败：没找到有效的 timex/temp1 曲线数据（可能不是标准 .alog）");
+    return;
+  }
+  // 对齐长度
+  var n = Math.min(timex.length, bt.length);
+  var pts = [];
+  for (var i = 0; i < n; i++){ if (bt[i] >= 0) pts.push({t:Math.round(timex[i]), pv:Math.round(bt[i])}); }
+  // 只保留入豆后（首个连续段），去掉尾部 0
+  var start = 0;
+  while (start < pts.length-2 && pts[start].t < 0) start++;
+  while (pts.length > 0 && pts[pts.length-1].t > (pts[0].t + 2400)) pts.pop();
+  if (pts.length < 20){ alert("有效曲线点太少（<20）"); return; }
+  // 锚点：computed 事件
+  var anchors = [];
+  var chargeBt = floatField(content, "CHARGE_BT");
+  var dropT = floatField(content, "DROP_time");
+  var lastT = pts[pts.length-1].t;
+  // 归一化时间：首个点 t0
+  var t0 = pts[0].t;
+  var rel = function(t){ return Math.max(0, Math.round(t - t0)); };
+  if (chargeBt !== null) anchors.push({t:0, bt:Math.round(chargeBt), label:"入豆"});
+  var dryT = floatField(content, "DRY_time");
+  var dryBt = floatField(content, "DRY_BT");
+  if (dryT !== null && dryBt !== null) anchors.push({t:rel(dryT), bt:Math.round(dryBt), label:"脱水"});
+  var fcsT = floatField(content, "FCs_time");
+  var fcsBt = floatField(content, "FCs_BT");
+  if (fcsT !== null && fcsBt !== null) anchors.push({t:rel(fcsT), bt:Math.round(fcsBt), label:"一爆"});
+  if (dropT !== null) anchors.push({t:rel(dropT), bt:Math.round(pts[pts.length-1].pv), label:"出豆"});
+  // 归一化 pts 时间（相对入豆）
+  var normPts = pts.map(function(p){ return {t:Math.round(p.t - t0), pv:p.pv}; }).filter(function(p){ return p.t >= 0; });
+  // 出豆截断
+  var endT = dropT !== null ? rel(dropT) : normPts[normPts.length-1].t;
+  normPts = normPts.filter(function(p){ return p.t <= endT; });
+  var title = alogTitle(content) || fname.replace(/\.alog$/i,"");
+  var tpl = {
+    id: "tpl_" + Date.now(),
+    name: title.slice(0,40),
+    src: "alog",
+    createdAt: Date.now(),
+    points: downsampleCurve(normPts, 5),
+    anchors: anchors,
+    sourceFile: fname
+  };
+  var list = loadTpls(); list.unshift(tpl); saveTpls(list);
+  alert("导入成功「" + tpl.name + "」\n" + tpl.points.length + " 个目标点" + (anchors.length ? " · " + anchors.length + " 个事件锚点" : ""));
+  refreshFollowSelect();
+}
+
+/* 模板删除（管理：简单列出确认删） */
+function manageTpls(){
+  var list = loadTpls();
+  if (!list.length){ alert("还没有模板。\n\n① 烘焙完成后点「存为模板」\n② 在跟随选择器选「导入 .alog 曲线…」"); return; }
+  var names = list.map(function(t,i){ return (i+1) + ". " + t.name; }).join("\n");
+  var idx = prompt("当前模板：\n\n" + names + "\n\n输入编号删除（取消=返回）", "");
+  if (!idx) return;
+  var i = parseInt(idx,10) - 1;
+  if (isNaN(i) || i < 0 || i >= list.length){ alert("编号无效"); return; }
+  var name = list[i].name;
+  if (!confirm("删除模板「" + name + "」？")) return;
+  list.splice(i,1); saveTpls(list);
+  alert("已删除"); refreshFollowSelect();
+}
+function followToggle(){
+  if (followOn){ send({type:"follow_stop"}); return; }
+  var sel = document.getElementById("followSel");
+  var val = sel.value;
+  var pts = null;
+  if (val.indexOf("tpl_") === 0){
+    var idx = parseInt(val.slice(4),10);
+    if (val === "tpl_del"){ manageTpls(); return; }
+    if (val === "tpl_imp"){ importAlog(); return; }
+    var tpls = loadTpls();
+    var tpl = tpls[idx];
+    if (!tpl){ alert("模板不存在"); return; }
+    // 模板源：有 points 直接用它，有 anchors 用锚点插值
+    pts = tpl.points && tpl.points.length > 10
+        ? curveToFollowPoints(tpl.points)
+        : (tpl.anchors && tpl.anchors.length >= 2 ? anchorsToFollowPoints(tpl.anchors) : null);
+    if (!pts){ alert("模板数据不足"); return; }
+    send({type:"follow_start", points:pts});
+    showFollowInfo(tpl.name, pts.length);
+    return;
+  }
+  // 内置示例
+  pts = buildCurve(val);
+  var label = val === "ramp" ? "线性爬温" : val === "soak" ? "爬温+恒温" : "陡峭演示";
+  send({type:"follow_start", points:pts});
+  showFollowInfo(label, pts.length);
+}
+function showFollowInfo(name, n){
+  document.getElementById("followInfo").style.display = "block";
+  document.getElementById("followInfo").innerHTML = "跟随「" + name + "」· " + n + " 点（" + Math.round(n*5/60*10)/10 + " 分钟）";
+}
+
 function buildCurve(kind){
   var pts=[]; var i;
   function seg(f,t,m){ var n=Math.round(m*60/5); for(var j=1;j<=n;j++) pts.push(Math.round(f+(t-f)*j/n)); }
@@ -1004,14 +1221,6 @@ function buildCurve(kind){
   else if(kind==="soak"){ for(i=0;i<3;i++) pts.push(25); seg(25,150,4); for(i=0;i<60;i++) pts.push(150); }
   else if(kind==="dram"){ for(i=0;i<3;i++) pts.push(30); for(i=0;i<60;i++) pts.push(220); }
   return pts.slice(0,720);
-}
-function followToggle(){
-  if (followOn){ send({type:"follow_stop"}); return; }
-  var kind = $("followSel").value;
-  var pts = buildCurve(kind);
-  send({type:"follow_start", points:pts});
-  $("followInfo").style.display="block";
-  $("followInfo").innerHTML = "已下发 "+pts.length+" 点（"+Math.round(pts.length*5/60*10)/10+" 分钟）";
 }
 boot();
 </script>
