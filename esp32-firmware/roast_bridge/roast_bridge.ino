@@ -46,7 +46,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.8.2";
+constexpr const char* FIRMWARE_VERSION = "1.8.3";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -1223,9 +1223,10 @@ void handleStatus() {
     bool write = reqLine.indexOf("tx=") >= 0 && reqLine.indexOf("rx=") >= 0 && reqLine.indexOf("fan=") >= 0;
     if (write) {
       int nt = -1, nr = -1, nf = -1;
-      // 注意："tx="/"rx="/"fan=" 均为 3 字母 + '=' 共 4 字符，偏移 +4 才指向数字
-      int p = reqLine.indexOf("tx="); if (p >= 0) nt = atoi(reqLine.c_str() + p + 4);
-      p = reqLine.indexOf("rx="); if (p >= 0) nr = atoi(reqLine.c_str() + p + 4);
+      // 解析偏移："tx="/"rx=" 是 3 字符（2 字母+=），"fan=" 是 4 字符（3 字母+=），
+      // 统一取 '=' 后一位开始（+3 对 tx/rx，+4 对 fan）——全用同一偏移会串位（tx=17 变 7）
+      int p = reqLine.indexOf("tx="); if (p >= 0) nt = atoi(reqLine.c_str() + p + 3);
+      p = reqLine.indexOf("rx="); if (p >= 0) nr = atoi(reqLine.c_str() + p + 3);
       p = reqLine.indexOf("fan="); if (p >= 0) nf = atoi(reqLine.c_str() + p + 4);
       // 校验：池内 + 互斥
       if (pinValid((int8_t)nt) && pinValid((int8_t)nr) && pinValid((int8_t)nf) &&
