@@ -374,3 +374,5 @@ manual.setting_fanfloor,自动风速下限,Auto fan floor,ManualScreen.kt,94
 manual.setting_fanfloor_desc,自动风速不低于此值，保证豆子翻滚,Fan never drops below this in auto mode,ManualScreen.kt,94
 manual.setting_gpio,桥接器 GPIO 引脚,Bridge GPIO pins,ManualScreen.kt,95
 manual.setting_gpio_desc,RS485 TX/RX 与风机换脚（换板不换线）,RS485 TX/RX & fan pin swap,ManualScreen.kt,95
+manual.full_entry,📖 查看完整用户指导手册,📖 Full User Manual,ManualScreen.kt,124
+manual.full_hint,全链路详解：架构 / 硬件接线 / Web UI / 跟随 / 安全 / 排障（内置离线版）,Full guide: architecture / wiring / Web UI / follow / safety / troubleshooting (offline),ManualScreen.kt,126

@@ -9,6 +9,7 @@ import com.roastcurve.app.history.HistoryScreen
 import com.roastcurve.app.history.RoastDetailScreen
 import com.roastcurve.app.monitor.MonitorScreen
 import com.roastcurve.app.manual.ManualScreen
+import com.roastcurve.app.manual.FullManualScreen
 import com.roastcurve.app.profile.AnchorEditorScreen
 import com.roastcurve.app.platform.exitApplication
 import com.roastcurve.app.settings.SettingsScreen
@@ -28,6 +29,7 @@ sealed interface Screen {
     data object History : Screen
     data object Settings : Screen
     data object Manual : Screen
+    data object FullManual : Screen
     data object BleConfig : Screen
     data object ModbusConfig : Screen
     data object GpioConfig : Screen
@@ -62,6 +64,7 @@ fun App() {
                     Screen.Monitor -> null
                     is Screen.Detail -> ({ screen = Screen.History })
                     Screen.Manual -> ({ screen = Screen.Settings })
+                    Screen.FullManual -> ({ screen = Screen.Manual })
                     Screen.BleConfig -> ({ screen = Screen.Settings })
                     Screen.ModbusConfig -> ({ screen = Screen.Settings })
                     Screen.GpioConfig -> ({ screen = Screen.Settings })
@@ -116,7 +119,11 @@ fun App() {
                                 onBack = { screen = Screen.Monitor },
                             )
                             is Screen.Manual -> ManualScreen(
+                                onOpenFullManual = { screen = Screen.FullManual },
                                 onBack = { screen = Screen.Settings },
+                            )
+                            is Screen.FullManual -> FullManualScreen(
+                                onBack = { screen = Screen.Manual },
                             )
                             is Screen.BleConfig -> BleConfigScreen(
                                 onBack = {

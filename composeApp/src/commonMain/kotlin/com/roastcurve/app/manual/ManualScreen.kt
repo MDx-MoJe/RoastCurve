@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ManualScreen(
     onBack: () -> Unit,
+    onOpenFullManual: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -122,6 +124,22 @@ fun ManualScreen(
                 Bullet(L10n.get("manual.s61"))
                 Bullet("Copyright © 2026 MDx")
             } }
+
+            // 完整手册入口
+            item {
+                Button(
+                    onClick = onOpenFullManual,
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                ) {
+                    Text(L10n.get("manual.full_entry"))
+                }
+                Text(
+                    L10n.get("manual.full_hint"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
+                )
+            }
         }
     }
 }

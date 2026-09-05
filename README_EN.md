@@ -87,6 +87,13 @@ Grab the APK and ESP32 firmware `.bin` from the **Releases / 发行版** page of
 - **APK**: Android install package
 - **Firmware .bin**: ESP32 bridge firmware (see esp32-firmware/)
 
+> 🆕 First time? Full step-by-step from download to your first roast is in **[Quick Start (快速上手)](docs/快速上手.md)**.
+
+## 📖 Docs
+
+- **[Quick Start](docs/快速上手.md)**: zero to first roast (download / wiring / flashing / provisioning / Web UI / App)
+- **[Full User Manual](docs/完整用户指导手册.md)**: in-depth guide (architecture / hardware / Web UI / App / follow / safety / troubleshooting)
+
 ## Build
 
 ```bash

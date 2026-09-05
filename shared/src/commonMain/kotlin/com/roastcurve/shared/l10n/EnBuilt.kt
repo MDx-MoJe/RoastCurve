@@ -126,6 +126,8 @@ object EnBuilt {
         "history.s6" to "{m}m{s}s ·",
         "history.s7" to "{size} pts",
         "history.s8" to "· Loss {loss}%",
+        "manual.full_entry" to "📖 Full User Manual",
+        "manual.full_hint" to "Full guide: architecture / wiring / Web UI / follow / safety / troubleshooting (offline)",
         "manual.s1" to "1. Two Roast Modes",
         "manual.s10" to "Start = begin recording manually after connecting; Stop = disconnect and finalize the curve. With Auto-follow on Charge enabled, tapping Charge at drop-in implicitly starts recording.",
         "manual.s11" to "Signal strength: a colored dot + dBm value is shown at the top after connecting (green=strong, yellow=fair, orange=weak, red=very weak). If orange or red before roasting, reposition the bridge or antenna first to avoid mid-roast disconnection.",

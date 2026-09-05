@@ -45,7 +45,7 @@
   <rect x="530" y="130" width="200" height="260" rx="12" class="box"/>
   <rect x="545" y="145" width="170" height="230" rx="8" class="boxIn"/>
   <text x="630" y="172" text-anchor="middle" class="name">ESP32-S3 桥接器</text>
-  <text x="630" y="190" text-anchor="middle" class="sub">RoastBridge v1.6 固件</text>
+  <text x="630" y="190" text-anchor="middle" class="sub">RoastBridge v1.8 固件</text>
   <text x="560" y="215" class="lbl">· WebSocket 服务 :8897</text>
   <text x="560" y="233" class="lbl">· Web UI / 状态口 :8898</text>
   <text x="560" y="251" class="lbl">· Modbus 网关 :8899</text>

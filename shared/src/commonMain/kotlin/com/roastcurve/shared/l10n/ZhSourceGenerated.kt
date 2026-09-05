@@ -126,6 +126,8 @@ object ZhSourceGenerated {
         "history.s6" to "{m}分{s}秒 · ",
         "history.s7" to "{size}点",
         "history.s8" to " · 失重{loss}%",
+        "manual.full_entry" to "📖 查看完整用户指导手册",
+        "manual.full_hint" to "全链路详解：架构 / 硬件接线 / Web UI / 跟随 / 安全 / 排障（内置离线版）",
         "manual.s1" to "一、两种烘焙模式",
         "manual.s10" to "「开始」= 连上后手动起表；「停止」= 断开并把曲线定稿保存。开启「入豆自动开始跟随」则投豆瞬间点「入豆」隐式起表。",
         "manual.s11" to "信号强度：连接后顶部显示彩色圆点 + dBm 值（绿强/黄中/橙弱/红极弱）。烘前若为橙/红，先调整桥接器位置或天线再开烘，避免中途掉线。",
