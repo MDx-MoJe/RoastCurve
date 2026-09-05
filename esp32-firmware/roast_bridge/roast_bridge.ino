@@ -46,7 +46,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.7.0";
+constexpr const char* FIRMWARE_VERSION = "1.7.1";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -494,6 +494,7 @@ void watchdogTick() {
 void triggerWatchdog() {
   if (!cfg.wdEnabled) return;
   if (holder != Holder::NONE) return;
+  if (follow.on) return;  // 跟随自主执行中：主控断开不介入（曲线自己跑完会回落，无需看门狗）
   if (wdState == WdState::ARMED) {
     wdState = WdState::COUNTDOWN;
     wdStateSince = millis();
@@ -975,7 +976,9 @@ void broadcastState() {
   const char* holderStr = holder == Holder::APP ? "app" : holder == Holder::WEB ? "web" : "none";
   d["holder"] = holderStr;
   if (wdState == WdState::COUNTDOWN) {
-    d["wd_remaining"] = cfg.graceS - (millis() - wdStateSince) / 1000;
+    // 防溢出：倒计时已超时（未及时切状态）时不报负数 → 前端不会看到 42 亿秒
+    uint32_t elapsedS = (millis() - wdStateSince) / 1000;
+    d["wd_remaining"] = (elapsedS >= cfg.graceS) ? 0 : (cfg.graceS - elapsedS);
   }
   d["ver"] = FIRMWARE_VERSION;
   d["uptime"] = millis() / 1000;
