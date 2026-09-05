@@ -63,6 +63,8 @@ Live monitor dashboard: dual-pane layout with real-time bean temperature / time 
 - Templates: save from roast, import Artisan .alog, manage — shared with the App
 - Fan slider with instant response · zip export/import · signal strength & event markers
 
+**How to use**: after provisioning the board (connect to hotspot `RoastBridge` → open `http://192.168.4.1` → enter WiFi), connect your phone/computer to the same WiFi and open `http://<board-IP>:8898` in a browser. Tap **Take over** → **Charge** to start recording; pick a profile or draw a curve, then **Start follow**.
+
 ### Custom GPIO (no rewiring needed)
 
 - TX/RX/fan pins configurable in **App Settings → Bridge GPIO Pins** or **Web UI → GPIO config** (reboot to apply)
