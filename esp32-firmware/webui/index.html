@@ -266,6 +266,7 @@ footer{display:none}
       <span style="font-size:11px;color:var(--tx2)" id="recHint">点「入豆」开始记录</span>
       <span style="flex:1"></span>
       <button id="btnSaveRec" onclick="manualSave()" style="display:none;font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid var(--primary);background:transparent;color:var(--primary)">保存本炉</button>
+      <button id="btnNextRoast" onclick="resetForNext()" style="display:none;font-size:12px;padding:6px 14px;border-radius:20px;border:0;background:var(--primary);color:var(--bg);font-weight:700">开始下一炉</button>
     </div>
     <div class="evbar" id="evDock">
       <button class="charge" data-ev="CHARGE">入豆</button>
@@ -393,8 +394,10 @@ function recDump(){
   $("recTime").textContent = "0:00";
   badge("ok","已连接");
   saveRecord(rec);
+  lastRoastEvents = rec.events || [];
   rec = null;
   hist = [];
+  roastEnded = true;
   renderRecDock();
 }
 function recName(){
@@ -404,7 +407,6 @@ function recName(){
 function manualSave(){
   if (!rec || !rec.active){ alert("当前没有进行中的记录"); return; }
   recDump();
-  alert("本炉已保存到记录");
 }
 /* ================== 事件语义 ================== */
 var EV_NAMES = {CHARGE:"入豆", DRY:"黄点", FCs:"一爆", FCe:"一爆毕", SCs:"二爆", SCe:"二爆毕", DROP:"出豆"};
@@ -422,25 +424,55 @@ function markEv(code, btn){
   renderRecDock();
 }
 /* 顶部记录状态行按钮 */
+var roastEnded = false;   // 上一炉已结束（出豆/手动保存后），等待「开始下一炉」
+var lastRoastEvents = []; // 上炉事件快照（rec 清空后仍可显示）
 function renderRecDock(){
   var e = $("evLog");
   var hint = $("recHint");
   var saveBtn = $("btnSaveRec");
+  var nextBtn = $("btnNextRoast");
   var active = !!(rec && rec.active);
-  if (!rec){ if(e) e.style.display="none"; if(hint) hint.textContent="点「入豆」开始记录"; if(saveBtn) saveBtn.style.display="none"; return; }
-  if (active){
-    if (hint) hint.textContent = "烘焙记录中… " + fmtClock((Date.now()-rec.startedAt)/1000);
-    if (saveBtn) saveBtn.style.display = "inline-block";
-  } else {
-    if (hint) hint.textContent = "已保存到记录";
-    if (saveBtn) saveBtn.style.display = "none";
+  if (!rec && !roastEnded){
+    if(e) e.style.display="none";
+    if(hint) hint.textContent = "点「入豆」开始记录";
+    if(saveBtn) saveBtn.style.display="none";
+    if(nextBtn) nextBtn.style.display="none";
+    resetPhases();
+    return;
   }
-  var list = rec.events || [];
+  if (active){
+    if(hint) hint.textContent = "烘焙记录中… " + fmtClock((Date.now()-rec.startedAt)/1000);
+    if(saveBtn) saveBtn.style.display = "inline-block";
+    if(nextBtn) nextBtn.style.display = "none";
+  } else {
+    // 刚结束（rec 存在但非 active，或 roastEnded）
+    if(hint) hint.textContent = "✓ 本炉已保存到记录，可以开始下一炉";
+    if(saveBtn) saveBtn.style.display = "none";
+    if(nextBtn) nextBtn.style.display = "inline-block";
+  }
+  var list = roastEnded ? lastRoastEvents : ((rec && rec.events) || []);
   if (!list.length){ if(e) e.style.display="none"; return; }
   e.style.display = "block";
   e.innerHTML = list.map(function(x){
     return "<b>"+(EV_NAMES[x.ev]||x.ev)+"</b> "+fmtClock(x.t)+" @"+fmt(x.pv)+"°C";
   }).join(" · ");
+}
+function resetForNext(){
+  // 清空本炉所有痕迹，回到全新待命态
+  roastEnded = false;
+  rec = null;
+  hist = [];
+  lastEvn = -1;
+  resetPhases();
+  pvPrev = null; tPrev = null; lastRor = null;
+  var e = $("evLog"); if (e) e.style.display = "none";
+  var hint = $("recHint"); if (hint) hint.textContent = "点「入豆」开始记录";
+  var saveBtn = $("btnSaveRec"); if (saveBtn) saveBtn.style.display = "none";
+  var nb = $("btnNextRoast"); if (nb) nb.style.display = "none";
+  $("ror").innerHTML = "--";
+  $("legRec").style.display = "none";
+  draw();
+  showBanner(null);
 }
 function renderEvents(list){
   // 固件事件回执仅用于 badge 计数同步，不并入本炉记录：
