@@ -817,7 +817,7 @@ function viewRec(i){
   sheet.insertAdjacentHTML("beforeend", parts.join(""));
   var btnRow = document.createElement("div");
   btnRow.style.cssText = "display:flex;gap:8px;margin-top:12px";
-  btnRow.innerHTML = "<button onclick='exportOne(curRecIdx)' style='flex:1;padding:9px;border-radius:50px;border:1px solid var(--primary);background:transparent;color:var(--primary)'>导出 JSON</button>"+
+  btnRow.innerHTML = "<button onclick='exportOne(curRecIdx)' style='flex:1;padding:9px;border-radius:50px;border:1px solid var(--primary);background:transparent;color:var(--primary)'>导出 (zip)</button>"+
     "<button onclick='delRec(curRecIdx)' style='flex:1;padding:9px;border-radius:50px;border:1px solid var(--err);background:transparent;color:var(--err)'>删除</button>"+
     "<button onclick='closeTopOverlay()' style='flex:1;padding:9px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)'>关闭</button>";
   sheet.appendChild(btnRow);
