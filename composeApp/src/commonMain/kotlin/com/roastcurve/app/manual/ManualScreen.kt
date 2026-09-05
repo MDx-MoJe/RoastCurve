@@ -90,6 +90,9 @@ fun ManualScreen(
                 SettingRow(L10n.get("manual.setting_autoconnect"), L10n.get("manual.s37"))
                 SettingRow(L10n.get("manual.setting_lookahead"), L10n.get("manual.setting_lookahead_desc"))
                 SettingRow(L10n.get("manual.setting_darkmode"), L10n.get("manual.s38"))
+                SettingRow(L10n.get("manual.setting_settle"), L10n.get("manual.setting_settle_desc"))
+                SettingRow(L10n.get("manual.setting_fanfloor"), L10n.get("manual.setting_fanfloor_desc"))
+                SettingRow(L10n.get("manual.setting_gpio"), L10n.get("manual.setting_gpio_desc"))
             } }
 
             item { Section(L10n.get("manual.s70")) {
