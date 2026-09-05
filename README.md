@@ -99,9 +99,9 @@ RoastCurve/
 
 ## 下载
 
-不想自己构建？直接下载现成的（两端同步发布）：
+不想自己构建？直接下载现成的：
 
-- **GitHub**：[Releases](https://github.com/MDx-MoJe/RoastCurve/releases)
+
 - **Gitee（国内推荐，更快）**：[发行版](https://gitee.com/MDx-MoJe/roast-curve/releases)
 
 - **APK**：Android 直接安装
