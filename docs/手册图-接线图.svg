@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" font-family="-apple-system,'PingFang SC','Helvetica Neue',sans-serif">
+  <defs>
+    <style>
+      .title{font-size:20px;font-weight:700;fill:#3D2B1F}
+      .name{font-size:14px;font-weight:700;fill:#3D2B1F}
+      .pin{font-size:13px;font-weight:700;fill:#BF4B3A;font-family:'SF Mono',monospace}
+      .pinG{font-size:13px;font-weight:700;fill:#55804B;font-family:'SF Mono',monospace}
+      .sub{font-size:11px;fill:#7A6857}
+      .lbl{font-size:12px;font-weight:700;fill:#4A3728}
+      .wire{stroke:#BF4B3A;stroke-width:3;fill:none}
+      .wireG{stroke:#55804B;stroke-width:3;fill:none}
+      .wireB{stroke:#8B5E3C;stroke-width:3;fill:none}
+      .wireY{stroke:#D4843A;stroke-width:3;fill:none}
+      .header{fill:#8B5E3C}
+      .htxt{fill:#FFFBF5;font-size:13px;font-weight:700}
+    </style>
+  </defs>
+
+  <text x="480" y="32" text-anchor="middle" class="title">接线图 · ESP32-S3 ↔ RS485 模块 ↔ 温控器（共 8 根线）</text>
+
+  <!-- ===== ESP32 板子 ===== -->
+  <rect x="60" y="70" width="240" height="470" rx="14" fill="#241D16" stroke="#8B5E3C" stroke-width="3"/>
+  <text x="180" y="100" text-anchor="middle" fill="#E8C9A8" font-size="16" font-weight="700">ESP32-S3 DevKitC-1</text>
+  <text x="180" y="120" text-anchor="middle" fill="#A89885" font-size="11">（N16R8，16MB Flash 推荐款）</text>
+
+  <!-- 左侧引脚 -->
+  <rect x="80" y="150" width="90" height="26" rx="6" fill="#3A2E24"/>
+  <text x="125" y="168" text-anchor="middle" class="pin" fill="#F0A050">GND</text>
+  <rect x="80" y="196" width="90" height="26" rx="6" fill="#3A2E24"/>
+  <text x="125" y="214" text-anchor="middle" class="pin" fill="#F0A050">GPIO18</text>
+  <rect x="80" y="242" width="90" height="26" rx="6" fill="#3A2E24"/>
+  <text x="125" y="260" text-anchor="middle" class="pin" fill="#F0A050">GPIO17</text>
+  <rect x="80" y="288" width="90" height="26" rx="6" fill="#3A2E24"/>
+  <text x="125" y="306" text-anchor="middle" class="pin" fill="#F0A050">3V3</text>
+  <rect x="80" y="334" width="90" height="26" rx="6" fill="#3A2E24"/>
+  <text x="125" y="352" text-anchor="middle" class="pin" fill="#F0A050">GPIO2</text>
+  <rect x="80" y="380" width="90" height="26" rx="6" fill="#3A2E24"/>
+  <text x="125" y="398" text-anchor="middle" class="pin" fill="#F0A050">GND</text>
+  <rect x="80" y="440" width="90" height="26" rx="6" fill="#3A2E24"/>
+  <text x="125" y="458" text-anchor="middle" class="pin" fill="#F0A050">GPIO48</text>
+  <rect x="80" y="480" width="90" height="26" rx="6" fill="#3A2E24"/>
+  <text x="125" y="498" text-anchor="middle" class="pin" fill="#F0A050">5V/GND</text>
+
+  <!-- 引脚说明 -->
+  <text x="180" y="168" class="sub">RS485 模块地</text>
+  <text x="180" y="214" class="sub">收 ← 模块 RO</text>
+  <text x="180" y="260" class="sub">发 → 模块 DI</text>
+  <text x="180" y="306" class="sub">RS485 模块电源</text>
+  <text x="180" y="352" class="sub">风机 PWM 出</text>
+  <text x="180" y="398" class="sub">风机地（信号地）</text>
+  <text x="180" y="458" class="sub">板载状态灯（内置）</text>
+  <text x="180" y="498" class="sub">USB 供电即可</text>
+
+  <!-- ===== RS485 模块 ===== -->
+  <rect x="400" y="150" width="190" height="180" rx="14" fill="#FFFBF5" stroke="#8B5E3C" stroke-width="2.5"/>
+  <rect x="400" y="150" width="190" height="30" rx="14" class="header"/>
+  <text x="495" y="170" text-anchor="middle" class="htxt">TTL → RS485 模块</text>
+  <text x="495" y="168" text-anchor="middle" class="htxt"></text>
+  <text x="495" y="199" text-anchor="middle" class="sub">自动收发款（DI/RO 丝印）</text>
+
+  <rect x="416" y="212" width="70" height="24" rx="6" fill="#F2EBDE"/>
+  <text x="451" y="229" text-anchor="middle" class="pin">RO</text>
+  <rect x="504" y="212" width="70" height="24" rx="6" fill="#F2EBDE"/>
+  <text x="539" y="229" text-anchor="middle" class="pin">DI</text>
+  <rect x="416" y="244" width="70" height="24" rx="6" fill="#F2EBDE"/>
+  <text x="451" y="261" text-anchor="middle" class="pinG">VCC 3V3</text>
+  <rect x="504" y="244" width="70" height="24" rx="6" fill="#F2EBDE"/>
+  <text x="539" y="261" text-anchor="middle" class="pinG">GND</text>
+  <rect x="416" y="284" width="70" height="24" rx="6" fill="#F2EBDE"/>
+  <text x="451" y="301" text-anchor="middle" class="pin">A</text>
+  <rect x="504" y="284" width="70" height="24" rx="6" fill="#F2EBDE"/>
+  <text x="539" y="301" text-anchor="middle" class="pin">B</text>
+
+  <!-- ===== 温控器 ===== -->
+  <rect x="700" y="150" width="210" height="180" rx="14" fill="#FFFBF5" stroke="#8B5E3C" stroke-width="2.5"/>
+  <rect x="700" y="150" width="210" height="30" rx="14" class="header"/>
+  <text x="805" y="170" text-anchor="middle" class="htxt">台泉 TC4S 温控器</text>
+  <text x="805" y="199" text-anchor="middle" class="sub">背后 RS485 端子 · 24V 供电</text>
+  <rect x="716" y="212" width="80" height="24" rx="6" fill="#F2EBDE"/>
+  <text x="756" y="229" text-anchor="middle" class="pin">A (+)</text>
+  <rect x="812" y="212" width="80" height="24" rx="6" fill="#F2EBDE"/>
+  <text x="852" y="229" text-anchor="middle" class="pin">B (−)</text>
+  <text x="805" y="260" text-anchor="middle" class="sub">通讯参数（面板菜单设置）：</text>
+  <text x="805" y="278" text-anchor="middle" class="pinG">1200 波特 · 8N1 · 从站地址 1</text>
+  <text x="805" y="300" text-anchor="middle" fill="#BF4B3A" font-size="11" font-weight="700">⚠ 改参数后必须断电重启才生效</text>
+  <text x="805" y="318" text-anchor="middle" class="sub">PV 寄存器 0x0000 · SV 寄存器 0x0002</text>
+
+  <!-- ===== 接线 1：ESP32 GPIO17 → 模块 DI ===== -->
+  <path d="M 170 255 C 300 255, 340 224, 504 224" class="wire"/>
+  <text x="330" y="243" class="lbl" fill="#BF4B3A">① 发送线（固件TX→DI）</text>
+
+  <!-- ===== 接线 2：模块 RO → ESP32 GPIO18 ===== -->
+  <path d="M 416 224 C 320 224, 300 209, 170 209" class="wireG"/>
+  <text x="290" y="196" class="lbl" fill="#55804B">② 接收线（RO→固件RX）</text>
+
+  <!-- ===== 接线 3：3V3 → VCC ===== -->
+  <path d="M 170 301 C 290 301, 320 256, 416 256" class="wireY"/>
+  <text x="300" y="290" class="lbl" fill="#D4843A">③ 供电 3.3V</text>
+
+  <!-- ===== 接线 4：GND → GND ===== -->
+  <path d="M 170 163 C 310 130, 380 256, 504 256" class="wireB"/>
+  <text x="300" y="140" class="lbl" fill="#8B5E3C">④ 共地 GND</text>
+
+  <!-- ===== 接线 5/6：A→A B→B ===== -->
+  <path d="M 486 296 C 600 296, 620 224, 716 224" class="wire"/>
+  <text x="590" y="286" class="lbl" fill="#BF4B3A">⑤ A → A</text>
+  <path d="M 539 296 C 640 296, 680 240, 812 224" class="wireG"/>
+  <text x="680" y="265" class="lbl" fill="#55804B">⑥ B → B</text>
+
+  <!-- ===== 接线 7/8：风机 ===== -->
+  <rect x="700" y="420" width="210" height="110" rx="14" fill="#FFFBF5" stroke="#5AA7C4" stroke-width="2.5"/>
+  <rect x="700" y="420" width="210" height="30" rx="14" fill="#5AA7C4"/>
+  <text x="805" y="440" text-anchor="middle" class="htxt">PWM 风机驱动板（可选）</text>
+  <text x="805" y="470" text-anchor="middle" class="sub">替代原电阻调速旋钮板</text>
+  <rect x="716" y="482" width="80" height="24" rx="6" fill="#F2EBDE"/>
+  <text x="756" y="499" text-anchor="middle" class="pin">PWM 入</text>
+  <rect x="812" y="482" width="80" height="24" rx="6" fill="#F2EBDE"/>
+  <text x="852" y="499" text-anchor="middle" class="pinG">信号地</text>
+  <text x="805" y="524" text-anchor="middle" class="sub">1kHz · 3.3V 直连无需电平转换</text>
+
+  <path d="M 170 347 C 400 347, 450 494, 716 494" class="wireB" stroke-dasharray="6,4"/>
+  <text x="400" y="335" class="lbl" fill="#8B5E3C">⑦ GPIO2 → PWM 输入（虚线=可选）</text>
+  <path d="M 170 393 C 380 393, 440 518, 812 518" class="wireB" stroke-dasharray="6,4"/>
+  <text x="450" y="560" class="lbl" fill="#8B5E3C">⑧ GND → 信号地（虚线=可选；⚠接信号地，不是 24V 功率地）</text>
+
+  <!-- 警示框 -->
+  <rect x="60" y="560" width="840" height="60" rx="12" fill="#BF4B3A" opacity="0.08"/>
+  <rect x="60" y="560" width="840" height="60" rx="12" fill="none" stroke="#BF4B3A" stroke-width="1.5"/>
+  <text x="80" y="584" fill="#BF4B3A" font-size="13" font-weight="700">⚠ 两大死亡陷阱：</text>
+  <text x="220" y="584" fill="#3D2B1F" font-size="12">① 模块丝印 TXD/RXD 是「接设备视角」，接反全线死寂（DI/RO 丝印按本图接）</text>
+  <text x="220" y="604" fill="#3D2B1F" font-size="12">② 测试桥接器时原 Wi-Fi 转 RS485 设备必须断电 —— RS485 总线同一时刻只允许一个主站</text>
+</svg>

@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="-apple-system,'PingFang SC','Helvetica Neue',sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8B5E3C"/>
+    </marker>
+    <style>
+      .box{fill:#FFFBF5;stroke:#8B5E3C;stroke-width:2;rx:12}
+      .boxIn{fill:#F2EBDE;stroke:#B8845A;stroke-width:1.5}
+      .title{font-size:20px;font-weight:700;fill:#3D2B1F}
+      .name{font-size:15px;font-weight:700;fill:#3D2B1F}
+      .sub{font-size:11px;fill:#7A6857}
+      .pin{font-size:12px;font-weight:700;fill:#BF4B3A;font-family:monospace}
+      .pinG{font-size:12px;font-weight:700;fill:#55804B;font-family:monospace}
+      .wire{stroke:#8B5E3C;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+      .wireB{stroke:#5AA7C4;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+      .lbl{font-size:11px;fill:#4A3728}
+    </style>
+  </defs>
+
+  <text x="480" y="34" text-anchor="middle" class="title">RoastBridge 系统架构 · 信号链路总览</text>
+
+  <!-- 你的手机 -->
+  <rect x="40" y="70" width="180" height="120" rx="12" class="box"/>
+  <text x="130" y="100" text-anchor="middle" class="name">手机 / 电脑浏览器</text>
+  <text x="130" y="122" text-anchor="middle" class="sub">iOS Safari · 安卓 Chrome</text>
+  <text x="130" y="140" text-anchor="middle" class="sub">Web UI 监控页</text>
+  <text x="130" y="158" text-anchor="middle" class="pinG">http://板子IP:8898</text>
+  <text x="130" y="176" text-anchor="middle" class="sub">WS :8897（状态推送）</text>
+
+  <!-- 安卓 App -->
+  <rect x="40" y="230" width="180" height="110" rx="12" class="box"/>
+  <text x="130" y="260" text-anchor="middle" class="name">烤豆 App（安卓）</text>
+  <text x="130" y="282" text-anchor="middle" class="sub">完整功能：跟随/模板/历史</text>
+  <text x="130" y="300" text-anchor="middle" class="pinG">Modbus TCP :8899</text>
+  <text x="130" y="318" text-anchor="middle" class="sub">BLE 配网（可选）</text>
+
+  <!-- 家里路由器 -->
+  <rect x="300" y="170" width="160" height="110" rx="12" class="box"/>
+  <text x="380" y="200" text-anchor="middle" class="name">家里路由器</text>
+  <text x="380" y="222" text-anchor="middle" class="sub">192.168.200.x 网段</text>
+  <text x="380" y="240" text-anchor="middle" class="sub">DHCP 分配板子 IP</text>
+  <text x="380" y="258" text-anchor="middle" class="sub">（建议路由器绑固定 IP）</text>
+
+  <!-- ESP32 -->
+  <rect x="530" y="130" width="200" height="260" rx="12" class="box"/>
+  <rect x="545" y="145" width="170" height="230" rx="8" class="boxIn"/>
+  <text x="630" y="172" text-anchor="middle" class="name">ESP32-S3 桥接器</text>
+  <text x="630" y="190" text-anchor="middle" class="sub">RoastBridge v1.6 固件</text>
+  <text x="560" y="215" class="lbl">· WebSocket 服务 :8897</text>
+  <text x="560" y="233" class="lbl">· Web UI / 状态口 :8898</text>
+  <text x="560" y="251" class="lbl">· Modbus 网关 :8899</text>
+  <text x="560" y="269" class="lbl">· 安全看门狗（30s）</text>
+  <text x="560" y="287" class="lbl">· 跟随引擎（查表）</text>
+  <text x="560" y="305" class="lbl">· SIM 模拟温控器</text>
+  <text x="560" y="325" class="pin">GPIO17 TX →</text>
+  <text x="560" y="343" class="pinG">GPIO18 RX ←</text>
+  <text x="560" y="361" class="pin">GPIO2 PWM →</text>
+
+  <!-- RS485 模块 -->
+  <rect x="540" y="430" width="180" height="70" rx="12" class="box"/>
+  <text x="630" y="458" text-anchor="middle" class="name">TTL→RS485 模块</text>
+  <text x="630" y="476" text-anchor="middle" class="sub">自动收发款（DI/RO 丝印）</text>
+  <text x="630" y="492" text-anchor="middle" class="sub">3V3 供电 · A/B 到温控器</text>
+
+  <!-- 温控器 -->
+  <rect x="780" y="420" width="150" height="90" rx="12" class="box"/>
+  <text x="855" y="450" text-anchor="middle" class="name">台泉 TC4S</text>
+  <text x="855" y="470" text-anchor="middle" class="sub">PID 温控器 · RS485</text>
+  <text x="855" y="488" text-anchor="middle" class="sub">1200-8N1 · 从站 1</text>
+
+  <!-- 烘豆机 -->
+  <rect x="780" y="300" width="150" height="80" rx="12" class="box"/>
+  <text x="855" y="328" text-anchor="middle" class="name">烘豆机</text>
+  <text x="855" y="348" text-anchor="middle" class="sub">加热丝（温控器继电器）</text>
+  <text x="855" y="366" text-anchor="middle" class="sub">风机（PWM 驱动板）</text>
+
+  <!-- 连线：浏览器 → 路由器 → ESP32 -->
+  <path d="M 220 130 C 270 130, 270 200, 300 210" class="wire"/>
+  <text x="255" y="150" class="lbl">WiFi</text>
+  <path d="M 220 285 C 270 285, 270 250, 300 245" class="wire"/>
+  <path d="M 460 225 C 500 225, 490 220, 528 220" class="wire"/>
+
+  <!-- ESP32 → RS485（UART）-->
+  <path d="M 585 390 L 585 428" class="wire"/>
+  <text x="592" y="412" class="lbl">UART 1200-8N1</text>
+  <!-- RS485 → 温控器 -->
+  <path d="M 720 465 L 778 465" class="wire"/>
+  <text x="724" y="456" class="lbl">A/B 双线</text>
+  <!-- 温控器 → 烘豆机 -->
+  <path d="M 855 420 L 855 382" class="wire"/>
+  <text x="862" y="405" class="lbl">继电器</text>
+  <!-- ESP32 → 风机 -->
+  <path d="M 730 340 C 760 340, 750 335, 778 330" class="wireB"/>
+  <text x="735" y="325" class="lbl">PWM 调速</text>
+
+  <!-- 底部注释 -->
+  <text x="480" y="510" text-anchor="middle" class="sub">全部通信都在家庭局域网内完成 · 不经过任何云服务器 · 断外网不影响烘焙</text>
+</svg>

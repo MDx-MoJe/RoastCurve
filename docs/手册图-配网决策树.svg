@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" font-family="-apple-system,'PingFang SC','Helvetica Neue',sans-serif">
+  <defs>
+    <style>
+      .title{font-size:20px;font-weight:700;fill:#3D2B1F}
+      .name{font-size:14px;font-weight:700;fill:#3D2B1F}
+      .sub{font-size:11px;fill:#7A6857}
+      .lbl{font-size:12px;fill:#4A3728}
+      .cond{fill:#FFFBF5;stroke:#8B5E3C;stroke-width:2}
+      .arrow{stroke:#8B5E3C;stroke-width:2.5;fill:none;marker-end:url(#a2)}
+      .num{fill:#FFFBF5;font-size:13px;font-weight:800}
+      .ncirc{fill:#D4843A}
+    </style>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8B5E3C"/>
+    </marker>
+  </defs>
+
+  <text x="480" y="30" text-anchor="middle" class="title">配网决策树 · 你的板子会走哪条路</text>
+
+  <!-- 开始 -->
+  <rect x="380" y="55" width="200" height="56" rx="28" class="cond"/>
+  <text x="480" y="80" text-anchor="middle" class="name">板子上电</text>
+  <text x="480" y="98" text-anchor="middle" class="sub">读 NVS 里的 WiFi 凭据</text>
+
+  <!-- 判断1：有凭据 -->
+  <rect x="150" y="160" width="220" height="70" rx="14" class="cond"/>
+  <text x="260" y="188" text-anchor="middle" class="name">NVS 有凭据？</text>
+  <text x="260" y="208" text-anchor="middle" class="sub">（以前配过网）</text>
+
+  <rect x="590" y="160" width="220" height="70" rx="14" class="cond"/>
+  <text x="700" y="188" text-anchor="middle" class="name">凭据无效/连不上？</text>
+  <text x="700" y="208" text-anchor="middle" class="sub">重试 3 次约 100 秒</text>
+
+  <!-- BLE 路径 -->
+  <rect x="60" y="290" width="260" height="120" rx="14" fill="#F2EBDE" stroke="#5AA7C4" stroke-width="2.5"/>
+  <text x="190" y="318" text-anchor="middle" class="name" fill="#1F7A8C">📶 BLE 配网（安卓 App）</text>
+  <text x="190" y="340" text-anchor="middle" class="lbl">紫灯闪烁 · App 扫描 RoastBridge</text>
+  <text x="190" y="358" text-anchor="middle" class="lbl">填 WiFi 名+密码 → BLE 透传给板子</text>
+  <text x="190" y="376" text-anchor="middle" class="lbl">优点：全程不断家里 WiFi</text>
+  <text x="190" y="394" text-anchor="middle" class="sub">长按 BOOT 后：先 BLE 等 10 分钟</text>
+
+  <!-- AP 路径 -->
+  <rect x="350" y="290" width="260" height="140" rx="14" fill="#FFF8E8" stroke="#D4843A" stroke-width="2.5"/>
+  <text x="480" y="318" text-anchor="middle" class="name" fill="#9C7514">📡 AP 热点配网（全平台）</text>
+  <text x="480" y="340" text-anchor="middle" class="lbl">热点 RoastBridge-Setup</text>
+  <text x="480" y="358" text-anchor="middle" class="lbl">密码 roast1234</text>
+  <text x="480" y="376" text-anchor="middle" class="lbl">连上自动弹配网页（或访问 192.168.4.1）</text>
+  <text x="480" y="394" text-anchor="middle" class="lbl">选 WiFi+密码 → 板子重启入网</text>
+  <text x="480" y="414" text-anchor="middle" class="sub">iOS 主路径 · 无需任何 App · DNS 劫持弹窗</text>
+
+  <!-- 成功 -->
+  <rect x="650" y="470" width="260" height="110" rx="14" fill="#EBF3EA" stroke="#5B8C5A" stroke-width="2.5"/>
+  <text x="780" y="498" text-anchor="middle" class="name" fill="#3D5C3C">✅ 成功连上家里 WiFi</text>
+  <text x="780" y="520" text-anchor="middle" class="lbl">绿灯常亮 · 路由器后台找 roastbridge</text>
+  <text x="780" y="538" text-anchor="middle" class="lbl">浏览器 http://板子IP:8898 → Web UI</text>
+  <text x="780" y="556" text-anchor="middle" class="lbl">App 填板子 IP → 完整功能</text>
+  <text x="780" y="574" text-anchor="middle" class="sub">建议路由器给板子绑固定 IP</text>
+
+  <!-- 箭头 -->
+  <path d="M 400 90 C 300 100, 260 120, 260 158" class="arrow"/>
+  <text x="268" y="126" class="lbl">看 NVS</text>
+  <path d="M 370 195 L 588 195" class="arrow"/>
+  <text x="452" y="186" class="lbl">有 → 尝试连接</text>
+  <path d="M 560 195 C 575 195, 575 195, 588 195" class="arrow"/>
+  <path d="M 260 230 C 260 260, 210 260, 192 288" class="arrow"/>
+  <text x="150" y="258" class="lbl">无凭据 → BLE</text>
+  <path d="M 700 230 C 700 255, 560 265, 500 288" class="arrow"/>
+  <text x="556" y="262" class="lbl">失败 3 次 → AP</text>
+  <path d="M 190 410 C 240 440, 600 460, 660 480" class="arrow"/>
+  <text x="380" y="452" class="lbl">配置成功（重启后走"有凭据"路径）</text>
+  <path d="M 480 430 L 480 468" class="arrow" opacity="0"/>
+  <path d="M 480 430 C 480 455, 600 470, 648 480" class="arrow"/>
+  <path d="M 320 350 C 340 350, 345 350, 348 350" class="arrow" opacity="0"/>
+
+  <!-- BLE 超时转 AP -->
+  <path d="M 320 330 C 345 330, 340 340, 348 345" class="arrow"/>
+  <text x="60" y="445" class="lbl" fill="#D4843A">BLE 等 10 分钟没人配</text>
+  <text x="60" y="462" class="lbl" fill="#D4843A">→ 自动转 AP（iOS 也能配）</text>
+
+  <!-- 底部说明 -->
+  <rect x="60" y="540" width="840" height="60" rx="12" fill="#F2EBDE"/>
+  <text x="480" y="562" text-anchor="middle" class="lbl" font-weight="700">三种进入配网模式的方式：① 出厂首次上电（NVS 空）② WiFi 连不上（重试 3 次后）③ 长按 BOOT 键 3 秒（清凭据重来）</text>
+  <text x="480" y="582" text-anchor="middle" class="sub">三路径并存：BLE（App 兼容，不断网）· AP 热点（全平台含 iOS）· USB 串口（极客兜底）。配网成功后凭据存 NVS，断电不丢</text>
+</svg>
