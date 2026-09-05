@@ -14,6 +14,7 @@ import com.roastcurve.app.platform.exitApplication
 import com.roastcurve.app.settings.SettingsScreen
 import com.roastcurve.app.settings.BleConfigScreen
 import com.roastcurve.app.settings.ModbusConfigScreen
+import com.roastcurve.app.settings.GpioConfigScreen
 import com.roastcurve.design.RoastCurveTheme
 import com.roastcurve.shared.model.RoastRecord
 import com.roastcurve.shared.model.Settings
@@ -29,6 +30,7 @@ sealed interface Screen {
     data object Manual : Screen
     data object BleConfig : Screen
     data object ModbusConfig : Screen
+    data object GpioConfig : Screen
     data class Detail(val record: RoastRecord) : Screen
     data class Editor(val profile: com.roastcurve.shared.model.RoastProfile?) : Screen
 }
@@ -62,6 +64,7 @@ fun App() {
                     Screen.Manual -> ({ screen = Screen.Settings })
                     Screen.BleConfig -> ({ screen = Screen.Settings })
                     Screen.ModbusConfig -> ({ screen = Screen.Settings })
+                    Screen.GpioConfig -> ({ screen = Screen.Settings })
                     else -> ({ screen = Screen.Monitor })
                 }
                 onDispose { }
@@ -109,6 +112,7 @@ fun App() {
                                 onOpenManual = { screen = Screen.Manual },
                                 onOpenBleConfig = { screen = Screen.BleConfig },
                                 onOpenModbusConfig = { screen = Screen.ModbusConfig },
+                                onOpenGpioConfig = { screen = Screen.GpioConfig },
                                 onBack = { screen = Screen.Monitor },
                             )
                             is Screen.Manual -> ManualScreen(
@@ -124,6 +128,10 @@ fun App() {
                             is Screen.ModbusConfig -> ModbusConfigScreen(
                                 settings = settings,
                                 onUpdate = { settings = it },
+                                onBack = { screen = Screen.Settings },
+                            )
+                            is Screen.GpioConfig -> GpioConfigScreen(
+                                settings = settings,
                                 onBack = { screen = Screen.Settings },
                             )
                             is Screen.Editor -> AnchorEditorScreen(

@@ -36,6 +36,7 @@ fun SettingsScreen(
     onOpenManual: () -> Unit = {},
     onOpenBleConfig: () -> Unit = {},
     onOpenModbusConfig: () -> Unit = {},
+    onOpenGpioConfig: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -261,6 +262,36 @@ fun SettingsScreen(
                     Text(L10n.get("settings.m1"), style = MaterialTheme.typography.bodyLarge)
                     Text(
                         L10n.get("settings.m2"),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(
+                    "›",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // ===== 桥接器 GPIO 引脚二级页入口 =====
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 2.dp,
+            onClick = onOpenGpioConfig,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(L10n.get("settings.g1"), style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        L10n.get("settings.g2"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

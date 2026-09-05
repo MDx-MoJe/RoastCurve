@@ -46,7 +46,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.8.0";
+constexpr const char* FIRMWARE_VERSION = "1.8.2";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -1214,6 +1214,44 @@ void handleStatus() {
     snprintf(head, sizeof(head),
       "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %u\r\nConnection: close\r\n\r\n",
       (unsigned)strlen(body));
+    sc.print(head); sc.print(body); sc.flush(); delay(2); sc.stop();
+    return;
+  }
+
+  // GPIO 配置口：GET /gpiocfg 读当前引脚+可用池；GET /gpiocfg?tx=N&rx=N&fan=N 写（校验后存 NVS，重启生效）
+  if (reqLine.indexOf("/gpiocfg") >= 0) {
+    bool write = reqLine.indexOf("tx=") >= 0 && reqLine.indexOf("rx=") >= 0 && reqLine.indexOf("fan=") >= 0;
+    if (write) {
+      int nt = -1, nr = -1, nf = -1;
+      // 注意："tx="/"rx="/"fan=" 均为 3 字母 + '=' 共 4 字符，偏移 +4 才指向数字
+      int p = reqLine.indexOf("tx="); if (p >= 0) nt = atoi(reqLine.c_str() + p + 4);
+      p = reqLine.indexOf("rx="); if (p >= 0) nr = atoi(reqLine.c_str() + p + 4);
+      p = reqLine.indexOf("fan="); if (p >= 0) nf = atoi(reqLine.c_str() + p + 4);
+      // 校验：池内 + 互斥
+      if (pinValid((int8_t)nt) && pinValid((int8_t)nr) && pinValid((int8_t)nf) &&
+          nt != nr && nt != nf && nr != nf) {
+        cfg.pinTx = (int8_t)nt; cfg.pinRx = (int8_t)nr; cfg.pinFan = (int8_t)nf;
+        saveCfg();
+        Serial.printf("[GPIO] HTTP 配置 TX=GPIO%d RX=GPIO%d FAN=GPIO%d（重启生效）\n", nt, nr, nf);
+        sc.print("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
+        sc.print("{\"ok\":true,\"note\":\"reboot required\"}");
+        sc.flush(); delay(2); sc.stop();
+        return;
+      }
+      sc.print("HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
+      sc.print("{\"ok\":false,\"error\":\"invalid or conflicting pins\"}");
+      sc.flush(); delay(2); sc.stop();
+      return;
+    }
+    // GET：回当前引脚 + 可用池
+    String body = "{\"pin_tx\":" + String(cfg.pinTx) + ",\"pin_rx\":" + String(cfg.pinRx) +
+                  ",\"pin_fan\":" + String(cfg.pinFan) + ",\"pool\":[";
+    for (uint8_t i = 0; i < PIN_POOL_LEN; i++) { if (i) body += ","; body += String(PIN_POOL[i]); }
+    body += "]}";
+    char head[128];
+    snprintf(head, sizeof(head),
+      "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %u\r\nConnection: close\r\n\r\n",
+      (unsigned)body.length());
     sc.print(head); sc.print(body); sc.flush(); delay(2); sc.stop();
     return;
   }

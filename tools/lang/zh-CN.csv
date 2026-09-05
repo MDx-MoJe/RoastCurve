@@ -349,3 +349,17 @@ settings.s47,回落温度 (°C),Settle SV (°C),SettingsScreen.kt,424
 settings.s48,回落风速 (%),Settle fan (%),SettingsScreen.kt,444
 monitor.s88,曲线已走完，已回落 {sv}°C,Profile finished — settled to {sv}°C,MonitorScreen.kt,516
 monitor.s89,温度超过 250°C，已回落保护,PV exceeded 250°C — settled for safety,MonitorScreen.kt,527
+settings.g1,桥接器 GPIO 引脚,Bridge GPIO Pins,SettingsScreen.kt,279
+settings.g2,自定义 RS485 TX/RX 与风机引脚（DIY 换板不换线）,Custom RS485 TX/RX & fan pins (swap boards without rewiring),SettingsScreen.kt,280
+gpio.title,GPIO 引脚配置,GPIO Pin Configuration,GpioConfigScreen.kt,1
+gpio.sub,RS485 TX/RX 与风机 PWM 引脚（读自桥接器）。改后重启桥接器生效。,RS485 TX/RX and fan PWM pins (read from bridge). Takes effect after bridge reboot.,GpioConfigScreen.kt,1
+gpio.tx,RS485 TX (发送),RS485 TX (transmit),GpioConfigScreen.kt,1
+gpio.rx,RS485 RX (接收),RS485 RX (receive),GpioConfigScreen.kt,1
+gpio.fan,风机 PWM,Fan PWM,GpioConfigScreen.kt,1
+gpio.save,保存并提示重启,Save & prompt reboot,GpioConfigScreen.kt,1
+gpio.note,可用池已排除硬件禁区（flash 26-32 / PSRAM 33-37 / USB 19-20 / 争议脚 1,3,45,46）。三脚互斥；改错失联时长按 BOOT 键 3 秒恢复默认 17/18/2。,Pool excludes reserved pins (flash 26-32 / PSRAM 33-37 / USB 19-20 / strapping 1,3,45,46). Pins are mutually exclusive; if you lose connection, hold BOOT for 3s to reset to 17/18/2.,GpioConfigScreen.kt,1
+gpio.saved,✓ 已保存。重启桥接器后生效。,✓ Saved. Takes effect after rebooting the bridge.,GpioConfigScreen.kt,1
+gpio.retry,重试,Retry,GpioConfigScreen.kt,1
+gpio.err_host,未找到桥接器地址。请先在监控页连接桥接器。,No bridge address. Connect to the bridge from Monitor first.,GpioConfigScreen.kt,1
+gpio.err_fetch,读取桥接器配置失败（需固件 v1.8.1+）。请确认已连接且固件已更新。,Failed to read bridge config (requires firmware v1.8.1+). Check connection & firmware.,GpioConfigScreen.kt,1
+gpio.err_save,保存失败。请确认桥接器在线后重试。,Save failed. Make sure the bridge is online and retry.,GpioConfigScreen.kt,1
