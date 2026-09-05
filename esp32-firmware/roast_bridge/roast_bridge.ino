@@ -46,7 +46,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.6.2";
+constexpr const char* FIRMWARE_VERSION = "1.7.0";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -61,10 +61,22 @@ constexpr int      PIN_FAN_PWM       = 2;
 constexpr uint32_t FAN_PWM_FREQ      = 1000;
 constexpr int      FAN_PWM_BITS      = 8;
 constexpr uint16_t FAN_DUTY_FLOOR    = 18;
-constexpr uint16_t FAN_DUTY_CEIL     = 252;
+constexpr uint16_t FAN_DUTY_CEIL    = 252;
 
 constexpr int      PIN_BOOT       = 0;
 constexpr int      PIN_LED        = 48;
+
+// ===== 可自定义 GPIO（v1.7：TX/RX/风机 用户可配，LED/BOOT 固定）=====
+// 绝对禁区（硬件占用，绝不放入可用池）：
+//   26-32  QIO flash 信号线（16MB）
+//   33-37  Octal PSRAM 数据线（8MB）
+//   19,20  USB D-/D+
+//   0      BOOT 键（固定，配网/恢复）
+//   48     WS2812 LED（固定）
+// 争议脚排除（上电采样/晶振）：1, 3, 45, 46
+// 可用池 = {4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,21,38,39,40,41,42}
+constexpr int8_t PIN_POOL[] = {2,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,21,38,39,40,41,42};
+constexpr uint8_t PIN_POOL_LEN = sizeof(PIN_POOL) / sizeof(PIN_POOL[0]);
 
 // BLE→AP 配网降级：长按清凭据后先 BLE（App 兼容），10 分钟无配网自动转 AP（iOS 主路径）
 uint32_t apAfter = 0;
@@ -130,10 +142,21 @@ struct SafeConfig {
   uint16_t regSv;
   uint32_t baud;
   uint8_t  slaveId;
+  // 自定义 GPIO（v1.7 可配：DIY 玩家换板不换线）
+  int8_t   pinTx;    // RS485 TX
+  int8_t   pinRx;    // RS485 RX
+  int8_t   pinFan;   // 风机 PWM
 };
 SafeConfig cfg = { true, DEF_WD_GRACE_S, DEF_SAFE_SV, DEF_SAFE_FAN,
                    true, DEF_SAFE_OFF_MIN, false, DEF_SIM_RAMP, DEF_AMBIENT,
-                   DEF_REG_PV, DEF_REG_SV, DEF_MODBUS_BAUD, DEF_MODBUS_SLAVE };
+                   DEF_REG_PV, DEF_REG_SV, DEF_MODBUS_BAUD, DEF_MODBUS_SLAVE,
+                   PIN_485_TX, PIN_485_RX, PIN_FAN_PWM };
+
+// 引脚合法性：必须在可用池内（禁区/争议脚已在 PIN_POOL 定义时排除）
+bool pinValid(int8_t p) {
+  for (uint8_t i = 0; i < PIN_POOL_LEN; i++) if (PIN_POOL[i] == p) return true;
+  return false;
+}
 
 void loadCfg() {
   nvs15.begin(NVS_NS15, false);
@@ -150,6 +173,9 @@ void loadCfg() {
   cfg.regSv          = nvs15.getUShort("regSv", DEF_REG_SV);
   cfg.baud           = nvs15.getULong("baud", DEF_MODBUS_BAUD);
   cfg.slaveId        = nvs15.getUChar("slave", DEF_MODBUS_SLAVE);
+  cfg.pinTx          = (int8_t)nvs15.getUChar("pinTx", PIN_485_TX);
+  cfg.pinRx          = (int8_t)nvs15.getUChar("pinRx", PIN_485_RX);
+  cfg.pinFan         = (int8_t)nvs15.getUChar("pinFan", PIN_FAN_PWM);
   nvs15.end();
   if (cfg.graceS < 5 || cfg.graceS > 600) cfg.graceS = DEF_WD_GRACE_S;
   if (cfg.safeSv < 20 || cfg.safeSv > 150) cfg.safeSv = DEF_SAFE_SV;
@@ -157,6 +183,12 @@ void loadCfg() {
   if (cfg.safeOffMin < 1 || cfg.safeOffMin > 120) cfg.safeOffMin = DEF_SAFE_OFF_MIN;
   if (cfg.simRamp < 1 || cfg.simRamp > 60) cfg.simRamp = DEF_SIM_RAMP;
   if (cfg.ambient < 0 || cfg.ambient > 60) cfg.ambient = DEF_AMBIENT;
+  // 引脚校验：不在池内/三者冲突 → 回默认（防 NVS 脏数据/换板不换线）
+  if (!pinValid(cfg.pinTx) || !pinValid(cfg.pinRx) || !pinValid(cfg.pinFan) ||
+      cfg.pinTx == cfg.pinRx || cfg.pinTx == cfg.pinFan || cfg.pinRx == cfg.pinFan) {
+    cfg.pinTx = PIN_485_TX; cfg.pinRx = PIN_485_RX; cfg.pinFan = PIN_FAN_PWM;
+    Serial.println("[引脚] NVS 值非法，回默认 17/18/2");
+  }
 }
 
 bool saveCfg() {
@@ -174,6 +206,9 @@ bool saveCfg() {
   nvs15.putUShort("regSv",  cfg.regSv);
   nvs15.putULong("baud",    cfg.baud);
   nvs15.putUChar("slave",   cfg.slaveId);
+  nvs15.putUChar("pinTx",   (uint8_t)cfg.pinTx);
+  nvs15.putUChar("pinRx",   (uint8_t)cfg.pinRx);
+  nvs15.putUChar("pinFan",  (uint8_t)cfg.pinFan);
   nvs15.end();
   return true;
 }
@@ -342,7 +377,7 @@ void followStop(bool done) {
     // 曲线正常走完：回落到结束收尾值（25°C/25% 风），不干烧不保温
     heaterWriteSv(FOLLOW_END_SV);
     heater.sv = FOLLOW_END_SV;   // 立即刷新缓存，广播不滞后
-    ledcWrite(PIN_FAN_PWM, (uint16_t)FOLLOW_END_FAN * 255 / 100);
+    ledcWrite(cfg.pinFan, (uint16_t)FOLLOW_END_FAN * 255 / 100);
     fanSpeed = FOLLOW_END_FAN;
     follow.notifyDone = true;    // 广播一次“已结束回落”给前端
     Serial.printf("[跟随] 曲线走完，回落 SV=%u 风机=%u%%\n", FOLLOW_END_SV, FOLLOW_END_FAN);
@@ -375,7 +410,7 @@ void followTick() {
       // 回落到跟随结束值（不是保温，因为这是收尾场景）
       heaterWriteSv(FOLLOW_END_SV);
       heater.sv = FOLLOW_END_SV;
-      ledcWrite(PIN_FAN_PWM, (uint16_t)FOLLOW_END_FAN * 255 / 100);
+      ledcWrite(cfg.pinFan, (uint16_t)FOLLOW_END_FAN * 255 / 100);
       fanSpeed = FOLLOW_END_FAN;
       broadcastState();
       return;
@@ -432,7 +467,7 @@ void watchdogTick() {
         // 一段：保温（用户可自定义 safe_sv / safe_fan）
         heaterWriteSv(cfg.safeSv);
         heater.sv = cfg.safeSv;  // 立即刷新缓存，广播帧里 sv 不滞后一拍
-        ledcWrite(PIN_FAN_PWM, (uint16_t)cfg.safeFan * 255 / 100);
+        ledcWrite(cfg.pinFan, (uint16_t)cfg.safeFan * 255 / 100);
         fanSpeed = cfg.safeFan;
         Serial.printf("[看门狗] 进入安全模式 SV=%u 风机=%u%%\n", cfg.safeSv, cfg.safeFan);
         if (!cfg.safeOffEnabled) { wdState = WdState::ARMED; }
@@ -827,7 +862,7 @@ void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
         if (follow.on) followStop(false);
         heaterWriteSv(cfg.safeSv);
         heater.sv = cfg.safeSv;  // 立即刷新缓存
-        ledcWrite(PIN_FAN_PWM, (uint16_t)cfg.safeFan * 255 / 100);
+        ledcWrite(cfg.pinFan, (uint16_t)cfg.safeFan * 255 / 100);
         fanSpeed = cfg.safeFan;
         if (wdState == WdState::ARMED) { wdState = WdState::SAFE_MODE; wdStateSince = millis(); }
         broadcastState();
@@ -845,6 +880,10 @@ void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
         JsonObject m = c.createNestedObject("modbus");
         m["reg_pv"] = cfg.regPv; m["reg_sv"] = cfg.regSv;
         m["baud"] = cfg.baud; m["slave_id"] = cfg.slaveId;
+        JsonObject g = c.createNestedObject("gpio");
+        g["pin_tx"] = cfg.pinTx; g["pin_rx"] = cfg.pinRx; g["pin_fan"] = cfg.pinFan;
+        g["pool"] = PIN_POOL_LEN;   // 可用池长度（前端据此渲染下拉）
+        g["pin_boot"] = PIN_BOOT; g["pin_led"] = PIN_LED;
         serializeJson(c, out);
         ws.sendTXT(num, out);
       } else if (strcmp(type_, "set_config") == 0) {
@@ -879,6 +918,21 @@ void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
           if (!mb["slave_id"].isNull()) cfg.slaveId = mb["slave_id"] | DEF_MODBUS_SLAVE;
           if (cfg.baud < 300 || cfg.baud > 115200) cfg.baud = DEF_MODBUS_BAUD;
           if (cfg.slaveId < 1 || cfg.slaveId > 247) cfg.slaveId = DEF_MODBUS_SLAVE;
+        }
+        // 自定义 GPIO：三重校验（池内 + 非 0 + 三者互斥），非法整体拒绝回旧值
+        JsonObject gp = doc["gpio"].as<JsonObject>();
+        if (!gp.isNull()) {
+          int8_t nt = gp["pin_tx"] | -1;
+          int8_t nr = gp["pin_rx"] | -1;
+          int8_t nf = gp["pin_fan"] | -1;
+          if (pinValid(nt) && pinValid(nr) && pinValid(nf) &&
+              nt != nr && nt != nf && nr != nf) {
+            cfg.pinTx = nt; cfg.pinRx = nr; cfg.pinFan = nf;
+            Serial.printf("[引脚] 新配置 TX=GPIO%d RX=GPIO%d FAN=GPIO%d（重启生效）\n",
+                          cfg.pinTx, cfg.pinRx, cfg.pinFan);
+          } else {
+            Serial.printf("[引脚] 拒绝非法配置 TX=%d RX=%d FAN=%d\n", nt, nr, nf);
+          }
         }
         saveCfg();
         Serial.printf("[配置] sim=%d safeSv=%u safeFan=%u\n", cfg.simEnabled, cfg.safeSv, cfg.safeFan);
@@ -1101,7 +1155,7 @@ void handleStatus() {
     uint16_t duty = (uint16_t)fanSpeed * 255 / 100;
     if (duty < FAN_DUTY_FLOOR && fanSpeed > 0) duty = FAN_DUTY_FLOOR;
     if (duty > FAN_DUTY_CEIL) duty = FAN_DUTY_CEIL;
-    ledcWrite(PIN_FAN_PWM, duty);
+    ledcWrite(cfg.pinFan, duty);
     Serial.printf("[风] 风速 %u%% -> duty %u\n", (unsigned)fanSpeed, (unsigned)duty);
     char body[96];
     snprintf(body, sizeof(body), "{\"fan_speed\":%u,\"duty\":%u}",
@@ -1158,13 +1212,15 @@ void setup() {
   WiFi.setSleep(false);
   pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_BOOT, INPUT_PULLUP);
-  loadCfg();  // 提前：串口波特率来自配置
-  rs485.begin(cfg.baud, SERIAL_8N1, PIN_485_RX, PIN_485_TX);
+  loadCfg();  // 提前：串口波特率+引脚来自配置
+  rs485.begin(cfg.baud, SERIAL_8N1, cfg.pinRx, cfg.pinTx);
+  Serial.printf("[RS485] TX=GPIO%d RX=GPIO%d 波特率 %lu 8N1 从站%u\n",
+                cfg.pinTx, cfg.pinRx, (unsigned long)cfg.baud, cfg.slaveId);
 
-  ledcAttach(PIN_FAN_PWM, FAN_PWM_FREQ, FAN_PWM_BITS);
-  ledcWrite(PIN_FAN_PWM, 0);
+  ledcAttach(cfg.pinFan, FAN_PWM_FREQ, FAN_PWM_BITS);
+  ledcWrite(cfg.pinFan, 0);
   fanSpeed = 0;
-  Serial.printf("[风] PWM 引脚 GPIO%d，频率 %uHz\n", PIN_FAN_PWM, (unsigned)FAN_PWM_FREQ);
+  Serial.printf("[风] PWM 引脚 GPIO%d，频率 %uHz\n", cfg.pinFan, (unsigned)FAN_PWM_FREQ);
   loadCreds();
   ensureWifi();
   server.begin();

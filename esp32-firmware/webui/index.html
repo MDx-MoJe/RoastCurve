@@ -568,6 +568,7 @@ function onState(m){
 function onConfig(m){
   cfgInfo = m.watchdog ? {safeSv:m.watchdog.safe_sv, safeFan:m.watchdog.safe_fan} : null;
   cfgInfo.modbus = m.modbus;
+  cfgInfo.gpio = m.gpio;   // {pin_tx,pin_rx,pin_fan,pool,pin_boot,pin_led}
 }
 /* ================== 阶段统计 ================== */
 var phaseEvTimes = {};  // ev -> sec
@@ -1034,15 +1035,35 @@ function drawEventMarks(X, Y, t0, t1, w){
   ctx.textAlign = "start";
 }
 /* ================== 设置 ================== */
+// 可用 GPIO 池（与固件 PIN_POOL 一致）：已排除 flash(26-32)/PSRAM(33-37)/USB(19,20)/BOOT(0)/LED(48)/争议(1,3,45,46)
+var GPIO_POOL = [2,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,21,38,39,40,41,42];
 function openSettings(){
   var o = loadCfg();
   var showFan = o.showFan || false;
+  var g = (cfgInfo && cfgInfo.gpio) ? cfgInfo.gpio : {pin_tx:17, pin_rx:18, pin_fan:2};
+  function optRow(label, id, cur){
+    var opts = '';
+    GPIO_POOL.forEach(function(p){
+      var dis = (p === g.pin_tx && id!=='setPinTx') || (p === g.pin_rx && id!=='setPinRx') || (p === g.pin_fan && id!=='setPinFan');
+      opts += '<option value="'+p+'" '+(p===cur?'selected':'')+(dis?' disabled':'')+'>GPIO'+p+(p===17?' (默认TX)':p===18?' (默认RX)':p===2?' (默认风机)':'')+'</option>';
+    });
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)">'+
+      '<div style="font-weight:600;font-size:13px">'+label+'</div>'+
+      '<select id="'+id+'" style="background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;color:var(--tx);font-size:13px">'+opts+'</select></div>';
+  }
   var html =
     '<h3 style="margin-bottom:12px">设置</h3>'+
     '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)">'+
     '<div><div style="font-weight:600">显示风机控制</div><div style="font-size:11px;color:var(--dim)">不需要可以关掉隐藏</div></div>'+
     '<input type="checkbox" id="setShowFan" '+(showFan?"checked":"")+' style="width:20px;height:20px"></div>';
-  html += '<div style="display:flex;gap:8px;margin-top:16px">'+
+  html += '<div style="margin-top:10px">'+
+    '<div style="font-weight:700;font-size:14px;margin-bottom:2px">GPIO 引脚配置</div>'+
+    '<div style="font-size:11px;color:var(--dim);margin-bottom:6px">DIY 换板不换线：改 RS485 与风机引脚后保存并重启生效</div>'+
+    optRow('RS485 TX', 'setPinTx', g.pin_tx) +
+    optRow('RS485 RX', 'setPinRx', g.pin_rx) +
+    optRow('风机 PWM', 'setPinFan', g.pin_fan) +
+    '<div style="font-size:10px;color:var(--dim);padding:6px 0">已分配的引脚在其他下拉中自动禁用（互斥）。BOOT(GPIO0)/LED(GPIO48)/USB(19,20)/flash/PSRAM 脚不可分配。</div></div>';
+  html += '<div style="display:flex;gap:8px;margin-top:12px">'+
     '<button onclick="saveSettings()" style="flex:1;padding:9px;border-radius:50px;border:0;background:var(--primary);color:var(--bg);font-weight:700">保存</button>'+
     '<button onclick="closeTopOverlay()" style="flex:1;padding:9px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">关闭</button></div>';
   showSheet(html);
@@ -1051,6 +1072,15 @@ function saveSettings(){
   var showFan = $("setShowFan").checked;
   cfgSet("showFan", showFan);
   $("fanCard").classList.toggle("hidden", !showFan);
+  // GPIO：仅当主控（网页持有控制权）才下发固件；否则只提示
+  if (cfgInfo && cfgInfo.gpio && $("setPinTx")){
+    var nt = parseInt($("setPinTx").value,10), nr = parseInt($("setPinRx").value,10), nf = parseInt($("setPinFan").value,10);
+    if (nt === nr || nt === nf || nr === nf){
+      alert("TX/RX/风机必须使用不同引脚"); return;
+    }
+    send({type:"set_config", gpio:{pin_tx:nt, pin_rx:nr, pin_fan:nf}});
+    alert("引脚已保存：TX=GPIO"+nt+" RX=GPIO"+nr+" 风机=GPIO"+nf+"\n\n重启后生效。若改后设备失联，长按 BOOT 键 3 秒恢复默认。");
+  }
   closeTopOverlay();
 }
 var topOvl = null;
