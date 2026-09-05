@@ -908,11 +908,14 @@ var dragFan = false, fanGraceUntil = 0;
 function setSvUI(){
   var dis = !isHolder || followOn;
   $("svSlider").disabled = dis; $("svSend").disabled = dis;
-  $("takeBtn").disabled = isHolder || followOn;
-  $("takeBtn").textContent = isHolder ? "✓ 本页是主控" : "接管控制";
+  // 接管：仅本页已是主控时禁。跟随中允许接管（原启动者可能已断开/锁屏）
+  $("takeBtn").disabled = isHolder;
+  $("takeBtn").textContent = isHolder ? "✓ 本页是主控" : (followOn ? "接管跟随" : "接管控制");
   $("followSel").disabled = !isHolder || followOn;
-  $("followBtn").disabled = !isHolder;
-  $("followBtn").textContent = followOn ? "停止跟随" : "启动跟随";
+  // 跟随按钮：跟随中永远可点（停止是安全操作，任何连上的人都能停）；
+  // 非跟随时需主控才能启动新曲线
+  $("followBtn").disabled = !isHolder && !followOn;
+  $("followBtn").textContent = followOn ? "■ 停止跟随" : "启动跟随";
   $("followBtn").className = followOn ? "stopf" : "";
   // 导入/管理模板永远可用（文件与本地操作，与控制权无关）
   $("fanSlider").disabled = followOn;

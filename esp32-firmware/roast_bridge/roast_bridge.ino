@@ -46,7 +46,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.7.1";
+constexpr const char* FIRMWARE_VERSION = "1.7.2";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -807,9 +807,11 @@ void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
       strncpy(diagLastType, type_, sizeof(diagLastType) - 1);
       diagLastType[sizeof(diagLastType) - 1] = 0;
       if (strcmp(type_, "takeover") == 0) {
-        if (follow.on) return;  // 跟随运行中不接受接管（跟随由启动者管理）
+        // 接管 = 承担看护责任。跟随中允许接管（原启动者可能已断开/锁屏），
+        // 接管者获得主控后可 follow_stop 停掉或继续观察；不擅自停曲线
         wsHolder = true; wsHolderNum = num;
         setHolder(Holder::WEB);
+        broadcastState();
       } else if (strcmp(type_, "sv_set") == 0) {
         // 只有主控能写 SV（粘性安全模式也靠显式 sv_set 退出）；跟随中拒绝
         if (!(wsHolder && wsHolderNum == num)) { /* 非主控拒绝 */ return; }
