@@ -19,9 +19,11 @@ RoastCurve (烤豆) → manage curves (monitoring, design, export)
 ## Features
 
 - **Live monitoring**: Modbus TCP via WiFi-RS485 gateway or a DIY ESP32 bridge; real-time bean temperature, RoR, event markers (Charge / Yellowing / First crack / Drop), phase statistics
-- **Profile follow (auto-roasting)**: autonomous curve execution on the bridge firmware — runs to completion, then settles SV & fan to your configured end values (default 25°C/25%), no false trip on empty drum / high airflow; hard safety cap at 250°C PV
+- **Profile follow (auto-roasting)**: autonomous curve execution on the bridge — runs to completion, then settles SV & fan to configured end values (default 25°C/25%); hard safety cap at 250°C PV
 - **Profile designer**: extract from history, import Artisan `.alog`, or draw custom anchor curves (FC monotone cubic interpolation)
 - **Recording**: 30s auto-draft + drop snapshot + finalize on stop; crash-safe session restore; CSV/JSON export
+- **Bridge Web UI**: roast in the browser — firmware samples data so nothing is lost on refresh; draw curves; zip export
+- **Custom bridge GPIO**: RS485 TX/RX & fan pins configurable from the App or Web UI (no rewiring on board swaps)
 - **BeanBag sync**: after each roast, automatically deduct green beans & add roasted stock (idempotent)
 - **Language packs**: built-in Chinese & English; import community language packs (zip) at runtime
 
@@ -43,18 +45,36 @@ Live monitor dashboard: dual-pane layout with real-time bean temperature / time 
 | Networking | Ktor Client (OkHttp / Darwin) |
 | Serialization | kotlinx.serialization |
 
-## Latest Release (2026-09-05)
+## Latest Release (2026-09-06)
 
 **App v1.3.20** · **Bridge firmware v1.8.3** · **Web UI overhaul**
 
-- **Follow mode is now autonomous**: removed the deviation fuse (empty-drum false trips); the curve runs to completion then settles SV to 25°C / fan 25%. App: settle values adjustable in Settings → Follow-End Settle (SV 20–120°C, fan 0–100%). Safety net: hard interrupt only if PV ≥250°C for 5s
-- **Web UI (browser console)**: full monitoring & control without the app. Roast data is now **sampled by the firmware** (every 5s, up to 120 min) — refresh / lock-screen / device switch never loses the curve; the page auto-recovers timer, events and history
-- **Draw-your-own curve** on the web: tap to add anchor points, drag to adjust, live temp/time labels per point, save as a follow profile
-- **Custom GPIO** (DIY board swaps without rewiring): RS485 TX/RX + fan PWM pins configurable in **App Settings → Bridge GPIO Pins** or **Web UI → GPIO config**. Reserved pins excluded (flash 26-32 / PSRAM 33-37 / USB 19-20 / strapping 1,3,45,46). Hold BOOT 3s to reset to defaults (17/18/2)
-- **Lock-screen / disconnect deadlock fixed**: after the controlling page drops, a fresh page can now take over or stop the running follow (previously stuck until emergency stop)
-- **Watchdog countdown overflow fixed** (no more 4294967096s phantom)
+### Follow mode: autonomous
 
-**Notes**: update App + firmware together (follow semantics must match). 4MB flash boards are unsupported since v1.4 — use 8MB (`default_8MB`) or 16MB (recommended). Web UI and App are separate follow entries — use only one at a time. **GPIO pin config requires firmware v1.8.1+** — the App/Web UI shows an upgrade guide for older firmware.
+- Curve runs to completion, then settles SV to 25°C / fan 25%
+- Settle values adjustable in Settings → Follow-End Settle (SV 20–120°C, fan 0–100%)
+- Hard interrupt if PV ≥250°C for 5s
+
+### Web UI (browser console)
+
+- Full monitoring & control in browser — no app needed
+- Roast data survives refresh / lock-screen / device switch; timer, events and history auto-recover
+- Draw your own curve: tap to add anchors, drag to adjust, live labels, save as follow profile
+- Templates: save from roast, import Artisan .alog, manage — shared with the App
+- Fan slider with instant response · zip export/import · signal strength & event markers
+
+### Custom GPIO (no rewiring needed)
+
+- TX/RX/fan pins configurable in **App Settings → Bridge GPIO Pins** or **Web UI → GPIO config** (reboot to apply)
+- Reserved pins excluded (flash 26-32 / PSRAM 33-37 / USB 19-20 / strapping 1,3,45,46), pins are mutually exclusive
+- Lost connection after a change? Hold BOOT 3s to reset to defaults (17/18/2)
+
+### Fixes
+
+- **Lock-screen / disconnect no longer deadlocks**: a fresh page can take over or stop the running follow
+- **Watchdog countdown fixed**: no more abnormal long countdowns
+
+**Notes**: update App + firmware together. 4MB flash boards unsupported since v1.4 — use 8MB or 16MB. Web UI and App are separate follow entries — use only one. GPIO config requires firmware v1.8.1+ (old firmware shows an upgrade prompt; flash v1.8.3 via USB).
 
 ## Downloads
 
