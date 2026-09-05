@@ -7,14 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>烤豆 · RoastBridge</title>
 <style>
-/* ============ 烤豆家族配色（design-system/Colors.kt 双主题）============
-   浅色: bg #FAF5EB surface #FFFBF5 sv #F2EBDE primary #8B5E3C accent #D4843A
-         onBg #3D2B1F onSurf #4A3728 onSurfVar #7A6857 ok #5B8C5A err #BF4B3A
-         grid #E8DDD0 gridTx #A89885
-   深色: bg #1A1410 surface #241D16 sv #2E251C primary #D4A574 accent #F0A050
-         onBg #E8DDD0 onSurf #D4C5B2 onSurfVar #A89885 ok #7CB87B err #E05545
-         grid #3A2E24 gridTx #7A6857
-======================================================================== */
+/* ============ 烤豆家族配色（design-system/Colors.kt 双主题）============ */
 :root{
   --bg:#FAF5EB; --card:#FFFBF5; --card2:#F2EBDE; --line:#E8DDD0;
   --tx:#3D2B1F; --tx2:#7A6857; --dim:#A89885;
@@ -22,8 +15,10 @@
   --accent:#D4843A; --accentLight:#F0B87A;
   --ok:#5B8C5A; --warn:#D4843A; --err:#BF4B3A;
   --gridLine:#E8DDD0; --gridText:#A89885;
-  --svDisp:#8B5E3C; --svPend:#D4843A;
-  --thumb:#B8845A;
+  --svDisp:#8B5E3C; --svPend:#D4843A; --thumb:#B8845A;
+  --phaseDrying:#D9EAD3; --phaseMaillard:#FAEFC0; --phaseDev:#EBD9BC;
+  --phaseDryingA:#55804B; --phaseMaillardA:#9C7514; --phaseDevA:#96652F;
+  --tabH:56px;
 }
 @media (prefers-color-scheme: dark){
   :root{
@@ -33,8 +28,9 @@
     --accent:#F0A050; --accentLight:#F5C898;
     --ok:#7CB87B; --warn:#F0A050; --err:#E05545;
     --gridLine:#3A2E24; --gridText:#7A6857;
-    --svDisp:#E8C9A8; --svPend:#F0A050;
-    --thumb:#E8C9A8;
+    --svDisp:#E8C9A8; --svPend:#F0A050; --thumb:#E8C9A8;
+    --phaseDrying:#243122; --phaseMaillard:#352D14; --phaseDev:#3A2818;
+    --phaseDryingA:#93C08A; --phaseMaillardA:#E0C368; --phaseDevA:#D4A574;
   }
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -58,7 +54,14 @@ header h1 span{color:var(--accent)}
 #badge.ok{color:var(--ok); border-color:var(--ok)}
 #badge.bad{color:var(--err); border-color:var(--err)}
 #badge.wd{color:var(--warn); border-color:var(--warn); animation:blink 1s infinite}
+#badge.rec{color:var(--err); border-color:var(--err); animation:blink 1.2s infinite}
 @keyframes blink{50%{opacity:.4}}
+.headBtns{display:flex; gap:6px}
+.headBtns button{
+  font-size:12px; padding:6px 12px; border-radius:20px; border:1px solid var(--line);
+  background:var(--card2); color:var(--tx2); font-family:inherit;
+}
+.headBtns button:active{background:var(--card)}
 #banner{
   display:none; margin:10px 12px 0; padding:10px 14px;
   border-radius:12px; font-size:13px; line-height:1.5;
@@ -70,7 +73,9 @@ header h1 span{color:var(--accent)}
   background:var(--accent); color:#fff; border:0; font-weight:700;
 }
 @media (prefers-color-scheme: dark){ #banner button{color:#1A1410} }
-main{flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:10px}
+main{flex:1; padding:0 0 calc(10px + var(--tabH) + env(safe-area-inset-bottom)); position:relative}
+.view{display:none; padding:10px 12px; flex-direction:column; gap:10px}
+.view.active{display:flex}
 .tempbar{display:flex; gap:10px}
 .tcard{
   flex:1; background:var(--card); border:1px solid var(--line); border-radius:16px;
@@ -81,10 +86,10 @@ main{flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:10px}
 .tcard.pv .val{color:var(--accent)}
 .tcard.sv .val{color:var(--svDisp)}
 .tcard .unit{font-size:13px; color:var(--dim); font-weight:400}
-#chartCard{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:10px}
-#chart{width:100%; height:240px; display:block}
-.legend{display:flex; gap:14px; padding:6px 4px 0; font-size:11px; color:var(--tx2); flex-wrap:wrap}
-.legend i{display:inline-block; width:16px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle}
+#chartCard{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:10px; position:relative}
+#chart{width:100%; height:250px; display:block}
+.legend{display:flex; gap:12px; padding:6px 4px 0; font-size:11px; color:var(--tx2); flex-wrap:wrap}
+.legend i{display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:4px; vertical-align:middle}
 .row{display:flex; gap:10px}
 .card{flex:1; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 14px}
 .card .lbl{font-size:11px; color:var(--tx2); margin-bottom:8px}
@@ -94,54 +99,46 @@ main{flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:10px}
 #holderTag.none{color:var(--dim)}
 button{font-family:inherit}
 #takeBtn{
-  margin-top:8px; width:100%; padding:9px; border-radius:50px; border:1px solid var(--accent);
+  margin-top:8px; width:100%; padding:8px; border-radius:50px; border:1px solid var(--accent);
   background:transparent; color:var(--accent); font-size:13px; font-weight:700;
 }
 #takeBtn:disabled{opacity:.35}
-#svRow{display:flex; align-items:center; gap:12px}
+#svRow{display:flex; align-items:center; gap:10px}
 #svVal{
-  min-width:78px; text-align:center; font-size:24px; font-weight:800;
+  min-width:74px; text-align:center; font-size:22px; font-weight:800;
   color:var(--svDisp); font-variant-numeric:tabular-nums;
-  background:var(--card2); border:1px solid var(--line); border-radius:12px;
-  padding:4px 6px; transition:border-color .2s;
+  background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:3px 5px;
 }
-#svVal span{font-size:10px; color:var(--dim); font-weight:400; display:block; margin-top:-2px}
+#svVal span{font-size:10px; color:var(--dim); font-weight:400; display:block}
 #svVal.pending{border-color:var(--svPend)}
-#svSlider{flex:1; -webkit-appearance:none; appearance:none; height:34px; background:transparent}
+#svSlider{flex:1; -webkit-appearance:none; appearance:none; height:32px; background:transparent}
 #svSlider::-webkit-slider-runnable-track{height:6px; border-radius:3px; background:var(--gridLine)}
 #svSlider::-webkit-slider-thumb{
   -webkit-appearance:none; width:26px; height:26px; border-radius:50%;
-  background:var(--thumb); margin-top:-10px; box-shadow:0 2px 6px rgba(0,0,0,.25);
+  background:var(--thumb); margin-top:-10px;
 }
-#svSend{
-  padding:9px 18px; border-radius:50px; border:0; background:var(--primary); color:var(--bg);
-  font-size:14px; font-weight:700;
+#svSend{padding:8px 16px; border-radius:50px; border:0; background:var(--primary); color:var(--bg); font-size:14px; font-weight:700}
+#svSlider:disabled{opacity:.3}#svSend:disabled{opacity:.3}
+/* 阶段统计 */
+.phaseRow{display:flex; gap:6px}
+.phaseCard{flex:1; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:8px 10px; text-align:center}
+.phaseCard .pn{font-size:11px; font-weight:600}
+.phaseCard .pd{font-size:9px; opacity:.7}
+.phaseCard .pt{font-size:16px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums}
+.phaseCard .pp{font-size:10px; opacity:.8}
+/* 风速 */
+#fanCard{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 14px}
+#fanRow{display:flex; align-items:center; gap:10px}
+#fanSlider{flex:1; -webkit-appearance:none; height:32px; background:transparent}
+#fanSlider::-webkit-slider-runnable-track{height:6px; border-radius:3px; background:var(--gridLine)}
+#fanSlider::-webkit-slider-thumb{
+  -webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:var(--ok); margin-top:-9px;
 }
-#svSlider:disabled{opacity:.3}
-#svSend:disabled{opacity:.3}
-#followCard .frow{display:flex; gap:8px; margin-top:8px}
-#followCard select{
-  flex:1; padding:9px; border-radius:12px; border:1px solid var(--line);
-  background:var(--card2); color:var(--tx); font-size:13px; font-family:inherit;
-}
-#followCard button{
-  padding:9px 16px; border-radius:50px; border:0; font-size:13px; font-weight:700;
-  background:var(--accent); color:#fff;
-}
-@media (prefers-color-scheme: dark){ #followCard button{color:#1A1410} }
-#followCard button.stopf{background:var(--err); color:#fff}
-#followCard button:disabled{opacity:.35}
-#followInfo{margin-top:8px; font-size:12px; color:var(--tx2); display:none}
-#followInfo b{color:var(--accent)}
-#stopBtn{
-  width:100%; padding:16px; border-radius:50px; border:1px solid var(--err);
-  background:rgba(191,75,58,.12); color:var(--err); font-size:17px; font-weight:800; letter-spacing:2px;
-}
-#stopBtn:active{background:var(--err); color:#fff}
-
+#fanVal{min-width:52px; text-align:center; font-size:20px; font-weight:800; color:var(--ok)}
+/* 事件 dock */
 .evbar{
   display:flex; gap:6px; background:var(--card); border:1px solid var(--line);
-  border-radius:50px; padding:8px 12px; justify-content:space-between;
+  border-radius:50px; padding:8px 10px; justify-content:space-between;
 }
 .evbar button{
   flex:1; padding:9px 2px; border-radius:24px; border:0; font-size:12px; font-weight:700;
@@ -153,96 +150,577 @@ button{font-family:inherit}
 .evbar button.fcs{background:#c2602f; color:#fff}
 .evbar button.scs{background:#8f2f22; color:#fff}
 .evbar button.drop{background:#3d6a80; color:#fff}
-#evLog{margin-top:8px; font-size:11px; color:var(--tx2); line-height:1.6; display:none}
-footer{padding:8px 16px calc(10px + env(safe-area-inset-bottom)); text-align:center; font-size:11px; color:var(--dim)}
-#hint{display:none; padding:6px 16px; font-size:12px; color:var(--warn); text-align:center}
+.evbar button:disabled{opacity:.3}
+#evLog{margin-top:6px; font-size:11px; color:var(--tx2); line-height:1.7; display:none}
+#evLog b{color:var(--primary)}
+/* 跟随 */
+#followCard .frow{display:flex; gap:8px; margin-top:8px}
+#followCard select{
+  flex:1; padding:8px; border-radius:12px; border:1px solid var(--line);
+  background:var(--card2); color:var(--tx); font-size:13px; font-family:inherit;
+}
+#followCard button{
+  padding:8px 14px; border-radius:50px; border:0; font-size:13px; font-weight:700;
+  background:var(--accent); color:#fff;
+}
+@media (prefers-color-scheme: dark){ #followCard button{color:#1A1410} }
+#followCard button.stopf{background:var(--err); color:#fff}
+#followCard button:disabled{opacity:.35}
+#followInfo{margin-top:6px; font-size:12px; color:var(--tx2); display:none}
+#followInfo b{color:var(--accent)}
+#stopBtn{
+  width:100%; padding:14px; border-radius:50px; border:1px solid var(--err);
+  background:rgba(191,75,58,.12); color:var(--err); font-size:16px; font-weight:800; letter-spacing:2px;
+}
+#stopBtn:active{background:var(--err); color:#fff}
+/* 底部 tab */
+#tabbar{
+  position:fixed; bottom:0; left:0; right:0; height:var(--tabH);
+  display:flex; background:var(--card); border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom); z-index:20;
+}
+#tabbar button{
+  flex:1; border:0; background:transparent; color:var(--dim);
+  font-size:11px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  font-family:inherit;
+}
+#tabbar button .ic{font-size:19px; line-height:1}
+#tabbar button.active{color:var(--accent)}
+/* 记录视图 */
+.listCard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 14px}
+.listRow{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line)}
+.listRow:last-child{border-bottom:0}
+.listRow .t{font-size:14px; font-weight:600}
+.listRow .s{font-size:11px; color:var(--dim); margin-top:2px}
+.emptyBox{text-align:center; padding:40px 20px; color:var(--dim); font-size:13px; line-height:1.8}
+.hidden{display:none!important}
+footer{display:none}
 </style>
 </head>
 <body>
 <header>
   <h1>烤豆<span>·</span>桥接器</h1>
-  <div id="badge">连接中…</div>
+  <div class="headBtns">
+    <button id="btnSettings">设置</button>
+  </div>
 </header>
-<div id="hint">iOS 锁屏会断开监控：设置 → 显示与亮度 → 自动锁定 → 永不</div>
 <div id="banner"></div>
 <main>
-  <div class="tempbar">
-    <div class="tcard pv"><div class="lbl">豆温 PV</div><div class="val" id="pv">--<span class="unit">°C</span></div></div>
-    <div class="tcard sv"><div class="lbl">设定 SV</div><div class="val" id="sv">--<span class="unit">°C</span></div></div>
-  </div>
-  <div id="chartCard">
-    <canvas id="chart"></canvas>
-    <div class="legend">
-      <span><i style="background:var(--accent)"></i>PV 豆温</span>
-      <span><i style="background:var(--primary)"></i>SV 设定</span>
-      <span><i style="background:var(--ok)"></i>RoR</span>
-      <span id="legFollow" style="display:none"><i style="background:var(--warn);height:2px;border-top:1px dashed var(--warn);background:none"></i>跟随目标</span>
-      <span id="legSim" style="display:none"><i style="background:var(--warn)"></i>SIM</span>
+  <!-- ===== 监控视图 ===== -->
+  <div class="view active" id="view-monitor">
+    <div class="tempbar">
+      <div class="tcard pv"><div class="lbl">豆温 PV</div><div class="val" id="pv">--<span class="unit">°C</span></div></div>
+      <div class="tcard sv"><div class="lbl">设定 SV</div><div class="val" id="sv">--<span class="unit">°C</span></div></div>
+      <div class="tcard" id="tcTime"><div class="lbl">时间</div><div class="val" id="recTime" style="font-size:22px">0:00</div></div>
     </div>
-  </div>
-  
-  <div class="evbar">
-    <button class="charge" onclick="markEv('CHARGE',this)">入豆</button>
-    <button class="dry" onclick="markEv('DRY',this)">黄点</button>
-    <button class="fcs" onclick="markEv('FCs',this)">一爆</button>
-    <button class="scs" onclick="markEv('SCs',this)">二爆</button>
-    <button class="drop" onclick="markEv('DROP',this)">出豆</button>
-  </div>
-  <div id="evLog"></div>
-<div class="row">
+    <div id="chartCard">
+      <canvas id="chart"></canvas>
+      <div class="legend">
+        <span><i style="background:var(--accent)"></i>PV 豆温</span>
+        <span><i style="background:var(--primary)"></i>SV 设定</span>
+        <span><i style="background:var(--ok)"></i>RoR</span>
+        <span id="legFollow" style="display:none"><i style="border-top:2px dashed var(--warn);background:none;height:0"></i>跟随目标</span>
+        <span id="legSim" style="display:none"><i style="background:var(--warn)"></i>SIM</span>
+        <span id="legRec" style="display:none"><i style="background:var(--err)"></i>记录中</span>
+      </div>
+    </div>
+    <!-- 阶段统计（入豆后显示）-->
+    <div class="phaseRow" id="phaseRow">
+      <div class="phaseCard"><div class="pn" style="color:var(--phaseDryingA)">脱水</div><div class="pd" id="phDrying"></div><div class="pt" id="phDryingT">--</div><div class="pp" id="phDryingP"></div></div>
+      <div class="phaseCard"><div class="pn" style="color:var(--phaseMaillardA)">美拉德</div><div class="pd" id="phMaillard"></div><div class="pt" id="phMaillardT">--</div><div class="pp" id="phMaillardP"></div></div>
+      <div class="phaseCard"><div class="pn" style="color:var(--phaseDevA)">发展</div><div class="pd" id="phDev"></div><div class="pt" id="phDevT">--</div><div class="pp" id="phDevP"></div></div>
+    </div>
+    <div class="row">
+      <div class="card"><div class="lbl">当前主控</div><div class="big" id="holderTag">—</div>
+        <button id="takeBtn" onclick="takeover()">接管控制</button></div>
+      <div class="card"><div class="lbl">RoR 升温速率</div><div class="big" id="ror">--<span style="font-size:12px;color:var(--dim)"> °C/分</span></div></div>
+    </div>
     <div class="card">
-      <div class="lbl">当前主控</div>
-      <div class="big" id="holderTag">—</div>
-      <button id="takeBtn" onclick="takeover()">接管控制</button>
+      <div class="lbl">设定温度 SV（主控可用，跟随中禁用）</div>
+      <div id="svRow">
+        <input type="range" id="svSlider" min="30" max="260" value="70" disabled>
+        <div id="svVal">--<span>°C</span></div>
+        <button id="svSend" onclick="applySv()" disabled>下发</button>
+      </div>
     </div>
-    <div class="card">
-      <div class="lbl">RoR 升温速率</div>
-      <div class="big" id="ror">--<span style="font-size:12px;color:var(--dim)"> °C/分</span></div>
+    <div id="fanCard" class="hidden">
+      <div class="lbl">风机转速</div>
+      <div id="fanRow">
+        <input type="range" id="fanSlider" min="0" max="100" value="0" disabled>
+        <div id="fanVal">0%</div>
+        <button id="fanSend" style="padding:8px 14px;border-radius:50px;border:0;background:var(--ok);color:#fff;font-weight:700" onclick="applyFan()">设置</button>
+      </div>
     </div>
+    <div id="followCard" class="card">
+      <div class="lbl">跟随曲线（固件端执行）</div>
+      <div class="frow">
+        <select id="followSel"></select>
+        <button id="followBtn" onclick="followToggle()">启动跟随</button>
+      </div>
+      <div id="followInfo"></div>
+    </div>
+    <button id="stopBtn" onclick="estop()">■ 急 停</button>
+    <!-- 事件 dock + 记录状态 -->
+    <div style="display:flex;align-items:center;gap:8px;padding:2px 2px 0">
+      <span style="font-size:11px;color:var(--tx2)" id="recHint">点「入豆」开始记录</span>
+      <span style="flex:1"></span>
+      <button id="btnSaveRec" onclick="manualSave()" style="display:none;font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid var(--primary);background:transparent;color:var(--primary)">保存本炉</button>
+    </div>
+    <div class="evbar" id="evDock">
+      <button class="charge" data-ev="CHARGE">入豆</button>
+      <button class="dry" data-ev="DRY">黄点</button>
+      <button class="fcs" data-ev="FCs">一爆</button>
+      <button class="scs" data-ev="SCs">二爆</button>
+      <button class="drop" data-ev="DROP">出豆</button>
+    </div>
+    <div id="evLog"></div>
   </div>
-  <div id="followCard" class="card">
-    <div class="lbl">跟随曲线（固件端执行，锁屏断连不影响）</div>
-    <div class="frow">
-      <select id="followSel">
-        <option value="ramp">线性爬温 25→200°C（8 分钟）</option>
-        <option value="soak">爬温+恒温 150°C×5 分钟（约 10 分钟）</option>
-        <option value="dram">陡峭曲线（熔断演示，会触发安全模式）</option>
-      </select>
-      <button id="followBtn" onclick="followToggle()">启动跟随</button>
-    </div>
-    <div id="followInfo"></div>
-  </div>
-  <div class="card">
-    <div class="lbl">设定温度 SV（主控可用，跟随中禁用）</div>
-    <div id="svRow">
-      <input type="range" id="svSlider" min="30" max="260" value="70" disabled>
-      <div id="svVal">--<span>°C</span></div>
-      <button id="svSend" onclick="applySv()" disabled>下发</button>
-    </div>
-  </div>
-  <button id="stopBtn" onclick="estop()">■ 急 停</button>
-</main>
-<footer>RoastBridge <span id="fver"></span> · <span id="fup"></span></footer>
 
+  <!-- ===== 记录视图 ===== -->
+  <div class="view" id="view-history">
+    <div class="listCard">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 2px 8px">
+        <span style="font-weight:700">烘焙记录</span>
+        <span style="display:flex;gap:6px">
+          <button onclick="exportAll()" style="font-size:12px;padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">导出全部</button>
+          <button onclick="document.getElementById('fileImport').click()" style="font-size:12px;padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">导入</button>
+        </span>
+      </div>
+      <input type="file" id="fileImport" accept=".json" style="display:none" onchange="importData(this)">
+      <div id="recList"><div class="emptyBox">还没有烘焙记录<br><br>连上桥接器 → 点「入豆」开始记录，<br>「出豆」后自动保存在本机浏览器</div></div>
+    </div>
+  </div>
+</main>
+<!-- 底部 tab -->
+<div id="tabbar">
+  <button class="active" data-view="monitor" onclick="switchView('monitor')"><span class="ic">🔥</span>监控</button>
+  <button data-view="history" onclick="switchView('history')"><span class="ic">📋</span>记录</button>
+</div>
 <script>
 "use strict";
+/* ================== 常量 ================== */
 var WSURL = "ws://" + location.hostname + ":8897";
-var ws = null, isHolder = false, cfgInfo = null;
-var hist = [], MAXPTS = 600;
-var lastDataTs = 0, pvPrev = null, tPrev = null;
-var svLastKnown = null;      // 固件最近一次 SV（含跟随写入）
-var lastEvn = -1;
-var svDraft = null;          // 用户拖动中的待下发值（未点下发前存在）
-var dragGraceUntil = 0;      // 拖动/修改后的宽限期：期间 state 不回写滑块
-var followOn = false;
-
+var LS_REC = "roastcurve_records_v1";
+var LS_CFG = "roastcurve_webcfg_v1";
+var MAXPTS = 7200;   // 整炉数据上限：2h @1Hz
+var REC_POINT_EVERY = 1; // 存点间隔（秒）
 var $ = function(id){ return document.getElementById(id); };
 var canvas = $("chart"), ctx = canvas.getContext("2d");
-
+var ws = null, isHolder = false, cfgInfo = null, followOn = false;
+var svLastKnown = null, svDraft = null, dragGraceUntil = 0, lastEvn = -1;
+var hist = [];                 // 实时预览曲线（最近 10 分钟）
+var rec = null;                // 当前录制会话 {startedAt, pts:[], events:[], dropped:bool}
+var recorderTimer = null;
+var lastDataTs = 0, pvPrev = null, tPrev = null, lastRor = null;
+var fanLastSent = 0;
+/* ================== 通用 ================== */
 function badge(cls, txt){ $("badge").className = cls; $("badge").textContent = txt; }
 function fmt(v){ return v === null || v === undefined || isNaN(v) ? "--" : Math.round(v); }
 function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function fmtClock(sec){ var m=Math.floor(sec/60), s=sec%60; return m+":"+(s<10?"0":"")+s; }
+function fmtClockLong(sec){ var h=Math.floor(sec/3600), m=Math.floor(sec%3600/60), s=sec%60; return h>0? (h+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")) : (m+":"+String(s).padStart(2,"0")); }
+function esc(s){ var d=document.createElement("div"); d.textContent=s==null?"":s; return d.innerHTML; }
+/* ================== 视图切换 ================== */
+function switchView(v){
+  document.querySelectorAll(".view").forEach(function(el){ el.classList.remove("active"); });
+  $("view-"+v).classList.add("active");
+  document.querySelectorAll("#tabbar button").forEach(function(b){ b.classList.toggle("active", b.dataset.view===v); });
+  if (v==="history") renderRecList();
+}
+/* ================== 配置持久化（localStorage）================== */
+function loadCfg(){ try{ return JSON.parse(localStorage.getItem(LS_CFG)) || {}; }catch(e){ return {}; } }
+function saveCfg(o){ localStorage.setItem(LS_CFG, JSON.stringify(o)); }
+function cfgGet(k, d){ var o=loadCfg(); return (k in o)? o[k] : d; }
+function cfgSet(k, v){ var o=loadCfg(); o[k]=v; saveCfg(o); }
 
+/* ================== WebSocket ================== */
+function connect(){
+  try{ ws = new WebSocket(WSURL); }catch(e){ badge("bad","连接失败"); return; }
+  ws.onopen = function(){
+    badge(rec && rec.active ? "rec" : "ok", rec && rec.active ? "记录中" : "已连接");
+    send({type:"get_config"});
+    setInterval(function(){ send({type:"ping"}); }, 5000);
+  };
+  ws.onmessage = function(ev){
+    var m; try{ m = JSON.parse(ev.data); }catch(e){ return; }
+    if (m.type === "state") onState(m);
+    else if (m.type === "config") onConfig(m);
+    else if (m.type === "events") renderEvents(m.list);
+  };
+  ws.onclose = function(){
+    badge("bad","连接断开");
+    showBanner("连接已断开，正在重连…", true);
+    isHolder = false; setSvUI();
+  };
+  ws.onerror = function(){ try{ ws.close(); }catch(e){} };
+}
+function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
+
+/* ================== 会话录制 ================== */
+function recStart(){
+  if (rec && rec.active) return;
+  hist = [];
+  rec = { id:"rb_"+Date.now(), active:true, startedAt:Date.now(), t0:0, chargePv:null,
+          pts:[], events:[], name:null, dropped:false, fanPts:[], fanDuty:0 };
+  lastEvn = -1;
+  $("legRec").style.display = "inline";
+  badge("rec","记录中");
+  renderRecDock();
+  showBanner(null);
+}
+function recTick(elapsedSec, pv, sv, fan){
+  if (!rec || !rec.active) return;
+  rec.fanDuty = fan;
+  rec.pts.push({t:Math.round(elapsedSec*10)/10, pv:pv, sv:sv});
+  if (rec.pts.length > MAXPTS) rec.pts.shift();
+}
+function recAddEvent(ev, elapsedSec, pv){
+  if (!rec) rec = { id:"rb_"+Date.now(), active:false, startedAt:Date.now(), t0:0, chargePv:null, pts:[], events:[], name:null, dropped:false, fanPts:[], fanDuty:0 };
+  // 入豆自动起表
+  if (ev==="CHARGE" && !rec.active){ rec.active = true; rec.startedAt = Date.now(); $("legRec").style.display="inline"; badge("rec","记录中"); }
+  rec.events.push({ev:ev, t:elapsedSec, pv:pv});
+  if (ev==="DROP") recDump();
+}
+function recDump(){
+  if (!rec) return;
+  rec.active = false;
+  $("legRec").style.display = "none";
+  badge("ok","已连接");
+  saveRecord(rec);
+  rec = null;
+  hist = [];
+  renderRecDock();
+}
+function recName(){
+  if (rec && rec.pts && rec.pts.length){ return new Date().toLocaleString("zh-CN",{hour12:false}).slice(0,16); }
+  return "";
+}
+function manualSave(){
+  if (!rec || !rec.active){ alert("当前没有进行中的记录"); return; }
+  recDump();
+  alert("本炉已保存到记录");
+}
+/* ================== 事件语义 ================== */
+var EV_NAMES = {CHARGE:"入豆", DRY:"黄点", FCs:"一爆", FCe:"一爆毕", SCs:"二爆", SCe:"二爆毕", DROP:"出豆"};
+function markEv(code, btn){
+  if (!rec || !rec.active){
+    if (code === "CHARGE") recStart();
+    else return;  // 未起表只允许入豆
+  }
+  send({type:"event", ev:code});
+  var elapsed = (Date.now() - rec.startedAt)/1000;
+  recAddEvent(code, Math.round(elapsed), curPv);
+  var old = btn.textContent;
+  btn.textContent = "✓";
+  setTimeout(function(){ btn.textContent = old; }, 700);
+  renderRecDock();
+}
+/* 顶部记录状态行按钮 */
+function renderRecDock(){
+  var e = $("evLog");
+  if (!rec) { if(e) e.style.display="none"; return; }
+  var list = rec.events || [];
+  if (!list.length){ if(e) e.style.display="none"; return; }
+  e.style.display = "block";
+  e.innerHTML = list.map(function(x){
+    return "<b>"+(EV_NAMES[x.ev]||x.ev)+"</b> "+fmtClock(x.t)+" @"+fmt(x.pv)+"°C";
+  }).join(" · ");
+}
+function renderEvents(list){
+  // 固件事件回执（并入当前会话记录去重）
+  if (rec && rec.active && list && list.length){
+    list.forEach(function(x){
+      if (!rec.events.some(function(r){ return r.ev===x.ev && Math.abs(r.t-x.t)<1; }))
+        rec.events.push({ev:x.ev, t:x.t, pv:x.pv});
+    });
+  }
+  renderRecDock();
+}
+/* ================== 状态处理 ================== */
+var curPv = 0, curSv = 0, curFan = 0, curUptime = 0;
+function onState(m){
+  lastDataTs = Date.now();
+  curPv = m.pv; curSv = m.sv; curFan = m.fan||0; curUptime = m.uptime;
+  $("pv").innerHTML = fmt(m.pv)+'<span class="unit">°C</span>';
+  $("sv").innerHTML = fmt(m.sv)+'<span class="unit">°C</span>';
+  $("legSim").style.display = m.mode==="sim" ? "inline":"none";
+  $("legFollow").style.display = m.follow ? "inline":"none";
+  isHolder = (m.holder === "web");
+  followOn = !!m.follow;
+  setSvUI();
+  var tag = $("holderTag");
+  tag.className = "big "+(isHolder?"me":(m.holder==="app"?"app":"none"));
+  tag.textContent = m.holder==="web"?"本网页":(m.holder==="app"?"安卓 App":"无");
+  // SV 回写（草稿宽限策略）
+  svLastKnown = m.sv;
+  if (Date.now() >= dragGraceUntil){
+    if (svDraft !== null) svDraft = null;
+    $("svSlider").value = m.sv;
+  }
+  updateSvVal();
+  // 风扇回写
+  if (!dragFan && Date.now() >= fanGraceUntil){
+    $("fanSlider").value = m.fan || 0;
+    $("fanVal").textContent = (m.fan||0)+"%";
+  }
+  // 横幅
+  if (m.safe){
+    showBanner("⚠ 安全模式生效中：SV 已压至 "+m.sv+"°C，风机 "+(m.fan||0)+"%。确认锅炉状态后用 SV 滑块显式恢复。");
+  } else if (m.wd_remaining !== undefined && m.wd_remaining !== null){
+    showBanner("⏳ 主控失联，<b>"+m.wd_remaining+"s</b> 后进入安全模式（保温 "+(cfgInfo?cfgInfo.safeSv:70)+"°C）<button onclick='takeover()'>立即接管</button>", true);
+  } else showBanner(null);
+  // 事件数变化拉取
+  if (m.evn !== undefined && m.evn !== lastEvn){ lastEvn = m.evn; send({type:"get_events"}); }
+  // 实时曲线（最近 10 分钟预览）
+  var now = m.uptime;
+  hist.push({t:now, pv:m.pv, sv:m.sv, ft:(m.follow?m.f_target:null)});
+  if (hist.length > 700) hist.shift();
+  // RoR（5s 窗口）
+  if (pvPrev !== null && tPrev !== null && now > tPrev){
+    var dt = now - tPrev;
+    if (dt >= 5){
+      lastRor = (m.pv - pvPrev)/dt*60;
+      $("ror").innerHTML = (lastRor>=0?"+":"")+lastRor.toFixed(1)+'<span style="font-size:12px;color:var(--dim)"> °C/分</span>';
+      pvPrev = m.pv; tPrev = now;
+    }
+  } else { pvPrev = m.pv; tPrev = now; }
+  // 录制：入豆后按系统秒走
+  if (rec && rec.active){
+    var elapsed = (Date.now() - rec.startedAt)/1000;
+    recTick(elapsed, m.pv, m.sv, m.fan||0);
+    $("recTime").textContent = fmtClock(elapsed);
+    updatePhases(elapsed);
+  }
+  draw();
+}
+function onConfig(m){
+  cfgInfo = m.watchdog ? {safeSv:m.watchdog.safe_sv, safeFan:m.watchdog.safe_fan} : null;
+  cfgInfo.modbus = m.modbus;
+}
+/* ================== 阶段统计 ================== */
+var phaseEvTimes = {};  // ev -> sec
+function updatePhases(elapsed){
+  // 事件时间表
+  if (rec) (rec.events||[]).forEach(function(e){ if (phaseEvTimes[e.ev]===undefined) phaseEvTimes[e.ev]=e.t; });
+  if (!(rec && rec.active)) return;
+  var evs = phaseEvTimes;
+  var tCharge = evs.CHARGE !== undefined ? evs.CHARGE : 0;
+  var tDry = evs.DRY;
+  var tFcs = evs.FCs;
+  var tDrop = evs.DROP;
+  var now = elapsed;
+  function showPhase(el, t0, t1, pctLabel){
+    if (t0 === undefined || t1 === undefined){ el.textContent = "--"; return; }
+    var d = Math.max(0, t1 - t0);
+    el.textContent = fmtClockLong(Math.round(d));
+  }
+  function pct(a,b){ return a&&b ? Math.round(a/b*100) : ""; }
+  // 脱水：入豆→黄点
+  var dryT = (tDry!==undefined? tDry : (now));  // 未到黄点先算到当前
+  $("phDryingT").textContent = (tDry!==undefined? fmtClockLong(Math.round(tDry - tCharge)) : fmtClockLong(Math.round(now - tCharge)));
+  $("phDryingP").textContent = tDry!==undefined ? (Math.round((tDry-tCharge)/now*100)+"%") : "";
+  // 美拉德：黄点→一爆
+  var mailT = (tFcs!==undefined && tDry!==undefined) ? (tFcs - tDry) : (tDry!==undefined ? (now - tDry) : null);
+  $("phMaillardT").textContent = mailT!==null ? fmtClockLong(Math.round(mailT)) : "--";
+  $("phMaillardP").textContent = (tDry!==undefined && tFcs!==undefined) ? (Math.round((tFcs-tDry)/now*100)+"%") : "";
+  // 发展：一爆→当前/出豆
+  var devT = (tFcs!==undefined) ? (now - tFcs) : null;
+  $("phDevT").textContent = devT!==null ? fmtClockLong(Math.round(devT)) : "--";
+  $("phDevP").textContent = tFcs!==undefined ? (Math.round((now-tFcs)/now*100)+"%") : "";
+}
+function resetPhases(){
+  phaseEvTimes = {};
+  ["phDryingT","phMaillardT","phDevT"].forEach(function(i){ $(i).textContent="--"; });
+  ["phDryingP","phMaillardP","phDevP"].forEach(function(i){ $(i).textContent=""; });
+  $("recTime").textContent = "0:00";
+}
+
+/* ================== 记录存储（localStorage）================== */
+function loadRecords(){ try{ return JSON.parse(localStorage.getItem(LS_REC))||[]; }catch(e){ return []; } }
+function saveRecord(r){
+  var list = loadRecords();
+  r.active = false;
+  r.savedAt = Date.now();
+  // 计算统计
+  r.stats = calcStats(r);
+  r.name = r.name || recName();
+  // 去重（同 id 覆盖）
+  var idx = list.findIndex(function(x){ return x.id===r.id; });
+  if (idx>=0) list[idx]=r; else list.unshift(r);
+  localStorage.setItem(LS_REC, JSON.stringify(list));
+}
+function calcStats(r){
+  var evs={}; (r.events||[]).forEach(function(e){ if(evs[e.ev]===undefined) evs[e.ev]=e.t; });
+  var stats = {charge:evs.CHARGE, dry:evs.DRY, fcs:evs.FCs, fce:evs.FCe, scs:evs.SCs, sce:evs.SCe, drop:evs.DROP, duration:0, maxPv:0};
+  if (r.pts && r.pts.length){
+    stats.duration = Math.round(r.pts[r.pts.length-1].t);
+    stats.maxPv = Math.round(Math.max.apply(null, r.pts.map(function(p){return p.pv;})));
+    stats.dropPv = r.pts[r.pts.length-1].pv;
+  }
+  // 阶段时长
+  var c=evs.CHARGE, d=evs.DRY, fc=evs.FCs, dp=evs.DROP||r.pts[r.pts.length-1].t;
+  if (c!==undefined&&d!==undefined) stats.drying = Math.round(d-c);
+  if (d!==undefined&&fc!==undefined) stats.maillard = Math.round(fc-d);
+  if (fc!==undefined) stats.development = Math.round(dp-fc);
+  return stats;
+}
+function renderRecList(){
+  var list = loadRecords();
+  var box = $("recList");
+  if (!list.length){ box.innerHTML = '<div class="emptyBox">还没有烘焙记录<br><br>连上桥接器 → 点「入豆」开始记录，<br>「出豆」后自动保存在本机浏览器</div>'; return; }
+  box.innerHTML = list.map(function(r, i){
+    var n = r.name || new Date(r.savedAt).toLocaleString();
+    var st = r.stats||{};
+    var fc = st.fcs !== undefined ? ("一爆 "+fmtClock(st.fcs)) : "";
+    var dur = st.duration ? fmtClock(st.duration) : "";
+    return '<div class="listRow" onclick="viewRec('+i+')">'+
+      '<div><div class="t">'+esc(n)+'</div>'+
+      '<div class="s">'+dur+' · 最高 '+fmt(st.maxPv)+'°C · '+(st.dropPv!==undefined?"出豆 "+fmt(st.dropPv)+"°C":"")+' · '+fc+'</div></div>'+
+      '<span style="color:var(--dim)">›</span></div>';
+  }).join("");
+}
+/* ================== 导出 / 导入 ================== */
+function download(filename, text){
+  var a = document.createElement("a");
+  a.href = "data:application/json;charset=utf-8,"+encodeURIComponent(text);
+  a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+function exportAll(){
+  var list = loadRecords();
+  if (!list.length){ alert("没有可导出的记录"); return; }
+  download("roastcurve_backup_"+new Date().toISOString().slice(0,10)+".json",
+    JSON.stringify({app:"roastcurve-web", type:"backup", version:1, records:list, exportedAt:new Date().toISOString()}, null, 2));
+}
+function exportOne(i){
+  var list = loadRecords();
+  var r = list[i];
+  download("roastcurve_"+r.name.replace(/[^\w\u4e00-\u9fa5-]+/g,"_")+".json",
+    JSON.stringify({app:"roastcurve-web", type:"record", version:1, record:r, exportedAt:new Date().toISOString()}, null, 2));
+}
+function importData(input){
+  var f = input.files[0];
+  if (!f) return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    try{
+      var data = JSON.parse(reader.result);
+      var records = data.records ? data.records : (data.record ? [data.record] : []);
+      if (!records.length){ alert("文件里没有烘焙记录"); return; }
+      var cur = loadRecords();
+      records.forEach(function(r){
+        var idx = cur.findIndex(function(x){ return x.id===r.id; });
+        if (idx>=0) cur[idx]=r; else cur.unshift(r);
+      });
+      localStorage.setItem(LS_REC, JSON.stringify(cur));
+      renderRecList();
+      alert("导入 "+records.length+" 条记录");
+    }catch(e){ alert("文件解析失败："+e.message); }
+  };
+  reader.readAsText(f);
+  input.value = "";
+}
+/* ================== 记录详情（浮层）================== */
+var curRecIdx = 0;
+function viewRec(i){
+  var list = loadRecords();
+  curRecIdx = i;
+  var r = list[i];
+  // 简单详情浮层
+  var st = r.stats||{};
+  var parts = [];
+  parts.push("<h3 style='margin-bottom:8px'>"+esc(r.name)+"</h3>");
+  var info = "";
+  info += "<div style='font-size:13px;color:var(--tx2);margin-bottom:10px'>";
+  info += "时长 "+fmtClock(st.duration)+" · 最高 "+fmt(st.maxPv)+"°C";
+  if (st.dropPv!==undefined) info += " · 出豆 "+fmt(st.dropPv)+"°C";
+  info += "</div>";
+  info += "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px'>";
+  if (st.drying!==undefined) info += "<span style='background:var(--phaseDrying);color:var(--phaseDryingA);padding:4px 10px;border-radius:14px;font-size:12px'>脱水 "+fmtClock(st.drying)+"</span>";
+  if (st.maillard!==undefined) info += "<span style='background:var(--phaseMaillard);color:var(--phaseMaillardA);padding:4px 10px;border-radius:14px;font-size:12px'>美拉德 "+fmtClock(st.maillard)+"</span>";
+  if (st.development!==undefined) info += "<span style='background:var(--phaseDev);color:var(--phaseDevA);padding:4px 10px;border-radius:14px;font-size:12px'>发展 "+fmtClock(st.development)+"</span>";
+  info += "</div>";
+  if (r.events && r.events.length){
+    info += "<div style='font-size:12px;color:var(--tx2);margin-bottom:10px'>" +
+      r.events.map(function(x){ return "<b style='color:var(--primary)'>"+(EV_NAMES[x.ev]||x.ev)+"</b> "+fmtClock(x.t)+" @"+fmt(x.pv)+"°C"; }).join(" · ") +
+      "</div>";
+  }
+  parts.push(info);
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:center;justify-content:center";
+  var sheet = document.createElement("div");
+  sheet.style.cssText = "background:var(--card);border-radius:20px;width:92%;max-width:440px;max-height:80vh;overflow-y:auto;padding:18px;border:1px solid var(--line)";
+  // 迷你曲线 canvas
+  var cv = document.createElement("canvas");
+  cv.width = 300; cv.height = 140; cv.style.cssText = "width:100%;height:150px;margin-bottom:10px";
+  sheet.appendChild(cv);
+  sheet.insertAdjacentHTML("beforeend", parts.join(""));
+  var btnRow = document.createElement("div");
+  btnRow.style.cssText = "display:flex;gap:8px;margin-top:12px";
+  btnRow.innerHTML = "<button onclick='exportOne(curRecIdx)' style='flex:1;padding:9px;border-radius:50px;border:1px solid var(--primary);background:transparent;color:var(--primary)'>导出 JSON</button>"+
+    "<button onclick='delRec(curRecIdx)' style='flex:1;padding:9px;border-radius:50px;border:1px solid var(--err);background:transparent;color:var(--err)'>删除</button>"+
+    "<button onclick='this.parentNode.parentNode.remove()' style='flex:1;padding:9px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)'>关闭</button>";
+  sheet.appendChild(btnRow);
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+  // 画曲线
+  drawMini(cv, r);
+}
+function delRec(i){
+  var cur = loadRecords();
+  cur.splice(i, 1);
+  localStorage.setItem(LS_REC, JSON.stringify(cur));
+  renderRecList();
+  // 关浮层
+  var ov = document.querySelector("body > div[style*='z-index:50']");
+  if (ov) ov.remove();
+}
+function drawMini(cv, r){
+  var pts = r.pts || [];
+  if (!pts.length) return;
+  var ctx2 = cv.getContext("2d");
+  var w = cv.width, h = cv.height;
+  ctx2.clearRect(0,0,w,h);
+  var t0 = pts[0].t, t1 = pts[pts.length-1].t;
+  var lo=1000, hi=-1000;
+  pts.forEach(function(p){ lo=Math.min(lo,p.pv,p.sv); hi=Math.max(hi,p.pv,p.sv); });
+  var pad=(hi-lo)*.1+2; lo-=pad; hi+=pad;
+  var X=function(t){ return 8+(t-t0)/(t1-t0||1)*(w-16); };
+  var Y=function(v){ return 8+(1-(v-lo)/(hi-lo))*(h-16); };
+  // 事件点
+  function line(key,c){
+    ctx2.strokeStyle=c; ctx2.lineWidth=1.5; ctx2.beginPath();
+    pts.forEach(function(p,i){ var x=X(p.t),y=Y(p[key]); i?ctx2.lineTo(x,y):ctx2.moveTo(x,y); });
+    ctx2.stroke();
+  }
+  line("sv", getCss("--primary"));
+  line("pv", getCss("--accent"));
+  // 事件刻度
+  (r.events||[]).forEach(function(e){
+    var x=X(e.t), y=Y(e.pv);
+    ctx2.fillStyle = e.ev==="CHARGE"?"#4a7c44":e.ev==="DROP"?"#3d6a80":"#c2602f";
+    ctx2.beginPath(); ctx2.arc(x,y,4,0,7); ctx2.fill();
+  });
+}
+/* ================== 控制命令 ================== */
+function takeover(){ send({type:"takeover"}); }
+function estop(){
+  if (!confirm("确认急停？\n\n跟随将终止，设定温度降至 "+(cfgInfo?cfgInfo.safeSv:70)+"°C。")) return;
+  send({type:"estop"});
+}
+function applySv(){
+  var v = (svDraft!==null)? svDraft : parseInt($("svSlider").value, 10);
+  if (!confirm("确认把设定温度改为 "+v+"°C？")) return;
+  send({type:"sv_set", value:v});
+  svDraft = null;
+}
+function applyFan(){
+  var v = parseInt($("fanSlider").value, 10);
+  if (v === (curFan|0)) return;
+  fetch("http://" + location.hostname + ":8898/fan?speed=" + v).catch(function(){ alert("风机指令发送失败"); });
+  fanLastSent = v;
+}
+var dragFan = false, fanGraceUntil = 0;
 function setSvUI(){
   var dis = !isHolder || followOn;
   $("svSlider").disabled = dis; $("svSend").disabled = dis;
@@ -252,242 +730,152 @@ function setSvUI(){
   $("followBtn").disabled = !isHolder;
   $("followBtn").textContent = followOn ? "停止跟随" : "启动跟随";
   $("followBtn").className = followOn ? "stopf" : "";
+  $("fanSlider").disabled = followOn;
 }
 function updateSvVal(){
-  var shown = (svDraft !== null) ? svDraft : (parseInt($("svSlider").value, 10) || 0);
+  var shown = (svDraft !== null) ? svDraft : (parseInt($("svSlider").value,10)||0);
   var diff = (svDraft !== null) && svLastKnown !== null && Math.abs(svDraft - svLastKnown) >= 1;
   $("svVal").innerHTML = shown + "<span>" + (diff ? "°C 待下发" : "°C") + "</span>";
   $("svVal").className = diff ? "pending" : "";
 }
 function showBanner(html, yellow){
   var b = $("banner");
-  if (!html){ b.style.display = "none"; return; }
-  b.style.display = "block";
+  if (!html){ b.style.display="none"; return; }
+  b.style.display="block";
   b.className = yellow ? "yellow" : "";
   b.innerHTML = html;
 }
-function takeover(){ send({type:"takeover"}); }
-function estop(){
-  if (!confirm("确认急停？\n\n跟随将终止，设定温度降至 " + (cfgInfo ? cfgInfo.safeSv : 70) + "°C。"))
-    return;
-  send({type:"estop"});
+/* ================== 图表绘制 ================== */
+function draw(){
+  var dpr = window.devicePixelRatio||1;
+  var w = canvas.clientWidth, h = canvas.clientHeight;
+  if (w===0 || h===0) return;
+  if (canvas.width !== w*dpr){ canvas.width=w*dpr; canvas.height=h*dpr; }
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  var padL=34, padR=10, padT=8, padB=16;
+  var cw=w-padL-padR, chh=h-padT-padB;
+  if (hist.length<2) return;
+  var t0=hist[0].t, t1=hist[hist.length-1].t;
+  if (t1-t0<30) t1=t0+30;
+  var lo=20, hi=100;
+  for (var i=0;i<hist.length;i++){
+    lo=Math.min(lo,hist[i].pv,hist[i].sv);
+    if(hist[i].ft!==null&&hist[i].ft!==undefined){ lo=Math.min(lo,hist[i].ft); hi=Math.max(hi,hist[i].ft); }
+    hi=Math.max(hi,hist[i].pv,hist[i].sv);
+  }
+  var pad=(hi-lo)*0.12+2; lo-=pad; hi+=pad;
+  function X(t){ return padL+(t-t0)/(t1-t0)*cw; }
+  function Y(v){ return padT+(1-(v-lo)/(hi-lo))*chh; }
+  ctx.strokeStyle=getCss("--gridLine"); ctx.fillStyle=getCss("--gridText");
+  ctx.font="10px -apple-system"; ctx.lineWidth=1;
+  for(var g=0;g<=4;g++){ var v=lo+(hi-lo)*g/4, y=Y(v);
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke();
+    ctx.fillText(Math.round(v),4,y+3);
+  }
+  ctx.fillText("-"+Math.round(t1-t0)+"s", padL, h-5);
+  ctx.fillText("now", w-padR-22, h-5);
+  var hasFt=hist.some(function(p){ return p.ft!==null&&p.ft!==undefined; });
+  if(hasFt){
+    ctx.strokeStyle=getCss("--warn"); ctx.lineWidth=1.2; ctx.setLineDash([4,3]);
+    ctx.beginPath(); var started=false;
+    for(var i=0;i<hist.length;i++){ if(hist[i].ft===null||hist[i].ft===undefined) continue;
+      var x=X(hist[i].t), y=Y(hist[i].ft);
+      if(!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y); }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  function line(key,color,width){ ctx.strokeStyle=color; ctx.lineWidth=width; ctx.beginPath();
+    var started=false;
+    for(var i=0;i<hist.length;i++){ var x=X(hist[i].t),y=Y(hist[i][key]);
+      if(!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y); }
+    ctx.stroke();
+  }
+  line("sv",getCss("--primary"),1.5);
+  line("pv",getCss("--accent"),2.5);
 }
-function applySv(){
-  var v = (svDraft !== null) ? svDraft : parseInt($("svSlider").value, 10);
-  if (!confirm("确认把设定温度改为 " + v + "°C？")) return;
-  send({type:"sv_set", value:v});
-  svDraft = null;   // 已下发，等 state 回流对齐
+/* ================== 设置 ================== */
+function openSettings(){
+  var o = loadCfg();
+  var showFan = o.showFan || false;
+  var html =
+    '<h3 style="margin-bottom:12px">设置</h3>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)">'+
+    '<div><div style="font-weight:600">显示风机控制</div><div style="font-size:11px;color:var(--dim)">不需要可以关掉隐藏</div></div>'+
+    '<input type="checkbox" id="setShowFan" '+(showFan?"checked":"")+' style="width:20px;height:20px"></div>';
+  html += '<div style="display:flex;gap:8px;margin-top:16px">'+
+    '<button onclick="saveSettings()" style="flex:1;padding:9px;border-radius:50px;border:0;background:var(--primary);color:var(--bg);font-weight:700">保存</button>'+
+    '<button onclick="this.parentNode.parentNode.remove()" style="flex:1;padding:9px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">关闭</button></div>';
+  showSheet(html);
 }
-
-// ---------- 跟随曲线（客户端预采样 5s 间隔数组）----------
+function saveSettings(){
+  var showFan = $("setShowFan").checked;
+  cfgSet("showFan", showFan);
+  $("fanCard").classList.toggle("hidden", !showFan);
+  var ov = document.querySelector("body > div[style*='z-index:40']");
+  if (ov) ov.remove();
+}
+function showSheet(html){
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;display:flex;align-items:center;justify-content:center";
+  var sheet = document.createElement("div");
+  sheet.style.cssText = "background:var(--card);border-radius:20px;width:92%;max-width:420px;padding:18px;border:1px solid var(--line)";
+  sheet.innerHTML = html;
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+}
+function showSheetSheet2(){}
+/* ================== 初始化 ================== */
+function boot(){
+  document.querySelectorAll(".evbar button").forEach(function(btn){
+    if (!btn.onclick) btn.addEventListener("click", function(){ markEv(this.dataset.ev, this); });
+  });
+  $("svSlider").addEventListener("input", function(){
+    svDraft = parseInt(this.value,10)||0;
+    dragGraceUntil = Date.now()+3000;
+    updateSvVal();
+  });
+  $("fanSlider").addEventListener("input", function(){
+    dragFan = true; fanGraceUntil = Date.now()+2000;
+    $("fanVal").textContent = this.value+"%";
+  });
+  $("fanSlider").addEventListener("change", function(){ dragFan=false; applyFan(); });
+  $("btnSettings").addEventListener("click", openSettings);
+  if (cfgGet("showFan", false)) $("fanCard").classList.remove("hidden");
+  fillFollowSelect();
+  setSvUI();
+  updateSvVal();
+  connect();
+  setInterval(function(){
+    if (ws && ws.readyState===1 && Date.now()-lastDataTs>4000 && lastDataTs>0){ try{ ws.close(); }catch(e){} }
+    draw();
+  }, 1000);
+  document.addEventListener("visibilitychange", function(){
+    if (!document.hidden && (!ws || ws.readyState>1)) connect();
+  });
+}
+function fillFollowSelect(){
+  var sel = $("followSel");
+  sel.innerHTML = '<option value="ramp">线性爬温 25→200°C（8 分钟）</option>'+
+                  '<option value="soak">爬温+恒温 150°C×5（约 10 分钟）</option>'+
+                  '<option value="dram">陡峭曲线（熔断演示）</option>';
+}
 function buildCurve(kind){
-  var pts = [];
-  function seg(from, to, minutes){
-    var n = Math.round(minutes * 60 / 5);
-    for (var i = 1; i <= n; i++) pts.push(Math.round(from + (to - from) * i / n));
-  }
-  if (kind === "ramp"){          // 线性爬温 25→200，8 分钟
-    for (var i = 0; i < 5; i++) pts.push(25);
-    seg(25, 200, 7.5);
-  } else if (kind === "soak"){   // 爬到 150 后恒温 5 分钟
-    for (var i = 0; i < 3; i++) pts.push(25);
-    seg(25, 150, 4);
-    var n = 60; for (var i = 0; i < n; i++) pts.push(150);
-  } else if (kind === "dram"){   // 陡峭：目标瞬间拉满，SIM 12°C/min 必然脱轨 → 熔断演示
-    for (var i = 0; i < 3; i++) pts.push(30);
-    for (var i = 0; i < 60; i++) pts.push(220);
-  }
-  return pts.slice(0, 720);
+  var pts=[]; var i;
+  function seg(f,t,m){ var n=Math.round(m*60/5); for(var j=1;j<=n;j++) pts.push(Math.round(f+(t-f)*j/n)); }
+  if(kind==="ramp"){ for(i=0;i<5;i++) pts.push(25); seg(25,200,7.5); }
+  else if(kind==="soak"){ for(i=0;i<3;i++) pts.push(25); seg(25,150,4); for(i=0;i<60;i++) pts.push(150); }
+  else if(kind==="dram"){ for(i=0;i<3;i++) pts.push(30); for(i=0;i<60;i++) pts.push(220); }
+  return pts.slice(0,720);
 }
 function followToggle(){
   if (followOn){ send({type:"follow_stop"}); return; }
   var kind = $("followSel").value;
   var pts = buildCurve(kind);
   send({type:"follow_start", points:pts});
-  $("followInfo").style.display = "block";
-  $("followInfo").innerHTML = "已下发 " + pts.length + " 点（" +
-    Math.round(pts.length * 5 / 60 * 10) / 10 + " 分钟）";
+  $("followInfo").style.display="block";
+  $("followInfo").innerHTML = "已下发 "+pts.length+" 点（"+Math.round(pts.length*5/60*10)/10+" 分钟）";
 }
-
-// ---------- WebSocket ----------
-function connect(){
-  try{ ws = new WebSocket(WSURL); }catch(e){ badge("bad", "连接失败"); return; }
-  ws.onopen = function(){
-    badge("ok", "已连接");
-    send({type:"get_config"});
-    setInterval(function(){ send({type:"ping"}); }, 5000);
-  };
-  ws.onmessage = function(ev){
-    var m;
-    try{ m = JSON.parse(ev.data); }catch(e){ return; }
-    if (m.type === "state") onState(m);
-    else if (m.type === "config") onConfig(m);
-    else if (m.type === "events") renderEvents(m.list);
-  };
-  ws.onclose = function(){ badge("bad", "连接断开"); showBanner("连接已断开，正在重连…", true); isHolder = false; setSvUI(); };
-  ws.onerror = function(){ try{ ws.close(); }catch(e){} };
-}
-function send(o){
-  if (ws && ws.readyState === 1) ws.send(JSON.stringify(o));
-}
-
-function onState(m){
-  lastDataTs = Date.now();
-  $("pv").innerHTML = fmt(m.pv) + '<span class="unit">°C</span>';
-  $("sv").innerHTML = fmt(m.sv) + '<span class="unit">°C</span>';
-  $("fver").textContent = "v" + m.ver;
-  $("fup").textContent = "运行 " + Math.floor(m.uptime/60) + " 分";
-  $("legSim").style.display = m.mode === "sim" ? "inline" : "none";
-  $("legFollow").style.display = m.follow ? "inline" : "none";
-
-  isHolder = (m.holder === "web");
-  followOn = !!m.follow;
-  setSvUI();
-  var tag = $("holderTag");
-  tag.className = "big " + (isHolder ? "me" : (m.holder === "app" ? "app" : "none"));
-  tag.textContent = m.holder === "web" ? "本网页" : m.holder === "app" ? "安卓 App" : "无";
-
-  // ===== SV 回写策略：拖动宽限期内不回写滑块（3s），点下发或超时后跟随固件值 =====
-  svLastKnown = m.sv;
-  if (Date.now() >= dragGraceUntil){
-    if (svDraft !== null) svDraft = null;   // 宽限过 = 用户放弃草稿，回到固件值
-    $("svSlider").value = m.sv;
-  }
-  updateSvVal();
-
-  // 横幅
-  if (m.safe){
-    showBanner("⚠ 安全模式生效中：SV 已压至 " + m.sv + "°C，风机 " + m.fan +
-      "%。确认锅炉状态后，用 SV 滑块显式恢复。");
-  } else if (m.wd_remaining !== undefined && m.wd_remaining !== null){
-    showBanner("⏳ 主控失联，<b>" + m.wd_remaining + "s</b> 后进入安全模式（保温 " +
-      (cfgInfo ? cfgInfo.safeSv : 70) + "°C）<button onclick='takeover()'>立即接管</button>", true);
-  } else if (m.follow){
-    var left = Math.max(0, m.f_total - m.f_elapsed);
-    $("followInfo").innerHTML = "跟随中：目标 <b>" + m.f_target + "°C</b> · 已走 " +
-      m.f_elapsed + "s / 共 " + m.f_total + "s（剩 " + left + "s）";
-    showBanner(null);
-  } else {
-    showBanner(null);
-  }
-
-  // 事件数变化 → 拉取事件列表
-  if (m.evn !== undefined && m.evn !== lastEvn){
-    lastEvn = m.evn;
-    send({type:"get_events"});
-  }
-  // 曲线
-  var now = m.uptime;
-  hist.push({t:now, pv:m.pv, sv:m.sv, ft:(m.follow ? m.f_target : null)});
-  if (hist.length > MAXPTS) hist.shift();
-  if (pvPrev !== null && tPrev !== null && now > tPrev){
-    var dt = now - tPrev;
-    if (dt >= 5){
-      var ror = (m.pv - pvPrev) / dt * 60;
-      $("ror").innerHTML = (ror >= 0 ? "+" : "") + ror.toFixed(1) +
-        '<span style="font-size:12px;color:var(--dim)"> °C/分</span>';
-      pvPrev = m.pv; tPrev = now;
-    }
-  } else { pvPrev = m.pv; tPrev = now; }
-  draw();
-}
-
-
-function markEv(code, btn){
-  send({type:"event", ev:code});
-  var old = btn.textContent;
-  btn.textContent = "\u2713";
-  setTimeout(function(){ btn.textContent = old; }, 800);
-}
-var EV_NAMES = {CHARGE:"入豆", DRY:"黄点", FCs:"一爆", FCe:"一爆毕", SCs:"二爆", SCe:"二爆毕", DROP:"出豆"};
-function renderEvents(list){
-  var el = document.getElementById("evLog");
-  if (!list || !list.length){ el.style.display = "none"; return; }
-  el.style.display = "block";
-  el.innerHTML = list.map(function(e){
-    var m = Math.floor(e.t / 60), s = e.t % 60;
-    return "<b>" + (EV_NAMES[e.ev] || e.ev) + "</b> " + m + ":" + (s<10?"0":"") + s + " @" + e.pv + "\u00b0C";
-  }).join(" \u00b7 ");
-}
-
-function onConfig(m){
-  cfgInfo = m.watchdog ? {safeSv:m.watchdog.safe_sv, safeFan:m.watchdog.safe_fan} : null;
-}
-
-// ---------- 画布 ----------
-function draw(){
-  var dpr = window.devicePixelRatio || 1;
-  var w = canvas.clientWidth, h = canvas.clientHeight;
-  if (canvas.width !== w * dpr){ canvas.width = w * dpr; canvas.height = h * dpr; }
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, w, h);
-  var padL = 34, padR = 10, padT = 8, padB = 18;
-  var cw = w - padL - padR, ch = h - padT - padB;
-  if (hist.length < 2) return;
-
-  var t0 = hist[0].t, t1 = hist[hist.length-1].t;
-  if (t1 - t0 < 30) t1 = t0 + 30;
-  var lo = 20, hi = 100;
-  for (var i = 0; i < hist.length; i++){
-    lo = Math.min(lo, hist[i].pv, hist[i].sv);
-    if (hist[i].ft !== null && hist[i].ft !== undefined) lo = Math.min(lo, hist[i].ft);
-    hi = Math.max(hi, hist[i].pv, hist[i].sv);
-    if (hist[i].ft !== null && hist[i].ft !== undefined) hi = Math.max(hi, hist[i].ft);
-  }
-  var pad = (hi - lo) * 0.1 + 2; lo -= pad; hi += pad;
-  function X(t){ return padL + (t - t0) / (t1 - t0) * cw; }
-  function Y(v){ return padT + (1 - (v - lo) / (hi - lo)) * ch; }
-
-  ctx.strokeStyle = getCss("--gridLine"); ctx.fillStyle = getCss("--gridText");
-  ctx.font = "10px -apple-system"; ctx.lineWidth = 1;
-  for (var g = 0; g <= 4; g++){
-    var v = lo + (hi - lo) * g / 4;
-    var y = Y(v);
-    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
-    ctx.fillText(Math.round(v), 4, y + 3);
-  }
-  ctx.fillText("-" + Math.round(t1 - t0) + "s", padL, h - 5);
-  ctx.fillText("now", w - padR - 22, h - 5);
-
-  // 跟随目标：黄色点线
-  var hasFt = hist.some(function(p){ return p.ft !== null && p.ft !== undefined; });
-  if (hasFt){
-    ctx.strokeStyle = getCss("--warn"); ctx.lineWidth = 1.5;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    var started = false;
-    for (var i = 0; i < hist.length; i++){
-      if (hist[i].ft === null || hist[i].ft === undefined) continue;
-      var x = X(hist[i].t), y = Y(hist[i].ft);
-      if (!started){ ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-  function line(key, color, width){
-    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath();
-    var started = false;
-    for (var i = 0; i < hist.length; i++){
-      var x = X(hist[i].t), y = Y(hist[i][key]);
-      if (!started){ ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-  }
-  line("sv", getCss("--primary"), 1.5);
-  line("pv", getCss("--accent"), 2.5);
-}
-setInterval(function(){
-  if (ws && ws.readyState === 1 && Date.now() - lastDataTs > 4000 && lastDataTs > 0){
-    try{ ws.close(); }catch(e){}
-  }
-  draw();
-}, 1000);
-document.addEventListener("visibilitychange", function(){
-  if (!document.hidden && (!ws || ws.readyState > 1)){ connect(); }
-});
-setSvUI();
-updateSvVal();
-connect();
+boot();
 </script>
 </body>
 </html>

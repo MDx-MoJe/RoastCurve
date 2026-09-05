@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>烤豆 · RoastBridge</title>
+<style>
+/* ============ 烤豆家族配色（design-system/Colors.kt 双主题）============
+   浅色: bg #FAF5EB surface #FFFBF5 sv #F2EBDE primary #8B5E3C accent #D4843A
+         onBg #3D2B1F onSurf #4A3728 onSurfVar #7A6857 ok #5B8C5A err #BF4B3A
+         grid #E8DDD0 gridTx #A89885
+   深色: bg #1A1410 surface #241D16 sv #2E251C primary #D4A574 accent #F0A050
+         onBg #E8DDD0 onSurf #D4C5B2 onSurfVar #A89885 ok #7CB87B err #E05545
+         grid #3A2E24 gridTx #7A6857
+======================================================================== */
+:root{
+  --bg:#FAF5EB; --card:#FFFBF5; --card2:#F2EBDE; --line:#E8DDD0;
+  --tx:#3D2B1F; --tx2:#7A6857; --dim:#A89885;
+  --primary:#8B5E3C; --primaryLight:#B8845A;
+  --accent:#D4843A; --accentLight:#F0B87A;
+  --ok:#5B8C5A; --warn:#D4843A; --err:#BF4B3A;
+  --gridLine:#E8DDD0; --gridText:#A89885;
+  --svDisp:#8B5E3C; --svPend:#D4843A;
+  --thumb:#B8845A;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1A1410; --card:#241D16; --card2:#2E251C; --line:#3A2E24;
+    --tx:#E8DDD0; --tx2:#A89885; --dim:#7A6857;
+    --primary:#D4A574; --primaryLight:#E8C9A8;
+    --accent:#F0A050; --accentLight:#F5C898;
+    --ok:#7CB87B; --warn:#F0A050; --err:#E05545;
+    --gridLine:#3A2E24; --gridText:#7A6857;
+    --svDisp:#E8C9A8; --svPend:#F0A050;
+    --thumb:#E8C9A8;
+  }
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  background:var(--bg); color:var(--tx);
+  font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;
+  padding-top:env(safe-area-inset-top);
+  min-height:100vh; display:flex; flex-direction:column;
+  user-select:none; -webkit-user-select:none;
+}
+header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; border-bottom:1px solid var(--line);
+}
+header h1{font-size:17px; font-weight:600}
+header h1 span{color:var(--accent)}
+#badge{
+  font-size:11px; padding:4px 10px; border-radius:20px;
+  background:var(--card2); color:var(--tx2); border:1px solid var(--line);
+}
+#badge.ok{color:var(--ok); border-color:var(--ok)}
+#badge.bad{color:var(--err); border-color:var(--err)}
+#badge.wd{color:var(--warn); border-color:var(--warn); animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.4}}
+#banner{
+  display:none; margin:10px 12px 0; padding:10px 14px;
+  border-radius:12px; font-size:13px; line-height:1.5;
+  background:rgba(191,75,58,.1); border:1px solid var(--err); color:var(--err);
+}
+#banner.yellow{background:rgba(212,132,58,.1); border-color:var(--warn); color:var(--warn)}
+#banner button{
+  margin-left:8px; padding:4px 14px; border-radius:20px; font-size:12px;
+  background:var(--accent); color:#fff; border:0; font-weight:700;
+}
+@media (prefers-color-scheme: dark){ #banner button{color:#1A1410} }
+main{flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:10px}
+.tempbar{display:flex; gap:10px}
+.tcard{
+  flex:1; background:var(--card); border:1px solid var(--line); border-radius:16px;
+  padding:10px 14px;
+}
+.tcard .lbl{font-size:11px; color:var(--tx2); margin-bottom:2px}
+.tcard .val{font-size:30px; font-weight:700; font-variant-numeric:tabular-nums}
+.tcard.pv .val{color:var(--accent)}
+.tcard.sv .val{color:var(--svDisp)}
+.tcard .unit{font-size:13px; color:var(--dim); font-weight:400}
+#chartCard{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:10px}
+#chart{width:100%; height:240px; display:block}
+.legend{display:flex; gap:14px; padding:6px 4px 0; font-size:11px; color:var(--tx2); flex-wrap:wrap}
+.legend i{display:inline-block; width:16px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle}
+.row{display:flex; gap:10px}
+.card{flex:1; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 14px}
+.card .lbl{font-size:11px; color:var(--tx2); margin-bottom:8px}
+.card .big{font-size:20px; font-weight:700}
+#holderTag.me{color:var(--ok)}
+#holderTag.app{color:var(--primary)}
+#holderTag.none{color:var(--dim)}
+button{font-family:inherit}
+#takeBtn{
+  margin-top:8px; width:100%; padding:9px; border-radius:50px; border:1px solid var(--accent);
+  background:transparent; color:var(--accent); font-size:13px; font-weight:700;
+}
+#takeBtn:disabled{opacity:.35}
+#svRow{display:flex; align-items:center; gap:12px}
+#svVal{
+  min-width:78px; text-align:center; font-size:24px; font-weight:800;
+  color:var(--svDisp); font-variant-numeric:tabular-nums;
+  background:var(--card2); border:1px solid var(--line); border-radius:12px;
+  padding:4px 6px; transition:border-color .2s;
+}
+#svVal span{font-size:10px; color:var(--dim); font-weight:400; display:block; margin-top:-2px}
+#svVal.pending{border-color:var(--svPend)}
+#svSlider{flex:1; -webkit-appearance:none; appearance:none; height:34px; background:transparent}
+#svSlider::-webkit-slider-runnable-track{height:6px; border-radius:3px; background:var(--gridLine)}
+#svSlider::-webkit-slider-thumb{
+  -webkit-appearance:none; width:26px; height:26px; border-radius:50%;
+  background:var(--thumb); margin-top:-10px; box-shadow:0 2px 6px rgba(0,0,0,.25);
+}
+#svSend{
+  padding:9px 18px; border-radius:50px; border:0; background:var(--primary); color:var(--bg);
+  font-size:14px; font-weight:700;
+}
+#svSlider:disabled{opacity:.3}
+#svSend:disabled{opacity:.3}
+#followCard .frow{display:flex; gap:8px; margin-top:8px}
+#followCard select{
+  flex:1; padding:9px; border-radius:12px; border:1px solid var(--line);
+  background:var(--card2); color:var(--tx); font-size:13px; font-family:inherit;
+}
+#followCard button{
+  padding:9px 16px; border-radius:50px; border:0; font-size:13px; font-weight:700;
+  background:var(--accent); color:#fff;
+}
+@media (prefers-color-scheme: dark){ #followCard button{color:#1A1410} }
+#followCard button.stopf{background:var(--err); color:#fff}
+#followCard button:disabled{opacity:.35}
+#followInfo{margin-top:8px; font-size:12px; color:var(--tx2); display:none}
+#followInfo b{color:var(--accent)}
+#stopBtn{
+  width:100%; padding:16px; border-radius:50px; border:1px solid var(--err);
+  background:rgba(191,75,58,.12); color:var(--err); font-size:17px; font-weight:800; letter-spacing:2px;
+}
+#stopBtn:active{background:var(--err); color:#fff}
+
+.evbar{
+  display:flex; gap:6px; background:var(--card); border:1px solid var(--line);
+  border-radius:50px; padding:8px 12px; justify-content:space-between;
+}
+.evbar button{
+  flex:1; padding:9px 2px; border-radius:24px; border:0; font-size:12px; font-weight:700;
+  background:var(--card2); color:var(--tx2); font-family:inherit;
+}
+.evbar button:active{opacity:.7}
+.evbar button.charge{background:#4a7c44; color:#fff}
+.evbar button.dry{background:#b8912a; color:#fff}
+.evbar button.fcs{background:#c2602f; color:#fff}
+.evbar button.scs{background:#8f2f22; color:#fff}
+.evbar button.drop{background:#3d6a80; color:#fff}
+#evLog{margin-top:8px; font-size:11px; color:var(--tx2); line-height:1.6; display:none}
+footer{padding:8px 16px calc(10px + env(safe-area-inset-bottom)); text-align:center; font-size:11px; color:var(--dim)}
+#hint{display:none; padding:6px 16px; font-size:12px; color:var(--warn); text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>烤豆<span>·</span>桥接器</h1>
+  <div id="badge">连接中…</div>
+</header>
+<div id="hint">iOS 锁屏会断开监控：设置 → 显示与亮度 → 自动锁定 → 永不</div>
+<div id="banner"></div>
+<main>
+  <div class="tempbar">
+    <div class="tcard pv"><div class="lbl">豆温 PV</div><div class="val" id="pv">--<span class="unit">°C</span></div></div>
+    <div class="tcard sv"><div class="lbl">设定 SV</div><div class="val" id="sv">--<span class="unit">°C</span></div></div>
+  </div>
+  <div id="chartCard">
+    <canvas id="chart"></canvas>
+    <div class="legend">
+      <span><i style="background:var(--accent)"></i>PV 豆温</span>
+      <span><i style="background:var(--primary)"></i>SV 设定</span>
+      <span><i style="background:var(--ok)"></i>RoR</span>
+      <span id="legFollow" style="display:none"><i style="background:var(--warn);height:2px;border-top:1px dashed var(--warn);background:none"></i>跟随目标</span>
+      <span id="legSim" style="display:none"><i style="background:var(--warn)"></i>SIM</span>
+    </div>
+  </div>
+  
+  <div class="evbar">
+    <button class="charge" onclick="markEv('CHARGE',this)">入豆</button>
+    <button class="dry" onclick="markEv('DRY',this)">黄点</button>
+    <button class="fcs" onclick="markEv('FCs',this)">一爆</button>
+    <button class="scs" onclick="markEv('SCs',this)">二爆</button>
+    <button class="drop" onclick="markEv('DROP',this)">出豆</button>
+  </div>
+  <div id="evLog"></div>
+<div class="row">
+    <div class="card">
+      <div class="lbl">当前主控</div>
+      <div class="big" id="holderTag">—</div>
+      <button id="takeBtn" onclick="takeover()">接管控制</button>
+    </div>
+    <div class="card">
+      <div class="lbl">RoR 升温速率</div>
+      <div class="big" id="ror">--<span style="font-size:12px;color:var(--dim)"> °C/分</span></div>
+    </div>
+  </div>
+  <div id="followCard" class="card">
+    <div class="lbl">跟随曲线（固件端执行，锁屏断连不影响）</div>
+    <div class="frow">
+      <select id="followSel">
+        <option value="ramp">线性爬温 25→200°C（8 分钟）</option>
+        <option value="soak">爬温+恒温 150°C×5 分钟（约 10 分钟）</option>
+        <option value="dram">陡峭曲线（熔断演示，会触发安全模式）</option>
+      </select>
+      <button id="followBtn" onclick="followToggle()">启动跟随</button>
+    </div>
+    <div id="followInfo"></div>
+  </div>
+  <div class="card">
+    <div class="lbl">设定温度 SV（主控可用，跟随中禁用）</div>
+    <div id="svRow">
+      <input type="range" id="svSlider" min="30" max="260" value="70" disabled>
+      <div id="svVal">--<span>°C</span></div>
+      <button id="svSend" onclick="applySv()" disabled>下发</button>
+    </div>
+  </div>
+  <button id="stopBtn" onclick="estop()">■ 急 停</button>
+</main>
+<footer>RoastBridge <span id="fver"></span> · <span id="fup"></span></footer>
+
+<script>
+"use strict";
+var WSURL = "ws://" + location.hostname + ":8897";
+var ws = null, isHolder = false, cfgInfo = null;
+var hist = [], MAXPTS = 600;
+var lastDataTs = 0, pvPrev = null, tPrev = null;
+var svLastKnown = null;      // 固件最近一次 SV（含跟随写入）
+var lastEvn = -1;
+var svDraft = null;          // 用户拖动中的待下发值（未点下发前存在）
+var dragGraceUntil = 0;      // 拖动/修改后的宽限期：期间 state 不回写滑块
+var followOn = false;
+
+var $ = function(id){ return document.getElementById(id); };
+var canvas = $("chart"), ctx = canvas.getContext("2d");
+
+function badge(cls, txt){ $("badge").className = cls; $("badge").textContent = txt; }
+function fmt(v){ return v === null || v === undefined || isNaN(v) ? "--" : Math.round(v); }
+function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+function setSvUI(){
+  var dis = !isHolder || followOn;
+  $("svSlider").disabled = dis; $("svSend").disabled = dis;
+  $("takeBtn").disabled = isHolder || followOn;
+  $("takeBtn").textContent = isHolder ? "✓ 本页是主控" : "接管控制";
+  $("followSel").disabled = !isHolder || followOn;
+  $("followBtn").disabled = !isHolder;
+  $("followBtn").textContent = followOn ? "停止跟随" : "启动跟随";
+  $("followBtn").className = followOn ? "stopf" : "";
+}
+function updateSvVal(){
+  var shown = (svDraft !== null) ? svDraft : (parseInt($("svSlider").value, 10) || 0);
+  var diff = (svDraft !== null) && svLastKnown !== null && Math.abs(svDraft - svLastKnown) >= 1;
+  $("svVal").innerHTML = shown + "<span>" + (diff ? "°C 待下发" : "°C") + "</span>";
+  $("svVal").className = diff ? "pending" : "";
+}
+function showBanner(html, yellow){
+  var b = $("banner");
+  if (!html){ b.style.display = "none"; return; }
+  b.style.display = "block";
+  b.className = yellow ? "yellow" : "";
+  b.innerHTML = html;
+}
+function takeover(){ send({type:"takeover"}); }
+function estop(){
+  if (!confirm("确认急停？\n\n跟随将终止，设定温度降至 " + (cfgInfo ? cfgInfo.safeSv : 70) + "°C。"))
+    return;
+  send({type:"estop"});
+}
+function applySv(){
+  var v = (svDraft !== null) ? svDraft : parseInt($("svSlider").value, 10);
+  if (!confirm("确认把设定温度改为 " + v + "°C？")) return;
+  send({type:"sv_set", value:v});
+  svDraft = null;   // 已下发，等 state 回流对齐
+}
+
+// ---------- 跟随曲线（客户端预采样 5s 间隔数组）----------
+function buildCurve(kind){
+  var pts = [];
+  function seg(from, to, minutes){
+    var n = Math.round(minutes * 60 / 5);
+    for (var i = 1; i <= n; i++) pts.push(Math.round(from + (to - from) * i / n));
+  }
+  if (kind === "ramp"){          // 线性爬温 25→200，8 分钟
+    for (var i = 0; i < 5; i++) pts.push(25);
+    seg(25, 200, 7.5);
+  } else if (kind === "soak"){   // 爬到 150 后恒温 5 分钟
+    for (var i = 0; i < 3; i++) pts.push(25);
+    seg(25, 150, 4);
+    var n = 60; for (var i = 0; i < n; i++) pts.push(150);
+  } else if (kind === "dram"){   // 陡峭：目标瞬间拉满，SIM 12°C/min 必然脱轨 → 熔断演示
+    for (var i = 0; i < 3; i++) pts.push(30);
+    for (var i = 0; i < 60; i++) pts.push(220);
+  }
+  return pts.slice(0, 720);
+}
+function followToggle(){
+  if (followOn){ send({type:"follow_stop"}); return; }
+  var kind = $("followSel").value;
+  var pts = buildCurve(kind);
+  send({type:"follow_start", points:pts});
+  $("followInfo").style.display = "block";
+  $("followInfo").innerHTML = "已下发 " + pts.length + " 点（" +
+    Math.round(pts.length * 5 / 60 * 10) / 10 + " 分钟）";
+}
+
+// ---------- WebSocket ----------
+function connect(){
+  try{ ws = new WebSocket(WSURL); }catch(e){ badge("bad", "连接失败"); return; }
+  ws.onopen = function(){
+    badge("ok", "已连接");
+    send({type:"get_config"});
+    setInterval(function(){ send({type:"ping"}); }, 5000);
+  };
+  ws.onmessage = function(ev){
+    var m;
+    try{ m = JSON.parse(ev.data); }catch(e){ return; }
+    if (m.type === "state") onState(m);
+    else if (m.type === "config") onConfig(m);
+    else if (m.type === "events") renderEvents(m.list);
+  };
+  ws.onclose = function(){ badge("bad", "连接断开"); showBanner("连接已断开，正在重连…", true); isHolder = false; setSvUI(); };
+  ws.onerror = function(){ try{ ws.close(); }catch(e){} };
+}
+function send(o){
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify(o));
+}
+
+function onState(m){
+  lastDataTs = Date.now();
+  $("pv").innerHTML = fmt(m.pv) + '<span class="unit">°C</span>';
+  $("sv").innerHTML = fmt(m.sv) + '<span class="unit">°C</span>';
+  $("fver").textContent = "v" + m.ver;
+  $("fup").textContent = "运行 " + Math.floor(m.uptime/60) + " 分";
+  $("legSim").style.display = m.mode === "sim" ? "inline" : "none";
+  $("legFollow").style.display = m.follow ? "inline" : "none";
+
+  isHolder = (m.holder === "web");
+  followOn = !!m.follow;
+  setSvUI();
+  var tag = $("holderTag");
+  tag.className = "big " + (isHolder ? "me" : (m.holder === "app" ? "app" : "none"));
+  tag.textContent = m.holder === "web" ? "本网页" : m.holder === "app" ? "安卓 App" : "无";
+
+  // ===== SV 回写策略：拖动宽限期内不回写滑块（3s），点下发或超时后跟随固件值 =====
+  svLastKnown = m.sv;
+  if (Date.now() >= dragGraceUntil){
+    if (svDraft !== null) svDraft = null;   // 宽限过 = 用户放弃草稿，回到固件值
+    $("svSlider").value = m.sv;
+  }
+  updateSvVal();
+
+  // 横幅
+  if (m.safe){
+    showBanner("⚠ 安全模式生效中：SV 已压至 " + m.sv + "°C，风机 " + m.fan +
+      "%。确认锅炉状态后，用 SV 滑块显式恢复。");
+  } else if (m.wd_remaining !== undefined && m.wd_remaining !== null){
+    showBanner("⏳ 主控失联，<b>" + m.wd_remaining + "s</b> 后进入安全模式（保温 " +
+      (cfgInfo ? cfgInfo.safeSv : 70) + "°C）<button onclick='takeover()'>立即接管</button>", true);
+  } else if (m.follow){
+    var left = Math.max(0, m.f_total - m.f_elapsed);
+    $("followInfo").innerHTML = "跟随中：目标 <b>" + m.f_target + "°C</b> · 已走 " +
+      m.f_elapsed + "s / 共 " + m.f_total + "s（剩 " + left + "s）";
+    showBanner(null);
+  } else {
+    showBanner(null);
+  }
+
+  // 事件数变化 → 拉取事件列表
+  if (m.evn !== undefined && m.evn !== lastEvn){
+    lastEvn = m.evn;
+    send({type:"get_events"});
+  }
+  // 曲线
+  var now = m.uptime;
+  hist.push({t:now, pv:m.pv, sv:m.sv, ft:(m.follow ? m.f_target : null)});
+  if (hist.length > MAXPTS) hist.shift();
+  if (pvPrev !== null && tPrev !== null && now > tPrev){
+    var dt = now - tPrev;
+    if (dt >= 5){
+      var ror = (m.pv - pvPrev) / dt * 60;
+      $("ror").innerHTML = (ror >= 0 ? "+" : "") + ror.toFixed(1) +
+        '<span style="font-size:12px;color:var(--dim)"> °C/分</span>';
+      pvPrev = m.pv; tPrev = now;
+    }
+  } else { pvPrev = m.pv; tPrev = now; }
+  draw();
+}
+
+
+function markEv(code, btn){
+  send({type:"event", ev:code});
+  var old = btn.textContent;
+  btn.textContent = "\u2713";
+  setTimeout(function(){ btn.textContent = old; }, 800);
+}
+var EV_NAMES = {CHARGE:"入豆", DRY:"黄点", FCs:"一爆", FCe:"一爆毕", SCs:"二爆", SCe:"二爆毕", DROP:"出豆"};
+function renderEvents(list){
+  var el = document.getElementById("evLog");
+  if (!list || !list.length){ el.style.display = "none"; return; }
+  el.style.display = "block";
+  el.innerHTML = list.map(function(e){
+    var m = Math.floor(e.t / 60), s = e.t % 60;
+    return "<b>" + (EV_NAMES[e.ev] || e.ev) + "</b> " + m + ":" + (s<10?"0":"") + s + " @" + e.pv + "\u00b0C";
+  }).join(" \u00b7 ");
+}
+
+function onConfig(m){
+  cfgInfo = m.watchdog ? {safeSv:m.watchdog.safe_sv, safeFan:m.watchdog.safe_fan} : null;
+}
+
+// ---------- 画布 ----------
+function draw(){
+  var dpr = window.devicePixelRatio || 1;
+  var w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== w * dpr){ canvas.width = w * dpr; canvas.height = h * dpr; }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  var padL = 34, padR = 10, padT = 8, padB = 18;
+  var cw = w - padL - padR, ch = h - padT - padB;
+  if (hist.length < 2) return;
+
+  var t0 = hist[0].t, t1 = hist[hist.length-1].t;
+  if (t1 - t0 < 30) t1 = t0 + 30;
+  var lo = 20, hi = 100;
+  for (var i = 0; i < hist.length; i++){
+    lo = Math.min(lo, hist[i].pv, hist[i].sv);
+    if (hist[i].ft !== null && hist[i].ft !== undefined) lo = Math.min(lo, hist[i].ft);
+    hi = Math.max(hi, hist[i].pv, hist[i].sv);
+    if (hist[i].ft !== null && hist[i].ft !== undefined) hi = Math.max(hi, hist[i].ft);
+  }
+  var pad = (hi - lo) * 0.1 + 2; lo -= pad; hi += pad;
+  function X(t){ return padL + (t - t0) / (t1 - t0) * cw; }
+  function Y(v){ return padT + (1 - (v - lo) / (hi - lo)) * ch; }
+
+  ctx.strokeStyle = getCss("--gridLine"); ctx.fillStyle = getCss("--gridText");
+  ctx.font = "10px -apple-system"; ctx.lineWidth = 1;
+  for (var g = 0; g <= 4; g++){
+    var v = lo + (hi - lo) * g / 4;
+    var y = Y(v);
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+    ctx.fillText(Math.round(v), 4, y + 3);
+  }
+  ctx.fillText("-" + Math.round(t1 - t0) + "s", padL, h - 5);
+  ctx.fillText("now", w - padR - 22, h - 5);
+
+  // 跟随目标：黄色点线
+  var hasFt = hist.some(function(p){ return p.ft !== null && p.ft !== undefined; });
+  if (hasFt){
+    ctx.strokeStyle = getCss("--warn"); ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    var started = false;
+    for (var i = 0; i < hist.length; i++){
+      if (hist[i].ft === null || hist[i].ft === undefined) continue;
+      var x = X(hist[i].t), y = Y(hist[i].ft);
+      if (!started){ ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  function line(key, color, width){
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath();
+    var started = false;
+    for (var i = 0; i < hist.length; i++){
+      var x = X(hist[i].t), y = Y(hist[i][key]);
+      if (!started){ ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  line("sv", getCss("--primary"), 1.5);
+  line("pv", getCss("--accent"), 2.5);
+}
+setInterval(function(){
+  if (ws && ws.readyState === 1 && Date.now() - lastDataTs > 4000 && lastDataTs > 0){
+    try{ ws.close(); }catch(e){}
+  }
+  draw();
+}, 1000);
+document.addEventListener("visibilitychange", function(){
+  if (!document.hidden && (!ws || ws.readyState > 1)){ connect(); }
+});
+setSvUI();
+updateSvVal();
+connect();
+</script>
+</body>
+</html>
