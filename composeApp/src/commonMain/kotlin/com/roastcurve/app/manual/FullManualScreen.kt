@@ -2,6 +2,7 @@ package com.roastcurve.app.manual
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -39,7 +41,9 @@ fun FullManualScreen(
     val scope = rememberCoroutineScope()
     var markdown by remember { mutableStateOf<String?>(null) }
     var loadFailed by remember { mutableStateOf(false) }
-    val images = remember { mutableMapOf<String, ImageBitmap>() }
+    // 快照 map：图片加载完成写入即触发重组
+    val images = remember { androidx.compose.runtime.mutableStateMapOf<String, ImageBitmap>() }
+    val imageFailed = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
 
     // 加载手册文本
     LaunchedEffect(Unit) {
@@ -52,12 +56,13 @@ fun FullManualScreen(
     }
 
     fun loadImage(name: String) {
-        if (images.containsKey(name)) return
+        if (images.containsKey(name) || imageFailed.containsKey(name)) return
         scope.launch {
             try {
                 val b = Res.readBytes("files/manual/$name")
                 images[name] = b.decodeToImageBitmap()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                imageFailed[name] = true
             }
         }
     }
@@ -86,13 +91,14 @@ fun FullManualScreen(
             }
             else -> {
                 val blocks = remember(markdown) { MarkdownParser.parse(markdown!!) }
-                LazyColumn(
-                    Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(blocks.size) { i ->
-                        val b = blocks[i]
+                    blocks.forEach { b ->
                         when (b) {
                             is MdBlock.Heading -> Text(
                                 b.text,
@@ -130,11 +136,31 @@ fun FullManualScreen(
                             is MdBlock.ImageRef -> {
                                 loadImage(b.file)
                                 val img = images[b.file]
-                                if (img != null) {
-                                    Image(
-                                        bitmap = img,
-                                        contentDescription = b.alt,
-                                        modifier = Modifier.fillMaxWidth(),
+                                val failed = imageFailed[b.file] == true
+                                when {
+                                    img != null -> {
+                                        Image(
+                                            bitmap = img,
+                                            contentDescription = b.alt,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(MaterialTheme.shapes.medium),
+                                        )
+                                        Text(
+                                            b.alt.ifEmpty { "（图）" },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                    failed -> Text(
+                                        "[图加载失败：${b.file}]",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                    else -> Text(
+                                        "加载图中…",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             }
@@ -280,23 +306,28 @@ sealed class MdBlock {
 private fun MdTable(rows: List<List<String>>) {
     if (rows.isEmpty()) return
     val cols = rows.maxOf { it.size }
+    val lineColor = MaterialTheme.colorScheme.outlineVariant
+    val borderColor = MaterialTheme.colorScheme.outlineVariant
     Column(
         Modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-            .padding(6.dp)
+            .border(1.dp, borderColor, androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f))
     ) {
         rows.forEachIndexed { ri, row ->
-            Row(Modifier.fillMaxWidth()) {
+            if (ri > 0) HorizontalDivider(Modifier.fillMaxWidth(), thickness = 0.5.dp, color = lineColor)
+            Row(Modifier.fillMaxWidth().background(
+                if (ri == 0) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent
+            )) {
                 for (c in 0 until cols) {
-                    val cell = row.getOrElse(c) { "" }
+                    val cell = MdRender.inline(row.getOrElse(c) { "" })
                     Text(
-                        MdRender.inline(cell),
+                        cell,
                         fontSize = 11.sp,
                         fontWeight = if (ri == 0) FontWeight.Bold else FontWeight.Normal,
                         color = if (ri == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f).padding(horizontal = 4.dp, vertical = 2.dp),
+                        lineHeight = 15.sp,
+                        modifier = Modifier.weight(1f).padding(horizontal = 6.dp, vertical = 5.dp),
                     )
                 }
             }
