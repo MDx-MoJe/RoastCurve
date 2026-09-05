@@ -248,8 +248,8 @@ footer{display:none}
       <div id="fanRow">
         <input type="range" id="fanSlider" min="0" max="100" value="0" disabled>
         <div id="fanVal">0%</div>
-        <button id="fanSend" style="padding:8px 14px;border-radius:50px;border:0;background:var(--ok);color:#fff;font-weight:700" onclick="applyFan()">设置</button>
       </div>
+      <div style="font-size:11px;color:var(--tx2);margin-top:4px" id="fanStatus">松手即生效 · 实际 <span id="fanActual">0</span>%</div>
     </div>
     <div id="followCard" class="card">
       <div class="lbl">跟随曲线（固件端执行）</div>
@@ -458,7 +458,9 @@ function onState(m){
     $("svSlider").value = m.sv;
   }
   updateSvVal();
-  // 风扇回写
+  // 风扇回写（拖动中不回写；实际值常驻更新）
+  var fa = $("fanActual");
+  if (fa) fa.textContent = (m.fan||0);
   if (!dragFan && Date.now() >= fanGraceUntil){
     $("fanSlider").value = m.fan || 0;
     $("fanVal").textContent = (m.fan||0)+"%";
@@ -647,6 +649,7 @@ function viewRec(i){
   }
   parts.push(info);
   var overlay = document.createElement("div");
+  overlay.className = "ovl";
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:center;justify-content:center";
   var sheet = document.createElement("div");
   sheet.style.cssText = "background:var(--card);border-radius:20px;width:92%;max-width:440px;max-height:80vh;overflow-y:auto;padding:18px;border:1px solid var(--line)";
@@ -659,7 +662,7 @@ function viewRec(i){
   btnRow.style.cssText = "display:flex;gap:8px;margin-top:12px";
   btnRow.innerHTML = "<button onclick='exportOne(curRecIdx)' style='flex:1;padding:9px;border-radius:50px;border:1px solid var(--primary);background:transparent;color:var(--primary)'>导出 JSON</button>"+
     "<button onclick='delRec(curRecIdx)' style='flex:1;padding:9px;border-radius:50px;border:1px solid var(--err);background:transparent;color:var(--err)'>删除</button>"+
-    "<button onclick='this.parentNode.parentNode.remove()' style='flex:1;padding:9px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)'>关闭</button>";
+    "<button onclick='closeTopOverlay()' style='flex:1;padding:9px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)'>关闭</button>";
   sheet.appendChild(btnRow);
   overlay.appendChild(sheet);
   document.body.appendChild(overlay);
@@ -671,9 +674,7 @@ function delRec(i){
   cur.splice(i, 1);
   localStorage.setItem(LS_REC, JSON.stringify(cur));
   renderRecList();
-  // 关浮层
-  var ov = document.querySelector("body > div[style*='z-index:50']");
-  if (ov) ov.remove();
+  closeTopOverlay();
 }
 function drawMini(cv, r){
   var pts = r.pts || [];
@@ -714,10 +715,23 @@ function applySv(){
   send({type:"sv_set", value:v});
   svDraft = null;
 }
-function applyFan(){
-  var v = parseInt($("fanSlider").value, 10);
-  if (v === (curFan|0)) return;
-  fetch("http://" + location.hostname + ":8898/fan?speed=" + v).catch(function(){ alert("风机指令发送失败"); });
+function applyFan(v){
+  if (v === undefined) v = parseInt($("fanSlider").value, 10);
+  $("fanVal").textContent = v + "%";
+  if (v === (curFan|0)) { $("fanStatus").innerHTML = '松手即生效 · 实际 <span id="fanActual">' + v + '</span>%'; return; }
+  // 乐观更新 + 状态提示
+  var st = $("fanStatus");
+  st.innerHTML = '发送中… 实际 <span id="fanActual">' + (curFan||0) + '</span>%';
+  fetch("http://" + location.hostname + ":8898/fan?speed=" + v)
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      var ok = (j && j.fan_speed !== undefined);
+      st.innerHTML = ok ? '✓ 已生效 · 实际 <span id="fanActual">' + j.fan_speed + '</span>%'
+                        : '发送失败，请重试';
+    })
+    .catch(function(){
+      st.innerHTML = '⚠ 发送失败，检查连接';
+    });
   fanLastSent = v;
 }
 var dragFan = false, fanGraceUntil = 0;
@@ -804,24 +818,32 @@ function openSettings(){
     '<input type="checkbox" id="setShowFan" '+(showFan?"checked":"")+' style="width:20px;height:20px"></div>';
   html += '<div style="display:flex;gap:8px;margin-top:16px">'+
     '<button onclick="saveSettings()" style="flex:1;padding:9px;border-radius:50px;border:0;background:var(--primary);color:var(--bg);font-weight:700">保存</button>'+
-    '<button onclick="this.parentNode.parentNode.remove()" style="flex:1;padding:9px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">关闭</button></div>';
+    '<button onclick="closeTopOverlay()" style="flex:1;padding:9px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">关闭</button></div>';
   showSheet(html);
 }
 function saveSettings(){
   var showFan = $("setShowFan").checked;
   cfgSet("showFan", showFan);
   $("fanCard").classList.toggle("hidden", !showFan);
-  var ov = document.querySelector("body > div[style*='z-index:40']");
-  if (ov) ov.remove();
+  closeTopOverlay();
 }
+var topOvl = null;
 function showSheet(html){
+  closeTopOverlay();
   var overlay = document.createElement("div");
+  overlay.className = "ovl";
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;display:flex;align-items:center;justify-content:center";
   var sheet = document.createElement("div");
   sheet.style.cssText = "background:var(--card);border-radius:20px;width:92%;max-width:420px;padding:18px;border:1px solid var(--line)";
   sheet.innerHTML = html;
   overlay.appendChild(sheet);
   document.body.appendChild(overlay);
+  topOvl = overlay;
+  overlay.addEventListener("click", function(e){ if (e.target === overlay) closeTopOverlay(); });
+}
+function closeTopOverlay(){
+  if (topOvl){ topOvl.remove(); topOvl = null; }
+  document.querySelectorAll(".ovl").forEach(function(el){ el.remove(); });
 }
 function showSheetSheet2(){}
 /* ================== 初始化 ================== */
@@ -834,11 +856,15 @@ function boot(){
     dragGraceUntil = Date.now()+3000;
     updateSvVal();
   });
+  var fanLastSentAt = 0;
   $("fanSlider").addEventListener("input", function(){
     dragFan = true; fanGraceUntil = Date.now()+2000;
-    $("fanVal").textContent = this.value+"%";
+    var v = parseInt(this.value,10);
+    $("fanVal").textContent = v + "%";
+    // 拖动中节流发送（200ms 一次），真正做到"滑块即遥控"
+    if (Date.now() - fanLastSentAt > 200){ fanLastSentAt = Date.now(); applyFan(v); }
   });
-  $("fanSlider").addEventListener("change", function(){ dragFan=false; applyFan(); });
+  $("fanSlider").addEventListener("change", function(){ dragFan=false; applyFan(parseInt(this.value,10)); });
   $("btnSettings").addEventListener("click", openSettings);
   if (cfgGet("showFan", false)) $("fanCard").classList.remove("hidden");
   fillFollowSelect();
