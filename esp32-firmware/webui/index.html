@@ -317,8 +317,8 @@ var fanLastSent = 0;
 function badge(cls, txt){ $("badge").className = cls; $("badge").textContent = txt; }
 function fmt(v){ return v === null || v === undefined || isNaN(v) ? "--" : Math.round(v); }
 function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
-function fmtClock(sec){ var m=Math.floor(sec/60), s=sec%60; return m+":"+(s<10?"0":"")+s; }
-function fmtClockLong(sec){ var h=Math.floor(sec/3600), m=Math.floor(sec%3600/60), s=sec%60; return h>0? (h+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")) : (m+":"+String(s).padStart(2,"0")); }
+function fmtClock(sec){ sec = Math.floor(sec); var m=Math.floor(sec/60), s=sec%60; return m+":"+(s<10?"0":"")+s; }
+function fmtClockLong(sec){ sec = Math.floor(sec); var h=Math.floor(sec/3600), m=Math.floor(sec%3600/60), s=sec%60; return h>0? (h+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")) : (m+":"+String(s).padStart(2,"0")); }
 function esc(s){ var d=document.createElement("div"); d.textContent=s==null?"":s; return d.innerHTML; }
 /* ================== 视图切换 ================== */
 function switchView(v){
