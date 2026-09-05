@@ -3,6 +3,7 @@ package com.roastcurve.app.settings
 import com.roastcurve.shared.l10n.L10n
 import com.roastcurve.shared.model.Settings
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -11,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.roastcurve.shared.storage.SettingsStore
 import kotlinx.coroutines.launch
 
@@ -46,11 +48,11 @@ fun ModbusConfigScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
         // ===== 参数卡 =====
         Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp)) {
                 ModbusRegRow(
                     label = L10n.get("modbus.s3"),
                     value = settings.modbusPvReg,
@@ -89,7 +91,7 @@ fun ModbusConfigScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
         // ===== 恢复默认（台泉 TC4S）=====
         OutlinedButton(
@@ -131,34 +133,41 @@ private fun ModbusRegRow(
 ) {
     val scope = rememberCoroutineScope()
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        Modifier.fillMaxWidth().padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = MaterialTheme.typography.bodyLarge)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedButton(
-                onClick = {
-                    val next = onChange((value - step).coerceAtLeast(min))
-                    onUpdate(next)
-                    scope.launch { SettingsStore().save(next) }
-                },
-                enabled = value - step >= min,
-            ) { Text("-") }
-            Text(
-                format(value),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(horizontal = 12.dp),
-                fontWeight = FontWeight.Bold,
-            )
-            OutlinedButton(
-                onClick = {
-                    val next = onChange((value + step).coerceAtMost(max))
-                    onUpdate(next)
-                    scope.launch { SettingsStore().save(next) }
-                },
-                enabled = value + step <= max,
-            ) { Text("+") }
-        }
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
+        OutlinedButton(
+            onClick = {
+                val next = onChange((value - step).coerceAtLeast(min))
+                onUpdate(next)
+                scope.launch { SettingsStore().save(next) }
+            },
+            enabled = value - step >= min,
+            modifier = Modifier.size(34.dp, 30.dp),
+            contentPadding = PaddingValues(0.dp),
+        ) { Text("-", fontSize = 18.sp, modifier = Modifier.offset(y = (-2).dp)) }
+        Text(
+            format(value),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.width(88.dp),
+        )
+        OutlinedButton(
+            onClick = {
+                val next = onChange((value + step).coerceAtMost(max))
+                onUpdate(next)
+                scope.launch { SettingsStore().save(next) }
+            },
+            enabled = value + step <= max,
+            modifier = Modifier.size(34.dp, 30.dp),
+            contentPadding = PaddingValues(0.dp),
+        ) { Text("+", fontSize = 18.sp, modifier = Modifier.offset(y = (-1).dp)) }
     }
 }

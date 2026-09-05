@@ -331,7 +331,7 @@ object ZhSourceGenerated {
         "modbus.s5" to "波特率",
         "modbus.s6" to "从站地址",
         "modbus.s7" to "⚠ 改动需重新连接后生效。寄存器地址填错时温控器会无响应（读不到温度），改回正确值即可。",
-        "modbus.s8" to "恢复默认（台泉 TC4S）",
+        "modbus.s8" to "恢复默认",
         "modbus.s9" to "一键恢复：PV=0x0000 SV=0x0002 波特率=1200 从站=1。",
         "settings.s5" to "解析失败：{take}",
         "settings.s6" to "数据备份",

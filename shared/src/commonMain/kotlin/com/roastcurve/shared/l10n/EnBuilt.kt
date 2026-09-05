@@ -331,7 +331,7 @@ object EnBuilt {
         "modbus.s5" to "Baud Rate",
         "modbus.s6" to "Slave ID",
         "modbus.s7" to "⚠ Takes effect after reconnect. Wrong register = no response (no temperature).",
-        "modbus.s8" to "Reset to Default (TC4S)",
+        "modbus.s8" to "Reset to Default",
         "modbus.s9" to "One-tap: PV=0x0000 SV=0x0002 baud=1200 slave=1.",
         "settings.s5" to "Parse failed: {take}",
         "settings.s6" to "Data Backup",
