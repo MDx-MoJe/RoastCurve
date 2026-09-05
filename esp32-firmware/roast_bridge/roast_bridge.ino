@@ -905,6 +905,7 @@ void broadcastState() {
   }
   d["ver"] = FIRMWARE_VERSION;
   d["uptime"] = millis() / 1000;
+  d["rssi"] = WiFi.RSSI();  // 信号强度 dBm（每秒广播，网页端分级显示）
   String out;
   serializeJson(d, out);
   ws.broadcastTXT(out);

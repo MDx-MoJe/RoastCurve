@@ -175,17 +175,17 @@ void startApConfig();
 void stopApConfig();
 #line 735 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len);
-#line 914 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 915 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void startBleConfig();
-#line 969 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 970 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 String readLine(uint32_t timeoutMs);
-#line 984 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 985 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCreds();
-#line 991 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 992 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void ensureWifi();
-#line 1135 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 1136 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void setup();
-#line 1173 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 1174 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loop();
 #line 138 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCfg() {
@@ -958,6 +958,7 @@ void broadcastState() {
   }
   d["ver"] = FIRMWARE_VERSION;
   d["uptime"] = millis() / 1000;
+  d["rssi"] = WiFi.RSSI();  // 信号强度 dBm（每秒广播，网页端分级显示）
   String out;
   serializeJson(d, out);
   ws.broadcastTXT(out);

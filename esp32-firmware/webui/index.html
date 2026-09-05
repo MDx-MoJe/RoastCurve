@@ -202,6 +202,8 @@ footer{display:none}
   <h1>烤豆<span>·</span>桥接器</h1>
   <div style="display:flex;align-items:center;gap:8px">
     <span id="badge" style="font-size:11px;padding:4px 10px;border-radius:20px;background:var(--card2);color:var(--tx2);border:1px solid var(--line)">连接中…</span>
+    <span id="rssiDot" title="信号强度" style="width:10px;height:10px;border-radius:50%;background:var(--dim);display:inline-block"></span>
+    <span id="rssiVal" style="font-size:10px;color:var(--dim);min-width:34px">--</span>
     <button id="btnSettings" style="font-size:12px;padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">设置</button>
   </div>
 </header>
@@ -366,7 +368,7 @@ function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 function recStart(){
   if (rec && rec.active) return;
   hist = [];
-  rec = { id:"rb_"+Date.now(), active:true, startedAt:Date.now(), t0:0, chargePv:null,
+  rec = { id:"rb_"+Date.now(), active:true, startedAt:Date.now(), t0:0, chargePv:null, chargeUptime:curUptime,
           pts:[], events:[], name:null, dropped:false, fanPts:[], fanDuty:0, _clock:0 };
   lastEvn = -1;
   $("legRec").style.display = "inline";
@@ -380,11 +382,11 @@ function recTick(elapsedSec, pv, sv, fan){
   rec.pts.push({t:Math.round(elapsedSec*10)/10, pv:pv, sv:sv});
   if (rec.pts.length > MAXPTS) rec.pts.shift();
 }
-function recAddEvent(ev, elapsedSec, pv){
-  if (!rec) rec = { id:"rb_"+Date.now(), active:false, startedAt:Date.now(), t0:0, chargePv:null, pts:[], events:[], name:null, dropped:false, fanPts:[], fanDuty:0 };
+function recAddEvent(ev, elapsedSec, pv, uptime){
+  if (!rec) rec = { id:"rb_"+Date.now(), active:false, startedAt:Date.now(), t0:0, chargePv:null, chargeUptime:curUptime, pts:[], events:[], name:null, dropped:false, fanPts:[], fanDuty:0 };
   // 入豆自动起表
   if (ev==="CHARGE" && !rec.active){ rec.active = true; rec.startedAt = Date.now(); $("legRec").style.display="inline"; badge("rec","记录中"); }
-  rec.events.push({ev:ev, t:elapsedSec, pv:pv});
+  rec.events.push({ev:ev, t:elapsedSec, pv:pv, uptime:(uptime!==undefined)?uptime:null});
   if (ev==="DROP") recDump();
 }
 function recDump(){
@@ -417,7 +419,7 @@ function markEv(code, btn){
   }
   send({type:"event", ev:code});
   var elapsed = rec._clock || ((Date.now() - rec.startedAt)/1000);
-  recAddEvent(code, Math.round(elapsed), curPv);
+  recAddEvent(code, Math.round(elapsed), curPv, curUptime);
   var old = btn.textContent;
   btn.textContent = "✓";
   setTimeout(function(){ btn.textContent = old; }, 700);
@@ -487,6 +489,7 @@ var curPv = 0, curSv = 0, curFan = 0, curUptime = 0;
 function onState(m){
   lastDataTs = Date.now();
   curPv = m.pv; curSv = m.sv; curFan = m.fan||0; curUptime = m.uptime;
+  if (m.rssi !== undefined) updateRssi(m.rssi);
   $("pv").innerHTML = fmt(m.pv)+'<span class="unit">°C</span>';
   $("sv").innerHTML = fmt(m.sv)+'<span class="unit">°C</span>';
   $("legSim").style.display = m.mode==="sim" ? "inline":"none";
@@ -850,6 +853,62 @@ function draw(){
   }
   line("sv",getCss("--primary"),1.5);
   line("pv",getCss("--accent"),2.5);
+
+  // === 事件标记点（入豆/黄点/一爆/出豆，带炉内时间+温度）===
+  drawEventMarks(X, Y, t0, t1, w);
+}
+/* 事件点在曲线上的标注（仅在录制中的本炉 + 时间窗内显示）*/
+function updateRssi(dbm){
+  var dot = $("rssiDot"), val = $("rssiVal");
+  if (!dot) return;
+  var c, label;
+  if (dbm >= -60){ c = getCss("--ok"); label = "强"; }
+  else if (dbm >= -75){ c = getCss("--warn"); label = "中"; }
+  else if (dbm >= -85){ c = getCss("--accent"); label = "弱"; }
+  else { c = getCss("--err"); label = "极弱"; }
+  dot.style.background = c;
+  if (val){ val.textContent = dbm + "dBm"; val.style.color = c; val.title = label; }
+}
+var EV_COLOR = {CHARGE:"#4a7c44", DRY:"#b8912a", FCs:"#c2602f", SCs:"#8f2f22", DROP:"#3d6a80"};
+var EV_SHORT = {CHARGE:"入豆", DRY:"黄点", FCs:"一爆", FCe:"一爆毕", SCs:"二爆", SCe:"二爆毕", DROP:"出豆"};
+function drawEventMarks(X, Y, t0, t1, w){
+  if (!rec || !rec.active) return;
+  var evs = rec.events || [];
+  if (!evs.length) return;
+  var chargeUp = rec.chargeUptime;
+  if (chargeUp === undefined || chargeUp === null) return;
+  // 事件按时间排，画点 + 错开标注
+  var drawn = [];
+  evs.forEach(function(ev){
+    var evUp = chargeUp + ev.t;         // 事件在 uptime 轴的位置
+    if (evUp < t0 - 5 || evUp > t1 + 5) return;   // 出窗不画
+    var x = X(evUp);
+    var y = Y(ev.pv !== undefined && ev.pv ? ev.pv : curPv);
+    var color = EV_COLOR[ev.ev] || "#8B5E3C";
+    // 空心圆 + 实心核
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, 7); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, 3.2, 0, 7); ctx.fill();
+    drawn.push({x:x, y:y, color:color, up:evUp, ev:ev});
+  });
+  // 标注文字：事件名 mm:ss 温度（简单上下交替防重叠）
+  ctx.font = "bold 10px -apple-system";
+  ctx.textAlign = "left";
+  drawn.forEach(function(d, i){
+    var label = EV_SHORT[d.ev] + " " + fmtClock(Math.max(0, Math.round(d.ev.t))) + " " + fmt(d.ev.pv) + "°";
+    var upOffset = (i % 2 === 0) ? -16 : 22;   // 上下交替
+    var tx = d.x + 8;
+    if (tx + 70 > w) tx = d.x - 78;            // 靠近右缘左置
+    var ty = d.y + upOffset;
+    // 标签底色条（可读性）
+    var tw = ctx.measureText(label).width + 6;
+    ctx.fillStyle = "rgba(0,0,0,.45)";
+    ctx.fillRect(tx - 3, ty - 9, tw, 13);
+    ctx.fillStyle = d.color;
+    ctx.fillText(label, tx, ty);
+  });
+  ctx.textAlign = "start";
 }
 /* ================== 设置 ================== */
 function openSettings(){
