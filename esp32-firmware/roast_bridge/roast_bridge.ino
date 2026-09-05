@@ -46,7 +46,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.7.2";
+constexpr const char* FIRMWARE_VERSION = "1.8.0";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -347,6 +347,19 @@ constexpr uint8_t  FOLLOW_END_FAN    = 25;    // %
 constexpr uint16_t FOLLOW_HARD_MAX   = 250;   // °C
 constexpr uint32_t FOLLOW_HARD_MS    = 5000;  // 超限持续 5s 才中断（防瞬态误报）
 
+// ==================== 事件日志 + 炉次记录器 ====================
+// 与 App 的 RoastEvent 枚举对齐：CHARGE/DRY/FCs/FCe/SCs/SCe/DROP
+constexpr uint8_t EV_MAX = 24;
+struct EvRecord { char ev[8]; uint32_t t; uint8_t pv; int32_t roastT; };  // t=uptime秒, roastT=跟随内秒(-1=非跟随)
+EvRecord evLog[EV_MAX];
+uint16_t evCount = 0;
+
+// 固件炉次记录器（v1.8：跟随期间固件自主采样，网页刷新不丢曲线）
+struct RoastSample { uint16_t t; uint8_t pv; uint8_t sv; uint8_t fan; };  // t=跟随 elapsed 秒
+constexpr uint16_t ROAST_MAX = 1440;   // 120 分钟 @5s
+RoastSample roastPts[ROAST_MAX];
+uint16_t roastCount = 0;
+
 struct FollowEngine {
   bool     on;
   uint8_t  pts[FOLLOW_MAX_POINTS];
@@ -366,9 +379,11 @@ void followStart(uint16_t count, const uint8_t* pts) {
   follow.t0 = millis();
   follow.lastWritten = -1;
   follow.hardSince = 0;
+  // 启动即开新炉次记录（清空上一炉残留）
+  roastCount = 0;
   // 跟随启动 = 固件接管控制，取消未决倒计时
   if (wdState == WdState::COUNTDOWN) wdState = WdState::ARMED;
-  Serial.printf("[跟随] 启动 %u 点（%u 秒）\n", count, count * FOLLOW_INTERVAL_S);
+  Serial.printf("[跟随] 启动 %u 点（%u 秒），炉次记录开始\n", count, count * FOLLOW_INTERVAL_S);
 }
 
 void followStop(bool done) {
@@ -397,6 +412,18 @@ void followTick() {
     followStop(true);
     broadcastState();
     return;
+  }
+  // 炉次采样（每 5s 一个点，跟随 elapsed 为轴；曲线最长 60min → ≤720 点，线性即可）
+  {
+    uint16_t cur5 = (uint16_t)(elapsed / FOLLOW_INTERVAL_S);   // 第几个 5s 块
+    uint16_t last5 = (roastCount > 0) ? (roastPts[roastCount - 1].t / FOLLOW_INTERVAL_S) : 0xFFFF;
+    if (cur5 != last5 && roastCount < ROAST_MAX) {
+      roastPts[roastCount].t = (uint16_t)elapsed;
+      roastPts[roastCount].pv = heater.pv;
+      roastPts[roastCount].sv = heater.sv;
+      roastPts[roastCount].fan = fanSpeed;
+      roastCount++;
+    }
   }
   // PV 绝对硬上限：仅防探头损坏/加热失控把炉子带飞（真实烘焙 PV 不会到这）
   if (heater.pv >= FOLLOW_HARD_MAX) {
@@ -770,13 +797,6 @@ uint32_t diagWsText = 0;     // TEXT 帧数
 uint32_t diagWsConn = 0;     // CONNECTED 数
 char diagLastType[12] = "-"; // 最近一条 TEXT 的 type 字段
 
-// ==================== 事件日志（本次会话，内存环形）====================
-// 与 App 的 RoastEvent 枚举对齐：CHARGE/DRY/FCs/FCe/SCs/SCe/DROP
-constexpr uint8_t EV_MAX = 24;
-struct EvRecord { char ev[8]; uint32_t t; uint8_t pv; };
-EvRecord evLog[EV_MAX];
-uint16_t evCount = 0;
-
 // WS 客户端角色：全部 observer 候选，编号即身份
 bool wsHolder = false;  // 当前主控是否为 WS 客户端
 uint8_t wsHolderNum = 0;
@@ -848,6 +868,8 @@ void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
           evLog[evCount].ev[7] = 0;
           evLog[evCount].t = millis() / 1000;
           evLog[evCount].pv = heater.pv;
+          // 跟随内相对秒（网页刷新后恢复事件到炉内时间轴）；非跟随时 -1
+          evLog[evCount].roastT = follow.on ? (int32_t)((millis() - follow.t0) / 1000) : -1;
           evCount++;
         }
       } else if (strcmp(type_, "get_events") == 0) {
@@ -856,7 +878,30 @@ void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
         for (uint16_t i = 0; i < evCount; i++) {
           if (i) out += ",";
           out += "{\"ev\":\"" + String(evLog[i].ev) + "\",\"t\":" +
-                 String(evLog[i].t) + ",\"pv\":" + String(evLog[i].pv) + "}";
+                 String(evLog[i].t) + ",\"pv\":" + String(evLog[i].pv) +
+                 ",\"roastT\":" + String(evLog[i].roastT) + "}";
+        }
+        out += "]}";
+        ws.sendTXT(num, out);
+      } else if (strcmp(type_, "get_roast") == 0) {
+        // 炉次快照：跟随中的完整曲线 + 事件（网页刷新后恢复记录用）
+        String out = "{\"type\":\"roast\",\"following\":" + String(follow.on ? "true" : "false");
+        if (follow.on) {
+          out += ",\"elapsed\":" + String((millis() - follow.t0) / 1000);
+          out += ",\"total\":" + String(follow.count * FOLLOW_INTERVAL_S);
+        }
+        out += ",\"pts\":[";
+        for (uint16_t i = 0; i < roastCount; i++) {
+          if (i) out += ",";
+          out += "{\"t\":" + String(roastPts[i].t) + ",\"pv\":" + String(roastPts[i].pv) +
+                 ",\"sv\":" + String(roastPts[i].sv) + ",\"fan\":" + String(roastPts[i].fan) + "}";
+        }
+        out += "],\"events\":[";
+        for (uint16_t i = 0; i < evCount; i++) {
+          if (i) out += ",";
+          out += "{\"ev\":\"" + String(evLog[i].ev) + "\",\"t\":" +
+                 String(evLog[i].t) + ",\"pv\":" + String(evLog[i].pv) +
+                 ",\"roastT\":" + String(evLog[i].roastT) + "}";
         }
         out += "]}";
         ws.sendTXT(num, out);

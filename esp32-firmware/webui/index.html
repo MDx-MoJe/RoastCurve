@@ -353,6 +353,7 @@ function connect(){
   ws.onopen = function(){
     badge(rec && rec.active ? "rec" : "ok", rec && rec.active ? "记录中" : "已连接");
     send({type:"get_config"});
+    send({type:"get_roast"});   // 拉炉次快照：固件跟随中则恢复记录会话
     setInterval(function(){ send({type:"ping"}); }, 5000);
   };
   ws.onmessage = function(ev){
@@ -360,6 +361,7 @@ function connect(){
     if (m.type === "state") onState(m);
     else if (m.type === "config") onConfig(m);
     else if (m.type === "events") renderEvents(m.list);
+    else if (m.type === "roast") onRoast(m);
   };
   ws.onclose = function(){
     badge("bad","连接断开");
@@ -496,6 +498,42 @@ function renderEvents(list){
   if (!rec || !rec.active) { lastEvn = (list&&list.length)? list.length : 0; }
   renderRecDock();
 }
+/* ================== 炉次快照恢复（刷新后从固件重建记录会话）================== */
+function onRoast(m){
+  if (!m || !m.following) return;        // 固件没在跟随，无需恢复
+  if (rec && rec.active) return;         // 本地已有活动记录（本页刚起的），不覆盖
+  if (roastEnded) return;                // 用户已结束上一炉，不强行打断
+  var evs = m.events || [];
+  var charge = null;
+  evs.forEach(function(e){ if (e.ev === "CHARGE" && charge === null) charge = e; });
+  // 时间轴锚点：入豆的 roastT（还没入豆则 0 = 跟随起点）
+  var anchorT = charge ? (charge.roastT || 0) : 0;
+  var nowElapsed = Math.max(0, (m.elapsed || 0) - anchorT);   // 炉内已走秒（相对入豆）
+  // 重建记录会话：startedAt 反推，使本地时钟从正确位置续走
+  rec = {
+    id: "rb_" + Date.now(), active: true,
+    startedAt: Date.now() - nowElapsed * 1000,
+    t0: 0, chargePv: charge ? charge.pv : null,
+    chargeUptime: charge ? charge.t : (m.pts && m.pts.length ? m.pts[0].t : curUptime),
+    pts: [], events: [], name: null, dropped: false, fanPts: [], fanDuty: 0, _clock: 0
+  };
+  // 恢复曲线点（相对入豆时间轴）
+  (m.pts || []).forEach(function(p){
+    var rel = p.t - anchorT;
+    if (rel >= -2) rec.pts.push({t: Math.max(0, Math.round(rel * 10) / 10), pv: p.pv, sv: p.sv});
+  });
+  // 恢复事件（CHARGE 本身置 t=0）
+  evs.forEach(function(e){
+    var rel = (e.roastT !== undefined && e.roastT >= 0) ? Math.max(0, e.roastT - anchorT) : 0;
+    rec.events.push({ev: e.ev, t: rel, pv: e.pv, uptime: e.t});
+  });
+  lastEvn = evs.length;
+  $("legRec").style.display = "inline";
+  badge("rec", "记录中");
+  renderRecDock();
+  showBanner("↻ 固件跟随中，已恢复本炉记录（" + fmtClock(nowElapsed) + "）。可继续打事件", true);
+}
+
 /* ================== 状态处理 ================== */
 var curPv = 0, curSv = 0, curFan = 0, curUptime = 0;
 function onState(m){
