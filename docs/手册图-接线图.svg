@@ -74,7 +74,7 @@
   <!-- ===== 温控器 ===== -->
   <rect x="700" y="150" width="210" height="180" rx="14" fill="#FFFBF5" stroke="#8B5E3C" stroke-width="2.5"/>
   <rect x="700" y="150" width="210" height="30" rx="14" class="header"/>
-  <text x="805" y="170" text-anchor="middle" class="htxt">台泉 TC4S 温控器</text>
+  <text x="805" y="170" text-anchor="middle" class="htxt">温控器（测试用台泉 TC4S）</text>
   <text x="805" y="199" text-anchor="middle" class="sub">背后 RS485 端子 · 24V 供电</text>
   <rect x="716" y="212" width="80" height="24" rx="6" fill="#F2EBDE"/>
   <text x="756" y="229" text-anchor="middle" class="pin">A (+)</text>

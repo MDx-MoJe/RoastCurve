@@ -64,7 +64,7 @@
 
   <!-- 温控器 -->
   <rect x="780" y="420" width="150" height="90" rx="12" class="box"/>
-  <text x="855" y="450" text-anchor="middle" class="name">台泉 TC4S</text>
+  <text x="855" y="450" text-anchor="middle" class="name">温控器</text>
   <text x="855" y="470" text-anchor="middle" class="sub">PID 温控器 · RS485</text>
   <text x="855" y="488" text-anchor="middle" class="sub">1200-8N1 · 从站 1</text>
 
