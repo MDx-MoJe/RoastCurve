@@ -260,6 +260,10 @@ footer{display:none}
         <select id="followSel"></select>
         <button id="followBtn" onclick="followToggle()">启动跟随</button>
       </div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button onclick="importAlog()" style="flex:1;font-size:12px;padding:6px 10px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">📥 导入曲线（.alog）</button>
+        <button onclick="manageTpls()" style="flex:1;font-size:12px;padding:6px 10px;border-radius:50px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">🗂 管理模板</button>
+      </div>
       <div id="followInfo"></div>
     </div>
     <button id="stopBtn" onclick="estop()">■ 急 停</button>
@@ -798,6 +802,7 @@ function setSvUI(){
   $("followBtn").disabled = !isHolder;
   $("followBtn").textContent = followOn ? "停止跟随" : "启动跟随";
   $("followBtn").className = followOn ? "stopf" : "";
+  // 导入/管理模板永远可用（文件与本地操作，与控制权无关）
   $("fanSlider").disabled = followOn;
 }
 function updateSvVal(){
@@ -1075,12 +1080,13 @@ function refreshFollowSelect(){
              '<option value="soak">示例：爬温+恒温 150°C</option>' +
              '<option value="dram">示例：陡峭曲线（熔断演示）</option>';
   var tpls = loadTpls();
-  tpls.forEach(function(t, i){
-    html += '<option value="tpl_' + i + '">★ ' + t.name + '</option>';
-  });
-  if (tpls.length) html += '<option value="tpl_del">— 管理模板…</option>';
-  else html += '<option value="tpl_imp" disabled>本地无模板（可导入 .alog）</option>';
-  html += '<option value="tpl_imp">导入 .alog 曲线…</option>';
+  if (tpls.length){
+    tpls.forEach(function(t, i){
+      html += '<option value="tpl_' + i + '">★ ' + t.name + '</option>';
+    });
+  } else {
+    html += '<option value="ramp" disabled>— 暂无模板，点下方「导入曲线」或烘焙后「存为模板」—</option>';
+  }
   sel.innerHTML = html;
 }
 function fillFollowSelect(){ refreshFollowSelect(); }
@@ -1089,7 +1095,9 @@ function fillFollowSelect(){ refreshFollowSelect(); }
 function importAlog(){
   var input = document.createElement("input");
   input.type = "file";
-  input.accept = ".alog,.txt,.json";
+  // 不能设 accept 白名单：.alog 是 Artisan 私有格式，系统无对应 MIME 类型，
+  // iOS/Android 文件选择器会把无类型的扩展名文件置灰不可选。
+  // 放开全部文件，内容在 parseAndAddAlog 里校验。
   input.onchange = function(){
     var f = input.files[0];
     if (!f) return;
@@ -1189,8 +1197,6 @@ function followToggle(){
   var pts = null;
   if (val.indexOf("tpl_") === 0){
     var idx = parseInt(val.slice(4),10);
-    if (val === "tpl_del"){ manageTpls(); return; }
-    if (val === "tpl_imp"){ importAlog(); return; }
     var tpls = loadTpls();
     var tpl = tpls[idx];
     if (!tpl){ alert("模板不存在"); return; }
