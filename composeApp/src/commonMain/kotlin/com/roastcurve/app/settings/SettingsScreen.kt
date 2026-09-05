@@ -411,6 +411,72 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(12.dp))
 
+        // ===== 跟随结束回落 =====
+        Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 2.dp) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+                Text(L10n.get("settings.s45"), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    L10n.get("settings.s46"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(6.dp))
+                // 回落温度
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Text(L10n.get("settings.s47"), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    OutlinedButton(
+                        onClick = {
+                            val v = (settings.followEndSv - 5).coerceAtLeast(20)
+                            val next = settings.copy(followEndSv = v)
+                            onUpdate(next); scope.launch { SettingsStore().save(next) }
+                        },
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) { Text("−5") }
+                    Text(
+                        "${settings.followEndSv}°C",
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            val v = (settings.followEndSv + 5).coerceAtMost(120)
+                            val next = settings.copy(followEndSv = v)
+                            onUpdate(next); scope.launch { SettingsStore().save(next) }
+                        },
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) { Text("+5") }
+                }
+                Spacer(Modifier.height(4.dp))
+                // 回落风速
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Text(L10n.get("settings.s48"), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    OutlinedButton(
+                        onClick = {
+                            val v = (settings.followEndFan - 5).coerceAtLeast(0)
+                            val next = settings.copy(followEndFan = v)
+                            onUpdate(next); scope.launch { SettingsStore().save(next) }
+                        },
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) { Text("−5") }
+                    Text(
+                        "${settings.followEndFan}%",
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            val v = (settings.followEndFan + 5).coerceAtMost(100)
+                            val next = settings.copy(followEndFan = v)
+                            onUpdate(next); scope.launch { SettingsStore().save(next) }
+                        },
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) { Text("+5") }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
         // ===== 设备连接 =====
         Text(L10n.get("settings.s29"), style = MaterialTheme.typography.labelMedium,
              color = MaterialTheme.colorScheme.onSurfaceVariant)

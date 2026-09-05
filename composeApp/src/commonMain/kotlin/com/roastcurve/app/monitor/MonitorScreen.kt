@@ -142,8 +142,8 @@ fun MonitorScreen(
     var activeProfile by remember { mutableStateOf<RoastProfile?>(null) }
     var showProfilePicker by remember { mutableStateOf(false) }
     var followAlert by remember { mutableStateOf<String?>(null) }
-    var fuseBadSec by remember { mutableStateOf(0) }          // 偏差熔断计数
     val svHistory = remember { mutableListOf<Float>() }        // SV 平滑窗口（Artisan 同款 5 点）
+    var hardBadSince by remember { mutableStateOf(0) }        // PV≥250°C 持续计数（硬上限保护，拍数×2s）
     var followClock by remember { mutableStateOf(0f) }         // 诊断：模板时钟
     var followTarget by remember { mutableStateOf<Float?>(null) }   // 诊断：当前目标温度
     var followLastSv by remember { mutableStateOf<Float?>(null) }   // 诊断：最近回读的 SV
@@ -510,27 +510,55 @@ fun MonitorScreen(
             val rawAtT = RoastMath.profileTargetAt(profile.points, tEff)
             val rawLa = if (laSec > 0f) RoastMath.profileTargetAt(profile.points, tEff + laSec) else null
             val raw = rawLa ?: rawAtT
+            val bt = lastP?.bt
             if (raw == null || rawAtT == null) {
-                exitFollow(L10n.get("monitor.s10"))
+                // 曲线走完：回落设定到用户配置的结束值（默认 25°C/25%），不再停在终点干烧
+                // 直发绕过 writingSv 去重门控（跟随循环已退出，无并发写；确保回落必达）
+                val chSettle = channel
+                if (chSettle != null) {
+                    scope.launch {
+                        try {
+                            chSettle.sendCommand(DeviceCommand(CommandType.PID_SETPOINT, settings.followEndSv.toFloat()))
+                        } catch (_: Exception) {}
+                        try {
+                            chSettle.sendCommand(DeviceCommand(CommandType.FAN_DUTY, settings.followEndFan.toFloat()))
+                        } catch (_: Exception) {}
+                        fanSpeed = settings.followEndFan.toFloat()
+                    }
+                }
+                followAlert = L10n.get("monitor.s88", "sv" to settings.followEndSv.toString())
+                followMode = false
                 break
+            }
+            // PV 硬上限保护（与固件对齐）：实测温度 ≥250°C 持续 5s → 回落退出
+            // 防探头损坏/加热失控把炉子带飞；正常烘焙 PV 不会到这（跟随无人值守才拦）
+            if (bt != null && bt >= 250f) {
+                hardBadSince += 2
+                if (hardBadSince >= 5) {
+                    val chHard = channel
+                    if (chHard != null) {
+                        scope.launch {
+                            try {
+                                chHard.sendCommand(DeviceCommand(CommandType.PID_SETPOINT, settings.followEndSv.toFloat()))
+                            } catch (_: Exception) {}
+                            try {
+                                chHard.sendCommand(DeviceCommand(CommandType.FAN_DUTY, settings.followEndFan.toFloat()))
+                            } catch (_: Exception) {}
+                            fanSpeed = settings.followEndFan.toFloat()
+                        }
+                    }
+                    followAlert = L10n.get("monitor.s89")
+                    followMode = false
+                    break
+                }
+            } else {
+                hardBadSince = 0
             }
             followTarget = raw
             // Artisan 同款五点衰减加权平滑，抹平台阶
             svHistory.add(raw)
             if (svHistory.size > 5) svHistory.removeAt(0)
             val target = RoastMath.smoothSv(svHistory).coerceIn(0f, 260f)
-
-            // 偏差熔断：仅在入豆后生效，且 |实际−目标| >15°C 连续 30 秒 → 自动切手动
-            val bt = lastP?.bt
-            if (chargeT != null && bt != null && kotlin.math.abs(bt - raw) > 15f) {
-                fuseBadSec += 2
-                if (fuseBadSec >= 30) {
-                    exitFollow(L10n.get("monitor.s11"))
-                    break
-                }
-            } else {
-                fuseBadSec = 0
-            }
 
             // 变化 ≥1° 才写寄存器（同 Artisan 去重写入）
             val cur = currentSv
@@ -792,7 +820,7 @@ fun MonitorScreen(
                                     when {
                                         followMode -> exitFollow()
                                         activeProfile == null -> showProfilePicker = true
-                                        else -> { svHistory.clear(); fuseBadSec = 0; fanManualOverride = false; followMode = true; followAlert = null }
+                                        else -> { svHistory.clear(); hardBadSince = 0; fanManualOverride = false; followMode = true; followAlert = null }
                                     }
                                 },
                                 label = { Text(L10n.get("monitor.s32")) },
@@ -1187,7 +1215,7 @@ fun MonitorScreen(
                                                 .clickable {
                                                     activeProfile = p
                                                     svHistory.clear()
-                                                    fuseBadSec = 0
+                                                    hardBadSince = 0
                                                     followAlert = null
                                                     // 仅选中模板，不立刻跟随；跟随由 chip 或入豆自动触发
                                                     showProfilePicker = false
@@ -1446,7 +1474,7 @@ fun MonitorScreen(
                                 if (settings.autoFollowOnCharge) {
                                     if (activeProfile != null) {
                                         svHistory.clear()
-                                        fuseBadSec = 0
+                                        hardBadSince = 0
                                         followAlert = null
                                         followMode = true
                                     } else {

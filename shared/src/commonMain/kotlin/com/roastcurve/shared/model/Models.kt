@@ -63,6 +63,8 @@ data class Settings(
     val autoConnectOnLaunch: Boolean = false,  // 启动时自动连接上次的桥接器
     val showSecondCrack: Boolean = false,      // 深烘模式：显示二爆/二爆止事件
     val lookaheadSec: Int = 0,                 // 跟随前瞻秒数：SV 提前参考 N 秒后的目标
+    val followEndSv: Int = 25,                 // 曲线走完回落温度 °C（不再停在终点干烧）
+    val followEndFan: Int = 25,                // 曲线走完回落风速 %
     val lastBridgeHost: String = "",           // 上次成功连接的桥接器 IP（记住上次用）
     val consentVersion: Int = 0,               // 已同意的隐私政策版本（0 = 从未同意，需弹窗）
     val langBuiltin: String = "zh-CN",         // 语言：内置语言代码（zh-CN / en）

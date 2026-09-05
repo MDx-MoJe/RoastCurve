@@ -343,3 +343,9 @@ modbus.s6,从站地址,Slave ID,ModbusConfigScreen.kt,1
 modbus.s7,⚠ 改动需重新连接后生效。寄存器地址填错时温控器会无响应（读不到温度），改回正确值即可。,⚠ Takes effect after reconnect. Wrong register = no response (no temperature).,ModbusConfigScreen.kt,1
 modbus.s8,恢复默认,Reset to Default (TC4S),ModbusConfigScreen.kt,1
 modbus.s9,一键恢复：PV=0x0000 SV=0x0002 波特率=1200 从站=1。,One-tap: PV=0x0000 SV=0x0002 baud=1200 slave=1.,ModbusConfigScreen.kt,1
+settings.s45,跟随结束回落,Follow-End Settle,SettingsScreen.kt,413
+settings.s46,曲线走完自动将温度/风速降到下面的值（不再停在终点干烧）,After the profile finishes, SV/fan settle to these values (no more idling at the end point).,SettingsScreen.kt,414
+settings.s47,回落温度 (°C),Settle SV (°C),SettingsScreen.kt,424
+settings.s48,回落风速 (%),Settle fan (%),SettingsScreen.kt,444
+monitor.s88,曲线已走完，已回落 {sv}°C,Profile finished — settled to {sv}°C,MonitorScreen.kt,516
+monitor.s89,温度超过 250°C，已回落保护,PV exceeded 250°C — settled for safety,MonitorScreen.kt,527
