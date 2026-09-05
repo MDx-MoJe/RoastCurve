@@ -1,0 +1,387 @@
+[
+  {
+    "Sourcefile": null,
+    "Include": "",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/cores/esp32"
+  },
+  {
+    "Sourcefile": null,
+    "Include": "",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/variants/esp32s3"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "WiFi.h",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/WiFi/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "Network.h",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Network/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "ESPmDNS.h",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/ESPmDNS/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "Preferences.h",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Preferences/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "WebSocketsServer.h",
+    "Includepath": "/Users/mdx/Documents/Arduino/libraries/WebSockets/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "WiFiClientSecure.h",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/NetworkClientSecure/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "ArduinoJson.h",
+    "Includepath": "/Users/mdx/Documents/Arduino/libraries/ArduinoJson/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "ArduinoOTA.h",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/ArduinoOTA/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "Update.h",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Update/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "BLEDevice.h",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/WiFi/src/AP.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/WiFi/src/STA.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/WiFi/src/WiFi.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/WiFi/src/WiFiAP.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/WiFi/src/WiFiGeneric.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/WiFi/src/WiFiMulti.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/WiFi/src/WiFiSTA.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/WiFi/src/WiFiScan.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Network/src/NetworkClient.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Network/src/NetworkEvents.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Network/src/NetworkInterface.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Network/src/NetworkManager.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Network/src/NetworkServer.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Network/src/NetworkUdp.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/ESPmDNS/src/ESPmDNS.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Preferences/src/Preferences.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Documents/Arduino/libraries/WebSockets/src/SocketIOclient.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Documents/Arduino/libraries/WebSockets/src/WebSockets.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Documents/Arduino/libraries/WebSockets/src/WebSocketsClient.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Documents/Arduino/libraries/WebSockets/src/WebSocketsServer.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Documents/Arduino/libraries/WebSockets/src/libb64/cdecode.c",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Documents/Arduino/libraries/WebSockets/src/libb64/cencode.c",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Documents/Arduino/libraries/WebSockets/src/libsha1/libsha1.c",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/NetworkClientSecure/src/NetworkClientSecure.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/NetworkClientSecure/src/ssl_client.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/ArduinoOTA/src/ArduinoOTA.cpp",
+    "Include": "SHA2Builder.h",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Hash/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/ArduinoOTA/src/ArduinoOTA.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Update/src/HttpsOTAUpdate.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Update/src/Updater.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Update/src/Updater_Signing.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLE2901.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLE2902.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLE2904.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEAddress.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEAdvertisedDevice.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEAdvertising.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEBeacon.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLECharacteristic.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLECharacteristicMap.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEClient.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEDescriptor.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEDescriptorMap.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEDevice.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEEddystoneTLM.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEEddystoneURL.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEExceptions.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEHIDDevice.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLERemoteCharacteristic.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLERemoteDescriptor.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLERemoteService.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEScan.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLESecurity.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEServer.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEService.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEServiceMap.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEUUID.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEUtils.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEValue.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/FreeRTOS.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/GeneralUtils.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Hash/src/PBKDF2_HMACBuilder.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Hash/src/SHA1Builder.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Hash/src/SHA2Builder.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/Hash/src/SHA3Builder.cpp",
+    "Include": "",
+    "Includepath": null
+  }
+]
