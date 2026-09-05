@@ -401,4 +401,7 @@
  /Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEServer.h \
  /Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLEUtils.h \
  /Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/BLE2902.h \
- /Users/mdx/Library/Arduino15/packages/esp32/tools/esp32s3-libs/3.3.11/include/esp_driver_ledc/include/driver/ledc.h
+ /Users/mdx/Library/Arduino15/packages/esp32/tools/esp32s3-libs/3.3.11/include/esp_driver_ledc/include/driver/ledc.h \
+ /Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/DNSServer/src/DNSServer.h \
+ /Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/AsyncUDP/src/AsyncUDP.h \
+ /Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/setup_gzip.h

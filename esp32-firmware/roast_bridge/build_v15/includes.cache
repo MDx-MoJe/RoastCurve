@@ -61,6 +61,16 @@
   },
   {
     "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "DNSServer.h",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/DNSServer/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
+    "Include": "AsyncUDP.h",
+    "Includepath": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/AsyncUDP/src"
+  },
+  {
+    "Sourcefile": "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/build_v15/sketch/roast_bridge.ino.cpp",
     "Include": "",
     "Includepath": null
   },
@@ -361,6 +371,16 @@
   },
   {
     "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/BLE/src/GeneralUtils.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/DNSServer/src/DNSServer.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/Users/mdx/Library/Arduino15/packages/esp32/hardware/esp32/3.3.11/libraries/AsyncUDP/src/AsyncUDP.cpp",
     "Include": "",
     "Includepath": null
   },

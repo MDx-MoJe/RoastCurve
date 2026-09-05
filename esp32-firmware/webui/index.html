@@ -138,6 +138,22 @@ button{font-family:inherit}
   background:rgba(191,75,58,.12); color:var(--err); font-size:17px; font-weight:800; letter-spacing:2px;
 }
 #stopBtn:active{background:var(--err); color:#fff}
+
+.evbar{
+  display:flex; gap:6px; background:var(--card); border:1px solid var(--line);
+  border-radius:50px; padding:8px 12px; justify-content:space-between;
+}
+.evbar button{
+  flex:1; padding:9px 2px; border-radius:24px; border:0; font-size:12px; font-weight:700;
+  background:var(--card2); color:var(--tx2); font-family:inherit;
+}
+.evbar button:active{opacity:.7}
+.evbar button.charge{background:#4a7c44; color:#fff}
+.evbar button.dry{background:#b8912a; color:#fff}
+.evbar button.fcs{background:#c2602f; color:#fff}
+.evbar button.scs{background:#8f2f22; color:#fff}
+.evbar button.drop{background:#3d6a80; color:#fff}
+#evLog{margin-top:8px; font-size:11px; color:var(--tx2); line-height:1.6; display:none}
 footer{padding:8px 16px calc(10px + env(safe-area-inset-bottom)); text-align:center; font-size:11px; color:var(--dim)}
 #hint{display:none; padding:6px 16px; font-size:12px; color:var(--warn); text-align:center}
 </style>
@@ -164,7 +180,16 @@ footer{padding:8px 16px calc(10px + env(safe-area-inset-bottom)); text-align:cen
       <span id="legSim" style="display:none"><i style="background:var(--warn)"></i>SIM</span>
     </div>
   </div>
-  <div class="row">
+  
+  <div class="evbar">
+    <button class="charge" onclick="markEv('CHARGE',this)">入豆</button>
+    <button class="dry" onclick="markEv('DRY',this)">黄点</button>
+    <button class="fcs" onclick="markEv('FCs',this)">一爆</button>
+    <button class="scs" onclick="markEv('SCs',this)">二爆</button>
+    <button class="drop" onclick="markEv('DROP',this)">出豆</button>
+  </div>
+  <div id="evLog"></div>
+<div class="row">
     <div class="card">
       <div class="lbl">当前主控</div>
       <div class="big" id="holderTag">—</div>
@@ -206,6 +231,7 @@ var ws = null, isHolder = false, cfgInfo = null;
 var hist = [], MAXPTS = 600;
 var lastDataTs = 0, pvPrev = null, tPrev = null;
 var svLastKnown = null;      // 固件最近一次 SV（含跟随写入）
+var lastEvn = -1;
 var svDraft = null;          // 用户拖动中的待下发值（未点下发前存在）
 var dragGraceUntil = 0;      // 拖动/修改后的宽限期：期间 state 不回写滑块
 var followOn = false;
@@ -296,6 +322,7 @@ function connect(){
     try{ m = JSON.parse(ev.data); }catch(e){ return; }
     if (m.type === "state") onState(m);
     else if (m.type === "config") onConfig(m);
+    else if (m.type === "events") renderEvents(m.list);
   };
   ws.onclose = function(){ badge("bad", "连接断开"); showBanner("连接已断开，正在重连…", true); isHolder = false; setSvUI(); };
   ws.onerror = function(){ try{ ws.close(); }catch(e){} };
@@ -344,6 +371,11 @@ function onState(m){
     showBanner(null);
   }
 
+  // 事件数变化 → 拉取事件列表
+  if (m.evn !== undefined && m.evn !== lastEvn){
+    lastEvn = m.evn;
+    send({type:"get_events"});
+  }
   // 曲线
   var now = m.uptime;
   hist.push({t:now, pv:m.pv, sv:m.sv, ft:(m.follow ? m.f_target : null)});
@@ -358,6 +390,24 @@ function onState(m){
     }
   } else { pvPrev = m.pv; tPrev = now; }
   draw();
+}
+
+
+function markEv(code, btn){
+  send({type:"event", ev:code});
+  var old = btn.textContent;
+  btn.textContent = "\u2713";
+  setTimeout(function(){ btn.textContent = old; }, 800);
+}
+var EV_NAMES = {CHARGE:"入豆", DRY:"黄点", FCs:"一爆", FCe:"一爆毕", SCs:"二爆", SCe:"二爆毕", DROP:"出豆"};
+function renderEvents(list){
+  var el = document.getElementById("evLog");
+  if (!list || !list.length){ el.style.display = "none"; return; }
+  el.style.display = "block";
+  el.innerHTML = list.map(function(e){
+    var m = Math.floor(e.t / 60), s = e.t % 60;
+    return "<b>" + (EV_NAMES[e.ev] || e.ev) + "</b> " + m + ":" + (s<10?"0":"") + s + " @" + e.pv + "\u00b0C";
+  }).join(" \u00b7 ");
 }
 
 function onConfig(m){

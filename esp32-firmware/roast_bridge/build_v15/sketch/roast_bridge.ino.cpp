@@ -151,19 +151,27 @@ uint16_t crc16(const uint8_t* buf, size_t len);
 bool mbapToRtu(const uint8_t* frame, size_t frameLen);
 #line 482 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void rtuToMbap(WiFiClient& out, const uint8_t* reqHeader, uint16_t waitMs);
-#line 565 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 541 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+void apSaveAndReboot(const String& ssid, const String& pass);
+#line 553 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+void apLoop();
+#line 650 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+void startApConfig();
+#line 663 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+void stopApConfig();
+#line 712 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len);
-#line 709 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 878 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void startBleConfig();
-#line 756 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 925 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 String readLine(uint32_t timeoutMs);
-#line 771 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 940 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCreds();
-#line 778 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 947 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void ensureWifi();
-#line 922 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 1091 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void setup();
-#line 960 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
+#line 1129 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loop();
 #line 124 "/Users/mdx/Desktop/OH-WorkSpace/RoastCurve/esp32-firmware/roast_bridge/roast_bridge.ino"
 void loadCfg() {
@@ -570,7 +578,147 @@ void rtuToMbap(WiFiClient& out, const uint8_t* reqHeader, uint16_t waitMs) {
   out.write(rsp + 1, n - 3);
 }
 
-// ==================== 蓝牙配网 ====================
+// ==================== AP 配网模式（iOS 主路径，无需 App）====================
+// 流程：板子发热点 RoastBridge-Setup → 手机连上 → Captive Portal 自动弹配网页
+//      → 选家里 WiFi+密码提交 → 存 NVS 重启连家里网络
+#include <DNSServer.h>
+#include <WiFiAP.h>
+
+DNSServer* apDns = nullptr;
+const byte AP_DNS_PORT = 53;
+bool apMode = false;
+
+// 配网页（AP 模式下 192.168.4.1 提供，同样 gzip）
+#include "setup_gzip.h"
+
+void apSaveAndReboot(const String& ssid, const String& pass) {
+  nvs.begin(NVS_NS, false);
+  nvs.putString("ssid", ssid);
+  nvs.putString("pass", pass);
+  nvs.end();
+  Serial.printf("[配网-AP] 已保存 SSID=%s，重启\n", ssid.c_str());
+  delay(300);
+  ESP.restart();
+}
+
+// AP 模式的 HTTP+DNS 处理（非阻塞，主循环调用）
+WiFiServer apServer(80);
+void apLoop() {
+  if (!apMode) return;
+  if (apDns) apDns->processNextRequest();
+
+  WiFiClient sc = apServer.available();
+  if (!sc) return;
+  String reqLine = "";
+  uint32_t t0 = millis(); size_t n = 0;
+  while (sc.connected() && millis() - t0 < 500 && n < 512 && reqLine.indexOf('\n') < 0) {
+    if (sc.available()) { char c = sc.read(); reqLine += c; n++; } else delay(1);
+  }
+  while (sc.connected() && millis() - t0 < 500 && n < 1024) {
+    if (sc.available()) { sc.read(); n++; } else break;
+  }
+
+  // POST /save：读 body 里的 ssid/pass（简化：不解析 Content-Length，直接抓关键字段）
+  if (reqLine.startsWith("POST /save")) {
+    // POST body 已在第二次 while 里读掉一部分；改从原始流读完整 body
+    // （上面已消费，改由 GET /scan+GET 参数方案更稳，此处用 URL 参数版）
+  }
+
+  // 扫描附近 WiFi 并返回 JSON（GET /scan）
+  if (reqLine.startsWith("GET /scan")) {
+    int found = WiFi.scanNetworks();
+    String out = "[";
+    for (int i = 0; i < found && i < 15; i++) {
+      if (i) out += ",";
+      out += "{\"s\":\"" + WiFi.SSID(i) + "\",\"q\":" + String(WiFi.RSSI(i)) + "}";
+    }
+    out += "]";
+    WiFi.scanDelete();
+    char head[128];
+    snprintf(head, sizeof(head),
+      "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %u\r\nConnection: close\r\n\r\n",
+      (unsigned)out.length());
+    sc.print(head); sc.print(out); sc.flush(); delay(2); sc.stop();
+    return;
+  }
+
+  // 提交配网：GET /save?s=<ssid>&p=<pass>（URL 编码由网页端 encodeURIComponent）
+  if (reqLine.startsWith("GET /save?s=") || reqLine.startsWith("GET /save?")) {
+    int qs = reqLine.indexOf('?');
+    int sp = reqLine.indexOf(' ', qs);
+    String q = reqLine.substring(qs + 1, sp);
+    String ssid = "", pass = "";
+    // 简易解析
+    int amp = q.indexOf('&');
+    String kv1 = (amp > 0) ? q.substring(0, amp) : q;
+    String kv2 = (amp > 0) ? q.substring(amp + 1) : "";
+    auto urlDecode = [](String s) {
+      String r; char a, b;
+      for (unsigned int i = 0; i < s.length(); i++) {
+        if (s[i] == '%' && i + 2 < s.length()) {
+          a = s[i+1]; b = s[i+2];
+          if (isxdigit(a) && isxdigit(b)) {
+            if (a >= 'a') a -= 32; if (b >= 'a') b -= 32;
+            char hex[3] = {a, b, 0};
+            r += (char)strtol(hex, nullptr, 16);
+            i += 2;
+          } else r += s[i];
+        } else if (s[i] == '+') r += ' ';
+        else r += s[i];
+      }
+      return r;
+    };
+    if (kv1.startsWith("s=")) ssid = urlDecode(kv1.substring(2));
+    if (kv2.startsWith("p=")) pass = urlDecode(kv2.substring(2));
+    ssid.trim();
+    const char* okBody = "{\"ok\":true}";
+    char head[128];
+    snprintf(head, sizeof(head),
+      "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 12\r\nConnection: close\r\n\r\n");
+    sc.print(head); sc.print(okBody); sc.flush(); delay(5); sc.stop();
+    if (ssid.length() > 0 && pass.length() >= 8) {
+      apSaveAndReboot(ssid, pass);
+    }
+    return;
+  }
+
+  // 其它任何路径（含 Captive Portal 探测）：回配网页
+  sc.print("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n");
+  sc.print("Content-Encoding: gzip\r\nCache-Control: no-store\r\n");
+  char cl[48];
+  snprintf(cl, sizeof(cl), "Content-Length: %u\r\nConnection: close\r\n\r\n", SETUP_GZIP_LEN);
+  sc.print(cl); sc.flush();
+  uint8_t buf[512];
+  for (unsigned int off = 0; off < SETUP_GZIP_LEN; off += sizeof(buf)) {
+    unsigned int n2 = SETUP_GZIP_LEN - off;
+    if (n2 > sizeof(buf)) n2 = sizeof(buf);
+    memcpy_P(buf, SETUP_GZIP + off, n2);
+    size_t w = 0;
+    while (w < n2) { w += sc.write(buf + w, n2 - w); yield(); }
+    yield();
+  }
+  sc.flush(); delay(2); sc.stop();
+}
+
+void startApConfig() {
+  Serial.println("\n[配网-AP] 启动热点 RoastBridge-Setup");
+  apMode = true;
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("RoastBridge-Setup", "roast1234");
+  IPAddress apIp = WiFi.softAPIP();  // 192.168.4.1
+  apServer.begin();
+  apDns = new DNSServer();
+  apDns->start(AP_DNS_PORT, "*", apIp);   // 劫持所有域名 → 弹窗
+  setStatusLed(160, 0, 255, true);  // 品红闪 = AP 配网
+  Serial.printf("[配网-AP] 热点就绪 http://%s 密码 roast1234\n", apIp.toString().c_str());
+}
+
+void stopApConfig() {
+  if (apDns) { apDns->stop(); delete apDns; apDns = nullptr; }
+  apServer.stop();
+  WiFi.softAPdisconnect(true);
+  apMode = false;
+}
 static const BLEUUID NUS_SERVICE_UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
 static const BLEUUID NUS_TX_UUID("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
 static const BLEUUID NUS_RX_UUID("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
@@ -602,6 +750,13 @@ uint32_t diagWsEvents = 0;   // wsEvent 总触发数
 uint32_t diagWsText = 0;     // TEXT 帧数
 uint32_t diagWsConn = 0;     // CONNECTED 数
 char diagLastType[12] = "-"; // 最近一条 TEXT 的 type 字段
+
+// ==================== 事件日志（本次会话，内存环形）====================
+// 与 App 的 RoastEvent 枚举对齐：CHARGE/DRY/FCs/FCe/SCs/SCe/DROP
+constexpr uint8_t EV_MAX = 24;
+struct EvRecord { char ev[8]; uint32_t t; uint8_t pv; };
+EvRecord evLog[EV_MAX];
+uint16_t evCount = 0;
 
 // WS 客户端角色：全部 observer 候选，编号即身份
 bool wsHolder = false;  // 当前主控是否为 WS 客户端
@@ -663,6 +818,27 @@ void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
           followStop(false);
           broadcastState();
         }
+      } else if (strcmp(type_, "event") == 0) {
+        // 事件标记：{type:"event", ev:"CHARGE|DRY|FCs|FCe|SCs|SCe|DROP"}
+        // 固件记录（内存环形，本次会话），浏览器只读展示；任何角色可打
+        const char* ev = doc["ev"] | "";
+        if (strlen(ev) > 0 && evCount < EV_MAX) {
+          strncpy(evLog[evCount].ev, ev, 7);
+          evLog[evCount].ev[7] = 0;
+          evLog[evCount].t = millis() / 1000;
+          evLog[evCount].pv = heater.pv;
+          evCount++;
+        }
+      } else if (strcmp(type_, "get_events") == 0) {
+        // 回全部事件（本次会话）
+        String out = "{\"type\":\"events\",\"list\":[";
+        for (uint16_t i = 0; i < evCount; i++) {
+          if (i) out += ",";
+          out += "{\"ev\":\"" + String(evLog[i].ev) + "\",\"t\":" +
+                 String(evLog[i].t) + ",\"pv\":" + String(evLog[i].pv) + "}";
+        }
+        out += "]}";
+        ws.sendTXT(num, out);
       } else if (strcmp(type_, "estop") == 0) {
         // 任何角色可用：急停 = 终止跟随 + 压温度到安全值
         if (follow.on) followStop(false);
@@ -738,6 +914,7 @@ void broadcastState() {
     if (idx >= follow.count) idx = follow.count - 1;
     d["f_target"] = follow.pts[idx];
   }
+  d["evn"] = evCount;  // 事件数（0 表示无）
   const char* holderStr = holder == Holder::APP ? "app" : holder == Holder::WEB ? "web" : "none";
   d["holder"] = holderStr;
   if (wdState == WdState::COUNTDOWN) {
@@ -822,7 +999,7 @@ void loadCreds() {
 // ==================== WiFi ====================
 void ensureWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
-  if (storedSsid.isEmpty()) { startBleConfig(); }
+  if (storedSsid.isEmpty()) { startApConfig(); return; }  // 无凭据 → AP 配网（iOS 友好主路径）
   if (storedSsid.isEmpty()) return;
   Serial.print("[WiFi] 连接中 ");
   WiFi.mode(WIFI_STA);
@@ -1004,6 +1181,7 @@ void setup() {
 
 void loop() {
   ArduinoOTA.handle();
+  apLoop();        // AP 配网模式（非激活时立即返回）
   handleStatus();
   ws.loop();
   heaterPoll();
@@ -1021,9 +1199,11 @@ void loop() {
     if (digitalRead(PIN_BOOT) == LOW) {
       if (bootPressStart == 0) bootPressStart = millis();
       else if (millis() - bootPressStart > 3000) {
-        Serial.println("[配网] BOOT 键长按，进入蓝牙配网模式");
+        Serial.println("[配网] BOOT 键长按，清除凭据并进入 AP 配网");
         bootPressStart = 0;
-        startBleConfig();
+        nvs.begin(NVS_NS, false); nvs.clear(); nvs.end();
+        storedSsid = ""; storedPass = "";
+        startApConfig();
       }
     } else {
       bootPressStart = 0;
@@ -1041,9 +1221,9 @@ void loop() {
       statusServer.begin();
       ws.begin();
       if (++wifiFailCount >= 3) {
-        Serial.println("[配网] 连续连接失败，进入蓝牙配网模式");
+        Serial.println("[配网] 连续连接失败，进入 AP 配网模式");
         wifiFailCount = 0;
-        startBleConfig();
+        startApConfig();
       }
     }
     return;

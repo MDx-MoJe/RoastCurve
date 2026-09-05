@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>桥接器配网</title>
+<style>
+:root{
+  --bg:#FAF5EB; --card:#FFFBF5; --card2:#F2EBDE; --line:#E8DDD0;
+  --tx:#3D2B1F; --tx2:#7A6857; --primary:#8B5E3C; --accent:#D4843A; --err:#BF4B3A;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#1A1410; --card:#241D16; --card2:#2E251C; --line:#3A2E24;
+         --tx:#E8DDD0; --tx2:#A89885; --primary:#D4A574; --accent:#F0A050; --err:#E05545; }
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  background:var(--bg); color:var(--tx); min-height:100vh;
+  font-family:-apple-system,"PingFang SC",sans-serif;
+  padding-top:env(safe-area-inset-top); display:flex; flex-direction:column; align-items:center;
+}
+.wrap{width:100%; max-width:360px; padding:28px 20px}
+h1{font-size:20px; font-weight:700; text-align:center; margin-bottom:4px}
+h1 span{color:var(--accent)}
+.sub{text-align:center; font-size:12px; color:var(--tx2); margin-bottom:24px}
+.card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px 16px; margin-bottom:14px}
+.lbl{font-size:12px; color:var(--tx2); margin-bottom:8px; display:block}
+#wifiList{max-height:180px; overflow-y:auto}
+.witem{
+  padding:10px 12px; border-radius:10px; font-size:14px; cursor:pointer;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.witem:active{background:var(--card2)}
+.witem.sel{background:var(--card2); color:var(--accent); font-weight:700}
+.witem .q{font-size:11px; color:var(--tx2)}
+input[type=password], input[type=text]{
+  width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line);
+  background:var(--card2); color:var(--tx); font-size:16px; outline:none;
+}
+input:focus{border-color:var(--accent)}
+#btn{
+  width:100%; padding:14px; border-radius:50px; border:0; margin-top:16px;
+  background:var(--accent); color:#fff; font-size:16px; font-weight:700;
+}
+@media (prefers-color-scheme: dark){ #btn{color:#1A1410} }
+#btn:disabled{opacity:.4}
+#msg{text-align:center; font-size:13px; margin-top:14px; min-height:20px; color:var(--tx2)}
+#msg.err{color:var(--err)}
+.manual{margin-top:14px; text-align:center; font-size:12px; color:var(--tx2); cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>烤豆<span>·</span>桥接器</h1>
+  <div class="sub">首次配网：连接到家里 2.4G WiFi</div>
+  <div class="card">
+    <span class="lbl">第一步：选择 WiFi（点这里刷新列表）</span>
+    <div id="wifiList" onclick="scan()"><div class="witem">点击扫描附近 WiFi…</div></div>
+  </div>
+  <div class="card">
+    <span class="lbl">第二步：输入密码（8 位以上）</span>
+    <input type="text" id="ssid" placeholder="WiFi 名称" autocomplete="off">
+    <div style="height:10px"></div>
+    <input type="password" id="pass" placeholder="WiFi 密码">
+    <button id="btn" onclick="save()">连接并保存</button>
+  </div>
+  <div id="msg"></div>
+  <div class="manual" onclick="document.getElementById('ssid').focus()">WiFi 没在列表里？手动输入名称即可</div>
+</div>
+<script>
+"use strict";
+var chosen = "";
+function esc(s){ var d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+function scan(){
+  var list = document.getElementById("wifiList");
+  list.innerHTML = '<div class="witem">扫描中…</div>';
+  fetch("/scan").then(function(r){return r.json()}).then(function(arr){
+    if (!arr.length){ list.innerHTML = '<div class="witem">没找到 WiFi，再点一次重试</div>'; return; }
+    list.innerHTML = arr.map(function(w){
+      var bars = w.q > -60 ? "▂▄▆█" : w.q > -75 ? "▂▄▆_" : "▂▄__";
+      return '<div class="witem" onclick="pick(this,\'' + esc(w.s).replace(/'/g,"\\'") + '\')">' +
+             '<span>' + esc(w.s) + '</span><span class="q">' + bars + '</span></div>';
+    }).join("");
+  }).catch(function(){ list.innerHTML = '<div class="witem">扫描失败，点此重试</div>'; });
+}
+function pick(el, ssid){
+  Array.prototype.forEach.call(el.parentNode.children, function(c){ c.classList.remove("sel"); });
+  el.classList.add("sel");
+  chosen = ssid;
+  document.getElementById("ssid").value = ssid;
+  document.getElementById("pass").focus();
+}
+function save(){
+  var ssid = document.getElementById("ssid").value.trim();
+  var pass = document.getElementById("pass").value;
+  var msg = document.getElementById("msg");
+  if (!ssid){ msg.textContent = "请填写 WiFi 名称"; msg.className = "err"; return; }
+  if (pass.length < 8){ msg.textContent = "密码至少 8 位"; msg.className = "err"; return; }
+  var btn = document.getElementById("btn");
+  btn.disabled = true; btn.textContent = "保存中…";
+  fetch("/save?s=" + encodeURIComponent(ssid) + "&p=" + encodeURIComponent(pass))
+    .then(function(r){return r.json()})
+    .then(function(){
+      msg.textContent = "已保存！桥接器正在连接 " + ssid + " …";
+      msg.className = "";
+      document.title = "配网成功";
+    })
+    .catch(function(){
+      msg.textContent = "提交失败，请重试";
+      msg.className = "err";
+      btn.disabled = false; btn.textContent = "连接并保存";
+    });
+}
+scan();
+</script>
+</body>
+</html>
