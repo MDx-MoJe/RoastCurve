@@ -890,13 +890,13 @@ function drawEventMarks(X, Y, t0, t1, w){
     ctx.beginPath(); ctx.arc(x, y, 6, 0, 7); ctx.stroke();
     ctx.fillStyle = color;
     ctx.beginPath(); ctx.arc(x, y, 3.2, 0, 7); ctx.fill();
-    drawn.push({x:x, y:y, color:color, up:evUp, ev:ev});
+    drawn.push({x:x, y:y, color:color, up:evUp, evCode:ev.ev, evTime:ev.t, evPv:ev.pv});
   });
   // 标注文字：事件名 mm:ss 温度（简单上下交替防重叠）
   ctx.font = "bold 10px -apple-system";
   ctx.textAlign = "left";
   drawn.forEach(function(d, i){
-    var label = EV_SHORT[d.ev] + " " + fmtClock(Math.max(0, Math.round(d.ev.t))) + " " + fmt(d.ev.pv) + "°";
+    var label = (EV_SHORT[d.evCode]||d.evCode) + " " + fmtClock(Math.max(0, Math.round(d.evTime))) + " " + fmt(d.evPv) + "°";
     var upOffset = (i % 2 === 0) ? -16 : 22;   // 上下交替
     var tx = d.x + 8;
     if (tx + 70 > w) tx = d.x - 78;            // 靠近右缘左置
