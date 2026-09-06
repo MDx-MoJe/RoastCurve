@@ -1326,7 +1326,7 @@ fun MonitorScreen(
                     TextButton(onClick = { safeModePrompt = false }) { Text(L10n.get("monitor.s92")) }
                 },
                 dismissButton = {
-                    // 下调到待机温度：写温控器（透传 FC06 → 固件识别为 sv_set 退出 SAFE_MODE）
+                    // 下调到待机温度：写温控器 + 风机复位（透传 FC06 → 固件识别为 sv_set 退出 SAFE_MODE）
                     TextButton(onClick = {
                         safeModePrompt = false
                         val ch = channel
@@ -1336,6 +1336,11 @@ fun MonitorScreen(
                                 try {
                                     ch.sendCommand(DeviceCommand(CommandType.PID_SETPOINT, target))
                                 } catch (_: Exception) {}
+                                // 风机同步复位（安全模式设的 safeFan 不随 sv_set 退出，需显式降）
+                                try {
+                                    ch.sendCommand(DeviceCommand(CommandType.FAN_DUTY, settings.followEndFan.toFloat()))
+                                } catch (_: Exception) {}
+                                fanSpeed = settings.followEndFan.toFloat()
                             }
                         }
                     }) { Text(L10n.get("monitor.s93", "sv" to settings.followEndSv.toString())) }
