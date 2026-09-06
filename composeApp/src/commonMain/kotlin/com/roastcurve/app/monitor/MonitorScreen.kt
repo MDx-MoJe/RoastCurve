@@ -160,6 +160,11 @@ fun MonitorScreen(
     var showBeanBagSync by remember { mutableStateOf(false) }     // 出豆后弹同步扣库存对话框
     var pendingRoastId by remember { mutableStateOf<String?>(null) } // 本炉幂等键（入豆时生成，出豆时用）
 
+    // ===== 固件安全模式交互 =====
+    // 看门狗保温（安全模式）激活时提示用户：继续保持 or 立即下调（2026-09-06 MDx 决策）
+    var safeModePrompt by remember { mutableStateOf(false) }
+    var safeModePromptSv by remember { mutableStateOf(0) }        // 提示时的保温 SV 值
+
     /** 直接写 SV（跟随模式用；adjustSv 是相对量） */
     fun setSvAbsolute(target: Float) {
         val ch = channel ?: return
@@ -293,14 +298,25 @@ fun MonitorScreen(
     }
 
     // 信号强度轮询：连上后每 5 秒读一次桥接器状态口（不阻塞主循环）
-    // MODBUS_TCP 与 TCP 透传都有 8898 状态口可读 RSSI；BLE 透传无 HTTP 口不显示（2026-09-06）
+    // 状态轮询：连上后每 5 秒读桥接器状态口（RSSI + 安全模式检测，不阻塞主循环）
+    // MODBUS_TCP 与 TCP 透传都有 8898 状态口；BLE 透传无 HTTP 口不显示（2026-09-06）
     LaunchedEffect(useRealDevice, hostInput, linkType) {
         if (!useRealDevice) return@LaunchedEffect
         val hasStatusPort = linkType == LinkType.MODBUS_TCP || linkType == LinkType.TCP_TRANSPARENT
+        var safePrompted = false   // 本连接内只提示一次，用户决定后不重复弹
         while (useRealDevice) {
             val h = hostInput.trim()
             if (h.isNotEmpty() && hasStatusPort) {
-                bridgeRssi = SignalProbe.fetchRssi(h)
+                val st = SignalProbe.fetchStatus(h)
+                bridgeRssi = st?.rssi
+                // 安全模式检测：固件看门狗保温中且非记录态 → 提示用户决定（继续保持/下调）
+                if (st?.safe == true && !safePrompted && !recording) {
+                    safePrompted = true
+                    safeModePromptSv = currentSv?.toInt() ?: 0
+                    safeModePrompt = true
+                }
+                // 用户选过「保持」后若又主动写了 SV（退出保温），允许下次再提示
+                if (st?.safe == false && safePrompted) safePrompted = false
             }
             delay(5000)
         }
@@ -1293,6 +1309,36 @@ fun MonitorScreen(
                         Spacer(Modifier.width(6.dp))
                         TextButton(onClick = { showProfilePicker = false }) { Text(L10n.get("common.cancel")) }
                     }
+                },
+            )
+        }
+
+        // ===== 固件安全保温模式交互：看门狗保温激活时用户决定继续保持或下调（2026-09-06） =====
+        if (safeModePrompt) {
+            AlertDialog(
+                onDismissRequest = { safeModePrompt = false },
+                title = { Text(L10n.get("monitor.s90")) },
+                text = {
+                    Text(L10n.get("monitor.s91", "sv" to safeModePromptSv.toString()))
+                },
+                confirmButton = {
+                    // 继续保持保温：关弹窗，不动作（固件保持 SAFE_MODE 粘性）
+                    TextButton(onClick = { safeModePrompt = false }) { Text(L10n.get("monitor.s92")) }
+                },
+                dismissButton = {
+                    // 下调到待机温度：写温控器（透传 FC06 → 固件识别为 sv_set 退出 SAFE_MODE）
+                    TextButton(onClick = {
+                        safeModePrompt = false
+                        val ch = channel
+                        val target = settings.followEndSv.toFloat()   // 待机温度（默认 25）
+                        if (ch != null) {
+                            scope.launch(Dispatchers.Main) {
+                                try {
+                                    ch.sendCommand(DeviceCommand(CommandType.PID_SETPOINT, target))
+                                } catch (_: Exception) {}
+                            }
+                        }
+                    }) { Text(L10n.get("monitor.s93", "sv" to settings.followEndSv.toString())) }
                 },
             )
         }

@@ -5,32 +5,34 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * 桥接器信号强度探测：读取固件开的 HTTP 状态口 /status（端口 8898），
- * 解析出 RSSI（WiFi 信号强度，dBm）。用裸 TCP 手写 GET，避免引入额外 HTTP 客户端依赖。
+ * 桥接器状态探测：读取固件开的 HTTP 状态口 /status（端口 8898）。
+ * 用裸 TCP 手写 GET，避免引入额外 HTTP 客户端依赖。
+ * 字段对应固件 handleStatus 的 JSON：rssi/uptime/client/fan_speed/ver/sim/holder/safe/sv 等。
  */
+data class BridgeStatus(
+    val rssi: Int? = null,
+    val safe: Boolean? = null,     // 固件安全模式激活（看门狗保温中）
+    val sv: Int? = null,           // 固件缓存的当前 SV 设定
+    val fanSpeed: Int? = null,
+    val ver: String? = null,
+)
+
 object SignalProbe {
 
-    /** 单次探测，返回 RSSI（dBm）或 null（不可达/超时/解析失败）。超时很短，不阻塞连接主流程 */
-    suspend fun fetchRssi(host: String): Int? = withContext(Dispatchers.IO) {
+    /** 单次探测完整状态；不可达/超时返回 null */
+    suspend fun fetchStatus(host: String): BridgeStatus? = withContext(Dispatchers.IO) {
         val t = TcpByteTransport(host = host, port = 8898, readTimeoutMs = 1500L)
         withTimeoutOrNull(2500L) {
             try {
                 t.open()
                 t.write("GET /status HTTP/1.0\r\nHost: $host\r\n\r\n".encodeToByteArray())
-                // 状态口响应很小（<200 字节），逐字节读到连接关闭（readExact 返回 null）
                 val buf = StringBuilder()
                 while (true) {
                     val one = t.readExact(1) ?: break
                     buf.append(one[0].toInt().toChar())
                     if (buf.length > 512) break
                 }
-                val body = buf.toString()
-                val idx = body.indexOf("\"rssi\":")
-                if (idx >= 0) {
-                    val rest = body.substring(idx + 7)
-                    val num = rest.takeWhile { it.isDigit() || it == '-' }
-                    if (num.isNotEmpty()) num.toIntOrNull() else null
-                } else null
+                parseStatus(buf.toString())
             } catch (_: Exception) {
                 null
             } finally {
@@ -38,6 +40,30 @@ object SignalProbe {
             }
         }
     }
+
+    /** 解析 /status JSON（裸字符串提取，避免引入 JSON 解析依赖） */
+    private fun parseStatus(body: String): BridgeStatus? {
+        if (body.indexOf("\"rssi\":") < 0) return null
+        fun field(name: String): String? {
+            val idx = body.indexOf("\"$name\":")
+            if (idx < 0) return null
+            val rest = body.substring(idx + name.length + 3)
+            // 数字或带引号字符串
+            val c = rest.firstOrNull() ?: return null
+            return if (c == '"') rest.drop(1).takeWhile { it != '"' }
+            else rest.takeWhile { it.isDigit() || it == '-' }
+        }
+        return BridgeStatus(
+            rssi = field("rssi")?.toIntOrNull(),
+            safe = field("safe")?.let { it == "1" || it == "true" },
+            sv = field("sv")?.toIntOrNull(),
+            fanSpeed = field("fan_speed")?.toIntOrNull(),
+            ver = field("ver"),
+        )
+    }
+
+    /** 兼容旧接口：只取 RSSI（dBm）或 null */
+    suspend fun fetchRssi(host: String): Int? = fetchStatus(host)?.rssi
 
     /**
      * 重置桥接器 WiFi：访问 /reset 端点，固件会清除凭据并重启进配网模式。
@@ -50,7 +76,6 @@ object SignalProbe {
             try {
                 t.open()
                 t.write("GET /reset HTTP/1.0\r\nHost: $host\r\n\r\n".encodeToByteArray())
-                // 读响应确认（固件返回 "resetting" 后即重启，连接会断开）
                 val buf = StringBuilder()
                 while (true) {
                     val one = t.readExact(1) ?: break

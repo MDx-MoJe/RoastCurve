@@ -47,7 +47,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.9.3";
+constexpr const char* FIRMWARE_VERSION = "1.9.4";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -465,15 +465,11 @@ void setHolder(Holder h) {
   Serial.printf("[仲裁] 主控 -> %s\n",
     h == Holder::APP ? "App" : h == Holder::WEB ? "Web" : "无");
   if (holder != Holder::NONE && wdState != WdState::ARMED) {
-    // 主控恢复：取消倒计时/退出安全模式（粘性规则：SAFE_MODE 需显式 sv_set 退出）
+    // 主控恢复：取消倒计时；安全模式保持粘性（不自动解除）——
+    // 是否退出由用户显式决定（sv_set），避免 App 短暂重连误动温控器（2026-09-06 MDx 决策：提供交互由用户选）
     if (wdState == WdState::COUNTDOWN || wdState == WdState::OFF_COUNTDOWN) {
       wdState = WdState::ARMED;
       Serial.println("[看门狗] 主控恢复，倒计时取消");
-    } else if (wdState == WdState::SAFE_MODE) {
-      // 【方案 3】新主控接入 = 有人看护，安全模式使命完成，自动解除（不写 SV，保持当前值）：
-      // App 连上后会自行读 SV 显示/按需调整，无需再靠保温兜底（2026-09-06）
-      wdState = WdState::ARMED;
-      Serial.println("[看门狗] 主控恢复，安全模式解除（SV 保持当前值）");
     }
   }
   broadcastState();
@@ -1477,6 +1473,15 @@ void loop() {
       // （瞬断恢复后 App 沿用原 TCP 连接，无新连接事件，必须靠流量把 holder 拉回 APP）
       lastAppReqMs = millis();
       if (holder == Holder::NONE) setHolder(Holder::APP);
+      // App 透传写 SV（FC06 写单寄存器，地址=SV 寄存器）视为主控显式 sv_set：
+      // 退出粘性安全模式——用户通过 App 下调温度 = 显式接管，保温使命完成（2026-09-06）
+      if (tcpLen >= 11 && tcpBuf[7] == 0x06) {
+        uint16_t wAddr = (tcpBuf[8] << 8) | tcpBuf[9];
+        if (wAddr == cfg.regSv && wdState == WdState::SAFE_MODE) {
+          wdState = WdState::ARMED;
+          Serial.println("[看门狗] App 透传写 SV，安全模式解除");
+        }
+      }
       size_t consumed = total;
       memmove(tcpBuf, tcpBuf + consumed, tcpLen - consumed);
       tcpLen -= consumed;
