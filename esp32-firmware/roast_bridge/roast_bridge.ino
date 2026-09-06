@@ -34,6 +34,7 @@
 #include <ArduinoJson.h>
 #include "webui_gzip.h"   // Web UI gzip 体（webui/index.html 生成）
 #include <ArduinoOTA.h>
+#include <esp_task_wdt.h>   // OTA 烧写期间喂任务看门狗（#10707）
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
@@ -483,6 +484,9 @@ void setHolder(Holder h) {
 // App 主控活跃证明：收到任意完整 MBAP 请求即刷新；空闲超时 = 主控失联（半开 TCP 检测）
 uint32_t lastAppReqMs = 0;
 const uint32_t APP_IDLE_TIMEOUT_MS = 15000;   // App 1s 轮询，超时 15s = 确失联（容忍读超时/OEM 后台限流）
+// OTA 诊断：最近一次 OTA 错误码（0=无/成功；1~6=ArduinoOTA onError）与出错时已传字节数
+volatile int otaErrCode = 0;
+volatile uint32_t otaErrAt = 0;
 
 void watchdogTick() {
   if (follow.on) return;  // 跟随运行中看门狗挂起（曲线自主执行，无需外部干预）
@@ -1155,6 +1159,10 @@ void ensureWifi() {
   }
   if (WiFi.status() == WL_CONNECTED) {
     Serial.printf("\n[WiFi] 已连接 %s\n", WiFi.localIP().toString().c_str());
+    // 关 WiFi 省电：默认 setSleep(true) 在长 TCP 传输（OTA 1.27MB/大文件）时
+    // 芯片间隙休眠导致掉包重传劣化 → OTA 传 ~150KB 断连（2026-09-06 排查）。
+    // 代价是待机功耗略增，对常供电的烘豆桥接器可接受。
+    WiFi.setSleep(false);
     static bool mdnsStarted = false;
     if (!mdnsStarted && MDNS.begin(MDNS_NAME)) {
       mdnsStarted = true;
@@ -1298,15 +1306,16 @@ void handleStatus() {
 
   int32_t rssi = WiFi.RSSI();
   uint32_t upS = (millis() - bootMs) / 1000;
-  char body[256];
+  char body[320];
   snprintf(body, sizeof(body),
-    "{\"rssi\":%ld,\"uptime\":%lu,\"client\":%d,\"req\":%lu,\"fan_speed\":%u,\"ver\":\"%s\",\"sim\":%d,\"holder\":\"%s\",\"safe\":%d,\"ws_ev\":%lu,\"ws_text\":%lu,\"ws_conn\":%lu,\"ws_last\":\"%s\"}",
+    "{\"rssi\":%ld,\"uptime\":%lu,\"client\":%d,\"req\":%lu,\"fan_speed\":%u,\"ver\":\"%s\",\"sim\":%d,\"holder\":\"%s\",\"safe\":%d,\"ws_ev\":%lu,\"ws_text\":%lu,\"ws_conn\":%lu,\"ws_last\":\"%s\",\"ota_err\":%d,\"ota_at\":%lu}",
     (long)rssi, (unsigned long)upS,
     (client && client.connected()) ? 1 : 0, (unsigned long)statReqCount,
     (unsigned)fanSpeed, FIRMWARE_VERSION, cfg.simEnabled ? 1 : 0,
     holder == Holder::APP ? "app" : holder == Holder::WEB ? "web" : "none",
     (wdState == WdState::SAFE_MODE || wdState == WdState::OFF_COUNTDOWN) ? 1 : 0,
-    (unsigned long)diagWsEvents, (unsigned long)diagWsText, (unsigned long)diagWsConn, diagLastType);
+    (unsigned long)diagWsEvents, (unsigned long)diagWsText, (unsigned long)diagWsConn, diagLastType,
+    otaErrCode, (unsigned long)otaErrAt);
   char head[128];
   snprintf(head, sizeof(head),
     "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %u\r\nConnection: close\r\n\r\n",
@@ -1360,14 +1369,24 @@ void setup() {
 
   ArduinoOTA.setHostname(MDNS_NAME);
   ArduinoOTA.setPassword(OTA_PASSWORD);
+  // OTA 块间隔超时调到 10s：默认 1s，flash 跨 sector 擦写 + 系统调度抖动会让
+  // 块到达间隔偶尔 >1s，大固件块多概率累积 → 传一部分就 RECEIVE_ERROR abort。
+  // espressif/arduino-esp32#10213：大 flash 大固件普遍受害，10-15s 显著改善（2026-09-06）
+  ArduinoOTA.setTimeout(10000);
   ArduinoOTA
     .onStart([]() { Serial.println("[OTA] 开始烧写…"); })
     .onEnd([]()   { Serial.println("\n[OTA] 完成"); })
     .onProgress([](unsigned p, unsigned t) {
+      // 喂任务看门狗：OTA 烧写是长阻塞操作，期间主循环任务不跑，
+      // 不喂 esp_task_wdt 会被看门狗咬导致传输中断（espressif/arduino-esp32#10707，2026-09-06 实踩）
+      esp_task_wdt_reset();
+      otaErrAt = p;   // 记录已传字节（诊断断点用）
       if (p % 25 == 0) Serial.printf("[OTA] %u%%\n", p / (t / 100));
     })
-    .onError([](ota_error_t e) { Serial.printf("[OTA] 错误 %u\n", e); });
+    .onError([](ota_error_t e) { otaErrCode = (int)e; Serial.printf("[OTA] 错误 %u\n", e); });
   ArduinoOTA.begin();
+  // onProgress 拿不到已传字节数，改用 onStart 重置诊断
+  otaErrCode = 0; otaErrAt = 0;
 
   Serial.printf("[TCP] 监听端口 %u\n", TCP_PORT);
   Serial.printf("[WS] 监听端口 %u\n", 8897);
