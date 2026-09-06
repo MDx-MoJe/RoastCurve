@@ -46,7 +46,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.9.0";
+constexpr const char* FIRMWARE_VERSION = "1.9.1";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -1172,7 +1172,7 @@ void handleStatus() {
   }
   statReqCount++;
 
-  if (reqLine.startsWith("GET /reset")) {
+  if (reqLine.startsWith("GET /reset") && (reqLine.length() <= 10 || reqLine[10] == '?' || reqLine[10] == ' ')) {
     sc.print("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n");
     sc.print("resetting");
     sc.flush(); delay(10); sc.stop();
@@ -1210,7 +1210,7 @@ void handleStatus() {
     return;
   }
 
-  if (reqLine.startsWith("GET /fan") && (reqLine.length() == 7 || reqLine[7] == '?' || reqLine[7] == ' ')) {
+  if (reqLine.startsWith("GET /fan") && (reqLine.length() <= 8 || reqLine[8] == '?' || reqLine[8] == ' ')) {
     int eq = reqLine.indexOf("speed=");
     if (eq < 0) {
       // 无 speed 参数：返回当前值，不动作（此前无参会把风机关 0）
