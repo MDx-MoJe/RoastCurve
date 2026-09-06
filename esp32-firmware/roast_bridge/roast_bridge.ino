@@ -46,7 +46,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.9.1";
+constexpr const char* FIRMWARE_VERSION = "1.9.2";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -468,6 +468,11 @@ void setHolder(Holder h) {
     if (wdState == WdState::COUNTDOWN || wdState == WdState::OFF_COUNTDOWN) {
       wdState = WdState::ARMED;
       Serial.println("[看门狗] 主控恢复，倒计时取消");
+    } else if (wdState == WdState::SAFE_MODE) {
+      // 【方案 3】新主控接入 = 有人看护，安全模式使命完成，自动解除（不写 SV，保持当前值）：
+      // App 连上后会自行读 SV 显示/按需调整，无需再靠保温兜底（2026-09-06）
+      wdState = WdState::ARMED;
+      Serial.println("[看门狗] 主控恢复，安全模式解除（SV 保持当前值）");
     }
   }
   broadcastState();
@@ -532,6 +537,14 @@ void triggerWatchdog() {
   if (!cfg.wdEnabled) return;
   if (holder != Holder::NONE) return;
   if (follow.on) return;  // 跟随自主执行中：主控断开不介入（曲线自己跑完会回落，无需看门狗）
+  // 【方案 2 判据】仅在炉子处于「加热态」时才武装看门狗：
+  // 当前 SV 设定 ≥ safeSv（保温目标）说明失联时在烘焙/加热，需要收敛回 safeSv 防意外；
+  // SV 已低于 safeSv（待机 25°C / 预热中）时失联，写 safeSv 反而是反向把炉子加热到保温值
+  // （空烧/浪费，2026-09-06 MDx 实况：待机断连被加热到 70°C）——此场景不武装，保持原 SV。
+  if (heater.sv < cfg.safeSv) {
+    Serial.printf("[看门狗] 主控失联但 SV=%u < safeSv=%u（非加热态），不武装\n", heater.sv, cfg.safeSv);
+    return;
+  }
   if (wdState == WdState::ARMED) {
     wdState = WdState::COUNTDOWN;
     wdStateSince = millis();
