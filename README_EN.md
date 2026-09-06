@@ -47,7 +47,13 @@ Live monitor dashboard: dual-pane layout with real-time bean temperature / time 
 
 ## Latest Release (2026-09-06)
 
-**App v1.3.20** · **Bridge firmware v1.8.3** · **Web UI overhaul**
+**App v1.3.27** · **Bridge firmware v1.9.4**
+
+### Watchdog v2 (firmware + App)
+
+- **No false hold at standby**: watchdog arms only when the roaster is heating (SV ≥ safe temp); standby disconnect keeps the temperature, no empty heating
+- **App prompt on safe hold**: App asks you to keep holding or drop to standby temperature
+- **Follow mode unaffected**: profile runs to completion after disconnect — take over when back
 
 ### Follow mode: autonomous
 
@@ -78,7 +84,7 @@ Live monitor dashboard: dual-pane layout with real-time bean temperature / time 
 - **Lock-screen / disconnect no longer deadlocks**: a fresh page can take over or stop the running follow
 - **Watchdog countdown fixed**: no more abnormal long countdowns
 
-**Notes**: update App + firmware together. 4MB flash boards unsupported since v1.4 — use 8MB or 16MB. Web UI and App are separate follow entries — use only one. GPIO config requires firmware v1.8.1+ (old firmware shows an upgrade prompt; flash v1.8.3 via USB).
+**Notes**: update App + firmware together. 4MB flash boards unsupported since v1.4 — use 8MB or 16MB. Web UI and App are separate follow entries — use only one. GPIO config requires firmware v1.8.1+ (old firmware shows an upgrade prompt; flash the latest via USB).
 
 ## Downloads
 
