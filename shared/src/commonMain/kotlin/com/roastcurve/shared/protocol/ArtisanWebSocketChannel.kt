@@ -8,7 +8,6 @@ import io.ktor.client.plugins.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.Clock
 import kotlin.concurrent.Volatile
 import kotlinx.serialization.json.*
 
@@ -56,7 +55,8 @@ class ArtisanWebSocketChannel(
     override var isConnected: Boolean = false
         private set
 
-    private var startTime: Long = 0L
+    private var startMark: kotlin.time.TimeMark? = null   // 单调钟：NTP 跳变不跳秒（2026-09-06 与其它通道统一）
+    private var recvJob: Job? = null      // 接收循环协程（disconnect 一并取消，2026-09-06 补）
 
     override suspend fun connect() {
         if (isConnected) return
@@ -64,7 +64,7 @@ class ArtisanWebSocketChannel(
         try {
             session = client.webSocketSession("ws://$host:$port$path")
             isConnected = true
-            startTime = nowMillis()
+            startMark = kotlin.time.TimeSource.Monotonic.markNow()
 
             job = CoroutineScope(Dispatchers.Default).launch {
                 while (isActive && isConnected) {
@@ -80,8 +80,8 @@ class ArtisanWebSocketChannel(
                 }
             }
 
-            // 启动接收循环
-            CoroutineScope(Dispatchers.Default).launch {
+            // 启动接收循环（句柄保存，disconnect 统一取消，防异常残留）
+            recvJob = CoroutineScope(Dispatchers.Default).launch {
                 try {
                     session?.let { s ->
                         for (frame in s.incoming) {
@@ -104,8 +104,8 @@ class ArtisanWebSocketChannel(
     }
 
     override suspend fun disconnect() {
-        job?.cancel()
-        job = null
+        job?.cancel(); job = null
+        recvJob?.cancel(); recvJob = null
         try {
             session?.close()
         } catch (_: Exception) {}
@@ -129,9 +129,11 @@ class ArtisanWebSocketChannel(
             // 处理数据响应
             if (obj.containsKey("Data")) {
                 val data = obj["Data"]?.jsonObject ?: return
-                val bt = data[btField]?.jsonPrimitive?.content?.toFloatOrNull() ?: 0f
-                val et = data[etField]?.jsonPrimitive?.content?.toFloatOrNull() ?: 0f
-                val elapsed = (nowMillis() - startTime) / 1000f
+                // bt 缺失/畸形：丢弃该帧（此前记 0°C 会画出假点并拉爆 RoR）
+                val bt = data[btField]?.jsonPrimitive?.content?.toFloatOrNull() ?: return
+                // et 缺失 → null（模型本就可空，单探头场景），不整帧丢弃
+                val et = data[etField]?.jsonPrimitive?.content?.toFloatOrNull()
+                val elapsed = (startMark?.elapsedNow()?.inWholeMilliseconds ?: 0L) / 1000f
 
                 _temperatureFlow.emit(
                     CurvePoint(
@@ -145,7 +147,7 @@ class ArtisanWebSocketChannel(
             // 处理推送消息（CHARGE / DROP）
             if (obj.containsKey("Message")) {
                 val message = obj["Message"]?.jsonPrimitive?.content ?: return
-                val elapsed = (nowMillis() - startTime) / 1000f
+                val elapsed = (startMark?.elapsedNow()?.inWholeMilliseconds ?: 0L) / 1000f
                 when (message.uppercase()) {
                     "CHARGE" -> _eventFlow.emit(
                         EventMarker(RoastEvent.CHARGE, elapsed)
@@ -177,8 +179,6 @@ class ArtisanWebSocketChannel(
         else -> null
     }
 
-    private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
-
     override suspend fun sendCharge() {
         session?.send(Frame.Text("""{"Message":"CHARGE"}"""))
     }
@@ -198,8 +198,15 @@ class ArtisanWebSocketChannel(
             RoastEvent.DROP -> "DROP"
             RoastEvent.CUSTOM -> label
         }
+        // label 可能含 " \ 等字符：JSON 字符串转义（此前直接拼会出非法帧）
+        val escaped = eventName
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
         session?.send(
-            Frame.Text("""{"Message":"Event","data":{"Event":"$eventName"}}""")
+            Frame.Text("""{"Message":"Event","data":{"Event":"$escaped"}}""")
         )
     }
 

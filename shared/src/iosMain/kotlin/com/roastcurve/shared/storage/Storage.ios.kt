@@ -22,9 +22,12 @@ internal actual fun ensureDir(path: String) {
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun writeFile(path: String, content: String) {
-    NSFileManager.defaultManager.createFileAtPath(
-        path, content.encodeToByteArray().toNSData(), null
-    )
+    val data = content.encodeToByteArray().toNSData()
+    // atomically=true：先写临时文件再替换，防写一半崩溃留下截断 JSON
+    if (!data.writeToFile(path, true)) {
+        // 失败退化：createFileAtPath 兜底（原行为）
+        NSFileManager.defaultManager.createFileAtPath(path, data, null)
+    }
 }
 
 @OptIn(ExperimentalForeignApi::class)

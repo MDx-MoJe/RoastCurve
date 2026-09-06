@@ -281,19 +281,23 @@ fun MonitorScreen(
     }
 
     // 连接期间每 30 秒自动落盘草稿：崩溃/意外断连最多丢 30 秒数据
-    LaunchedEffect(useRealDevice) {
-        while (useRealDevice && recording) {   // 只在记录中循环，停止后立即停转，不再空转写新档
+    // key 必须含 recording：新会话时序是「连接(true,false) → 开表(true,true)」，
+    // 只监听 useRealDevice 时开表后循环不重启 → 草稿从不落盘（2026-09-06 修复）
+    LaunchedEffect(useRealDevice, recording) {
+        while (useRealDevice && recording) {
             delay(30_000)
             persistSession()
         }
     }
 
     // 信号强度轮询：连上后每 5 秒读一次桥接器状态口（不阻塞主循环）
-    LaunchedEffect(useRealDevice, hostInput) {
+    // MODBUS_TCP 与 TCP 透传都有 8898 状态口可读 RSSI；BLE 透传无 HTTP 口不显示（2026-09-06）
+    LaunchedEffect(useRealDevice, hostInput, linkType) {
         if (!useRealDevice) return@LaunchedEffect
+        val hasStatusPort = linkType == LinkType.MODBUS_TCP || linkType == LinkType.TCP_TRANSPARENT
         while (useRealDevice) {
             val h = hostInput.trim()
-            if (h.isNotEmpty() && linkType == LinkType.MODBUS_TCP) {
+            if (h.isNotEmpty() && hasStatusPort) {
                 bridgeRssi = SignalProbe.fetchRssi(h)
             }
             delay(5000)
@@ -338,9 +342,10 @@ fun MonitorScreen(
                         // 同名同源的旧模板覆盖更新（重导不重复堆积）
                         val existId = ProfileStore().listAll()
                             .find { it.sourceRecordId == "artisan-alog" && it.name == nm }?.id
+                        val newId = existId ?: RoastStore.newId(kotlinx.datetime.Clock.System.now().toEpochMilliseconds())
                         ProfileStore().save(
                             RoastProfile(
-                                id = existId ?: RoastStore.newId(kotlinx.datetime.Clock.System.now().toEpochMilliseconds()),
+                                id = newId,
                                 name = nm,
                                 sourceRecordId = "artisan-alog",
                                 points = pts,
@@ -351,7 +356,8 @@ fun MonitorScreen(
                             L10n.get("monitor.s4", "nm" to nm, "size" to pts.size, "size2" to computedEvents.size)
                         else
                             L10n.get("monitor.s5", "nm" to nm, "size" to pts.size)
-                        activeProfile = ProfileStore().listAll().find { it.id.startsWith("2026") && it.name == nm } ?: activeProfile
+                        // 直接用刚保存的 id（勿用 startsWith("2026") 年份魔数猜，2027 起静默失效）
+                        activeProfile = ProfileStore().listAll().find { it.id == newId && it.name == nm } ?: activeProfile
                         showProfilePicker = true   // 重开选择器展示结果
                     } catch (e: Exception) {
                         followAlert = L10n.get("monitor.import_failed", "msg" to (e.message?.take(40) ?: ""))
@@ -364,12 +370,10 @@ fun MonitorScreen(
 
     fun connect(host: String) {
         connectionError = null
-        println("CONNECT called host=$host connecting=$connecting oldChannel=${channel != null} oldCollectJob=${collectJob != null}")
         // 幂等门控：connect 非原子（ch.connect() 是异步 suspend），快速双击或自动+手动叠加
         // 会并发进入两次。第一次完成后 channel 已就绪，第二次若还进来直接忽略（已有活跃连接）。
-        if (connecting) { println("CONNECT ignored: already connecting"); return }
+        if (connecting) return
         if (channel != null && (channel?.isConnected == true)) {
-            println("CONNECT ignored: already connected")
             return
         }
         connecting = true
@@ -397,10 +401,12 @@ fun MonitorScreen(
                             LinkType.TCP_TRANSPARENT -> TransparentChannel(
                                 name = L10n.get("monitor.s6"),
                                 transport = TcpByteTransport(host = host, port = 8899),
+                                fanHost = host,   // TCP 透传桥接器有 8898 状态口，可控风
                             )
                             LinkType.BLE_TRANSPARENT -> TransparentChannel(
                                 name = L10n.get("monitor.s6"),
                                 transport = createBleTransport(bleAddress.trim()),
+                                // fanHost 缺省 null：BLE 无 HTTP 通道，风速被禁用并提示
                             )
                         }
                         ch.connect()
@@ -458,7 +464,6 @@ fun MonitorScreen(
                     launch {
                         while (isActive) {
                             // 仅记录中刷新自然时钟；待命态保持 0:00
-                            println("RC_TICK rec=$recording ch=${ch.elapsedSec()} disp=$displayTimeSec off=$timerOffsetSec start=$startTimeSec")
                             if (recording) displayTimeSec = ch.elapsedSec() + timerOffsetSec
                             delay(200)
                         }
@@ -500,8 +505,10 @@ fun MonitorScreen(
             val t = ch.elapsedSec()
             val lastP = curvePoints.lastOrNull()
             // 模板时钟：入豆后经过的时间（未入豆则为 0，目标停在起点）
+            // 恢复会话必须加 timerOffsetSec：崩溃重启后 elapsedSec 从重连起算，
+            // 不加会把模板从头回放写回低温起点（2026-09-06 修复）
             val chargeT = events.find { it.event == RoastEvent.CHARGE }?.timeSeconds
-            val tEff = if (chargeT != null) (t - chargeT).coerceAtLeast(0f) else 0f
+            val tEff = if (chargeT != null) ((t + timerOffsetSec) - chargeT).coerceAtLeast(0f) else 0f
             followClock = tEff
 
             // 目标值：带前瞻时取 tEff+N 的目标提前预热；超出末段则保持当前目标，
@@ -530,7 +537,8 @@ fun MonitorScreen(
                 followMode = false
                 break
             }
-            // PV 硬上限保护（与固件对齐）：实测温度 ≥250°C 持续 5s → 回落退出
+            // PV 硬上限保护（与固件对齐）：实测温度 ≥250°C 持续约 6s（2s/拍，第 3 拍触发）→ 回落退出。
+            // 固件侧 FOLLOW_HARD_MS 是精确 5s，两侧本就差 1 拍节奏，属预期（注释与实现一致，2026-09-06 校）
             // 防探头损坏/加热失控把炉子带飞；正常烘焙 PV 不会到这（跟随无人值守才拦）
             if (bt != null && bt >= 250f) {
                 hardBadSince += 2
@@ -692,6 +700,9 @@ fun MonitorScreen(
                         startTimeSec = 0f
                         displayTimeSec = 0f
                         recording = true
+                        // 开表即生成 sessionId：saveSessionState() 需要非空 id，
+                        // 否则进程被杀恢复（st.recording && sid != null）对新会话是死代码
+                        if (sessionId == null) sessionId = RoastStore.newId(kotlinx.datetime.Clock.System.now().toEpochMilliseconds())
                         saveSessionState()
                     }) { Text(L10n.get("monitor.s15")) }
                 }
@@ -848,8 +859,14 @@ fun MonitorScreen(
                                 Text(L10n.get("monitor.s34"), style = MaterialTheme.typography.labelSmall)
                             }
                             // 实时偏差（跟随中显示数字，手动时提示参照）
+                            // 与控制器同口径：以入豆为锚（未入豆→0 起点），恢复会话含 timerOffsetSec，
+                            // 避免预热段/恢复场景 Δ 与 SV 实际控制基准不一致（2026-09-06 修复）
                             val dev = fullCurve.lastOrNull()?.bt?.let { bt ->
-                                RoastMath.profileTargetAt(prof.points, fullCurve.lastOrNull()?.timeSeconds ?: 0f)?.let { bt - it }
+                                val chargeT = events.find { it.event == RoastEvent.CHARGE }?.timeSeconds
+                                val baseT = if (chargeT != null)
+                                    ((fullCurve.lastOrNull()?.timeSeconds ?: 0f) - chargeT).coerceAtLeast(0f)
+                                else 0f
+                                RoastMath.profileTargetAt(prof.points, baseT)?.let { bt - it }
                             }
                             Text(
                                 when {
@@ -1224,7 +1241,7 @@ fun MonitorScreen(
                                         ) {
                                             Text(p.name, fontWeight = FontWeight.Bold)
                                             Text(
-                                                L10n.get("monitor.s56", "size" to curvePoints.size),
+                                                L10n.get("monitor.s56", "size" to (p.points.size.let { if (it > 0) it else p.anchors.size })),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
@@ -1467,6 +1484,9 @@ fun MonitorScreen(
                                 curvePoints.clear()
                                 events.clear()
                                 startTimeSec = 0f
+                                // 入豆延续开表生成的 sessionId（同炉同档，persistSession 覆盖更新不重复建档）；
+                                // 若直接入豆未经开表则补生成
+                                if (sessionId == null) sessionId = RoastStore.newId(kotlinx.datetime.Clock.System.now().toEpochMilliseconds())
                                 // 生成本炉唯一 ID：出豆时同步豆袋扣库存的幂等键
                                 pendingRoastId = "roast-" + kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
                                 saveSessionState()
@@ -1499,16 +1519,26 @@ fun MonitorScreen(
                                             ch.sendCommand(DeviceCommand(CommandType.PID_SETPOINT, 25f))
                                         } catch (_: Exception) {
                                         }
+                                        // 出豆收尾与「曲线走完回落」同语义：风速一并降到冷却值（此前只降 SV 不动风）
+                                        try {
+                                            ch.sendCommand(DeviceCommand(CommandType.FAN_DUTY, settings.followEndFan.toFloat()))
+                                        } catch (_: Exception) {
+                                        }
+                                        fanSpeed = settings.followEndFan.toFloat()
                                     }
                                 }
                                 persistSession()   // 出豆即存兑底快照，之后定时器继续覆盖更新
-                                // 出豆后弹豆袋同步扣库存（若设置了入豆克重）
-                                if (isBridgeAvailableOnPlatform()) showBeanBagSync = true
+                                // 出豆后弹豆袋同步扣库存：仅当本炉有入豆（pendingRoastId 非空）才弹——
+                                // 未标入豆的开表炉无生豆关联，弹了确认键也永久禁用（2026-09-06 修复）
+                                if (pendingRoastId != null && isBridgeAvailableOnPlatform()) showBeanBagSync = true
                             }
                             // 事件时间戳用「点击时刻的当前计时」而非最后采样点时间戳：
                             // 采样点可能滞后（轮询 1s 间隔 + 写 SV 阻塞轮询），用 lastP 会让事件时刻偏小，
                             // 导致美拉德段（黄点→一爆）等阶段计时不准（2026-08-30 实锤）。
-                            val evtNow = channel?.elapsedSec() ?: fullCurve.lastOrNull()?.timeSeconds ?: 0f
+                            // 恢复会话：channel 分支加 timerOffsetSec（与 displayTimeSec 同基准）；
+                            // fullCurve 回退分支不加——collect 里已 +timerOffsetSec 入列（防双重偏移，2026-09-06）
+                            val evtNow = channel?.elapsedSec()?.plus(timerOffsetSec)
+                                ?: (fullCurve.lastOrNull()?.timeSeconds ?: 0f)
                             val lastP = if (event == RoastEvent.CHARGE && useRealDevice) null else fullCurve.lastOrNull()
                             val t = if (event == RoastEvent.CHARGE) 0f else evtNow   // 入豆锚定 0，其余用点击时刻
                             // 记录事件时刻的豆温，图表与阶段卡都会用到
@@ -1583,8 +1613,6 @@ private fun TimeCard(
 ) {
     val m = (seconds / 60).toInt()
     val s = (seconds % 60).toInt()
-    // 跳秒诊断：打印 UI 层实际拿到的秒数与转换结果，定位「跳」发生在哪一层
-    println("TIMECARD sec=$seconds m=$m s=$s")
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(10.dp),

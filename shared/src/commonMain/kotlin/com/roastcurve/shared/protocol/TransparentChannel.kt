@@ -4,6 +4,7 @@ import com.roastcurve.shared.l10n.L10n
 import com.roastcurve.shared.model.CurvePoint
 import com.roastcurve.shared.model.EventMarker
 import com.roastcurve.shared.model.RoastEvent
+import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,6 +33,8 @@ class TransparentChannel(
     private val transport: ByteTransport,
     private val slaveId: Int = ModbusRtu.Tc4s.DEFAULT_SLAVE_ID,
     private val pollIntervalMs: Long = 1000L,
+    /** 桥接器状态口 host（TCP 透传时可控风；BLE 透传无 HTTP 通道传 null，风速被禁用） */
+    private val fanHost: String? = null,
 ) : DeviceChannel {
 
     private val _temperatureFlow = MutableSharedFlow<CurvePoint>(extraBufferCapacity = 64)
@@ -50,6 +53,7 @@ class TransparentChannel(
     private var startMark: kotlin.time.TimeMark? = null
     private val transactionMutex = Mutex()
     private var job: Job? = null
+    private var fanClient: HttpClient? = null   // 懒建：仅在 TCP 透传控风时创建，disconnect 释放
 
     override suspend fun connect(): Unit = withContext(Dispatchers.IO) {
         if (isConnected) return@withContext
@@ -132,6 +136,7 @@ class TransparentChannel(
         transactionMutex.withLock { /* 拿到锁说明无进行中事务 */ }
         job?.cancel(); job = null
         try { transport.close() } catch (_: Exception) {}
+        fanClient?.close(); fanClient = null   // 释放 HTTP 客户端（此前从不 close 泄漏）
     }
 
     override suspend fun sendCommand(command: DeviceCommand) = withContext(Dispatchers.IO) {
@@ -142,6 +147,16 @@ class TransparentChannel(
                 }
                 if (!ok) throw ModbusException(L10n.get("app.s11"))
             }
+            // 风扇：TCP 透传桥接器有 8898 状态口（与 ModbusTcpChannel 同款 HTTP /fan）；
+            // BLE 透传无 HTTP 通道 → 明确报不支持（上层滑块禁用并提示），不再静默抛通用错
+            CommandType.FAN_DUTY -> {
+                val host = fanHost ?: throw ModbusException("BLE 透传链路不支持风速控制")
+                val ok = transactionMutex.withLock {
+                    val client = fanClient ?: createFanHttpClient().also { fanClient = it }
+                    sendFanSpeed(client, host, command.value.toInt())
+                }
+                if (!ok) throw ModbusException("风扇写入失败（桥接器无响应）")
+            }
             else -> throw ModbusException("command ${command.type} not supported yet")
         }
     }
@@ -150,8 +165,23 @@ class TransparentChannel(
         val request = ModbusRtu.buildWriteSingleRegister(slaveId, address, value)
         transport.write(request)
         val echo = transport.readExact(RTU_WRITE_RESPONSE_LEN) ?: return false
-        // 借 parseReadResponse 做 CRC + 从站 + 功能码 + 异常码校验（写响应是请求回显）
-        ModbusRtu.parseReadResponse(request, echo)
+        // FC06 写响应 = 请求回显 [从站,0x06,地址H,地址L,值H,值L,CRC]。
+        // 此前借 parseReadResponse（读响应解析）会把地址高字节当 byteCount：
+        // SV 地址 0x0002 高字节恰为 0 才碰巧可用，配成 ≥0x0100 即误判（2026-09-06 修复）
+        return verifyWriteEcho(request, echo)
+    }
+
+    /** 专用写回显校验：CRC + 从站 + 功能码 + 地址 + 值 与请求一致 */
+    private fun verifyWriteEcho(request: ByteArray, echo: ByteArray): Boolean {
+        if (echo.size < 8) return false
+        val crcPos = echo.size - 2
+        val expected = ((echo[crcPos + 1].toInt() and 0xFF) shl 8) or (echo[crcPos].toInt() and 0xFF)
+        if (ModbusRtu.crc16(echo, 0, crcPos) != expected) return false
+        // 请求布局 [从站,0x06,地址H,地址L,值H,值L,CRC]（echo 去掉 CRC 后应逐字节等于请求前 6 字节）
+        if (echo.size - 2 != request.size - 2) return false
+        for (i in 0 until request.size - 2) {
+            if (echo[i] != request[i]) return false
+        }
         return true
     }
 

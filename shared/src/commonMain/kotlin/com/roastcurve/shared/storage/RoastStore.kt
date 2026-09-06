@@ -65,17 +65,19 @@ class RoastStore {
         fun toCsv(record: RoastRecord): String = buildString {
             appendLine("time_sec,bean_temp_c,env_temp_c")
             record.curveData.forEach { p ->
-                val bt10 = (p.bt * 10).toInt()
-                val btStr = "${bt10 / 10}.${(bt10 % 10).toInt().toString().takeLast(1)}"
-                val etStr = p.et?.let { e ->
-                    val e10 = (e * 10).toInt()
-                    "${e10 / 10}.${e10 % 10}"
-                } ?: ""
-                appendLine("${p.timeSeconds.toInt()},$btStr,$etStr")
+                // locale 无关的定点 1 位小数（"%.1f".format 走系统 locale，de/fr 出逗号破坏 CSV）；
+                // 负温度符号单独处理（旧整数除法 -0.5 → "0.-5" 畸形）
+                fun fmt1(v: Float): String {
+                    val n = Math.round(v * 10f)
+                    val neg = n < 0
+                    val a = kotlin.math.abs(n)
+                    return (if (neg) "-" else "") + "${a / 10}.${a % 10}"
+                }
+                appendLine("${p.timeSeconds.toInt()},${fmt1(p.bt)},${p.et?.let { fmt1(it) } ?: ""}")
             }
         }
 
-        /** 记录 id：时间戳形式 20260824-142500 */
+        /** 记录 id：时间戳形式 20260824-142500-123（追加毫秒防同秒两炉冲突） */
         fun newId(epochMillis: Long): String {
             // 必须转本地时区：Instant.toString() 是 UTC，直接取子串会偏移时区
             val dt = Instant.fromEpochMilliseconds(epochMillis)
@@ -83,7 +85,8 @@ class RoastStore {
             fun p2(n: Int) = n.toString().padStart(2, '0')
             val date = dt.year.toString().padStart(4, '0') + p2(dt.monthNumber) + p2(dt.dayOfMonth)
             val time = p2(dt.hour) + p2(dt.minute) + p2(dt.second)
-            return "$date-$time"
+            val ms = p2((epochMillis % 1000L).toInt() / 10)   // 厘秒精度足够防同秒冲突，id 不过长
+            return "$date-$time-$ms"
         }
     }
 }

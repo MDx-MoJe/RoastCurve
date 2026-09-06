@@ -161,7 +161,6 @@ class ModbusTcpChannel(
     /** 重置计时基准（入豆时调用）：后续采样点时间从零开始 */
     override fun resetTimer() {
         startMark = kotlin.time.TimeSource.Monotonic.markNow()
-        println("RESET_TIMER mark=${startMark.hashCode()}")
     }
 
     override suspend fun disconnect() = withContext(Dispatchers.IO) {
@@ -172,6 +171,8 @@ class ModbusTcpChannel(
         job?.cancel(); job = null
         try { socket?.close() } catch (_: Exception) {}
         socket = null; input = null; output = null
+        // 释放 HTTP 客户端（此前从不 close，反复连接泄漏）
+        fanClient?.close(); fanClient = null
     }
 
     private fun nextTransId(): Int = ++transId and 0xFFFF

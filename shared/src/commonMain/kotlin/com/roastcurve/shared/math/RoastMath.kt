@@ -13,6 +13,14 @@ import kotlin.math.sqrt
  */
 object RoastMath {
 
+    // ===== 阶段阈值（单一真相源：#39 ChartState 的 DRY_END_TEMP/FC_START_TEMP 此前是死配置）=====
+    /** 干燥结束 / 美拉德开始温度阈值（°C） */
+    const val DRY_END_TEMP = 150f
+    /** 美拉德结束 / 发展开始温度阈值（°C） */
+    const val FC_START_TEMP = 195f
+    /** 预热保护：开始 30s 内一律 PREHEAT */
+    const val PREHEAT_GUARD_SEC = 30f
+
     /**
      * 计算升温速率 RoR（°C/min）
      * 使用中心差分法，默认窗口为前后各 15 秒
@@ -27,16 +35,21 @@ object RoastMath {
     ): List<Float> {
         if (points.size < 3) return points.map { 0f }
 
-        return points.mapIndexed { i, point ->
+        // binarySearchBy 要求输入按 timeSeconds 升序；防御：无序时按时间排序的副本计算
+        // （此前假设有序，乱序输入会算出 rightIdx=-1 → points[-1] 崩溃）
+        val sorted = points.zip(points.indices)
+            .sortedBy { it.first.timeSeconds }
+            .map { it.first }
+        return sorted.mapIndexed { i, point ->
             // 找到窗口边界
-            val leftIdx = points.binarySearchBy(point.timeSeconds - windowSeconds) { it.timeSeconds }
+            val leftIdx = sorted.binarySearchBy(point.timeSeconds - windowSeconds) { it.timeSeconds }
                 .let { if (it < 0) -it - 1 else it }
-            val rightIdx = points.binarySearchBy(point.timeSeconds + windowSeconds) { it.timeSeconds }
+            val rightIdx = sorted.binarySearchBy(point.timeSeconds + windowSeconds) { it.timeSeconds }
                 .let { if (it < 0) -it - 2 else it }
-                .coerceAtMost(points.lastIndex)
+                .coerceAtMost(sorted.lastIndex)
 
-            val leftPoint = points[max(leftIdx, 0)]
-            val rightPoint = points[rightIdx]
+            val leftPoint = sorted[max(leftIdx, 0)]
+            val rightPoint = sorted[rightIdx]
 
             val dt = rightPoint.timeSeconds - leftPoint.timeSeconds
             if (dt >= 1f) {   // 时间窗过小会导致 RoR 爆炸，跳过
@@ -169,11 +182,11 @@ object RoastMath {
     /**
      * 检测烘焙阶段
      *
-     * 基于温度阈值和 RoR 变化识别：
-     * - DRY（干燥结束）：BT ≈ 150°C，RoR 开始下降后回升
-     * - FCs（一爆开始）：BT ≈ 190-200°C，RoR 急剧上升
-     * - FCe（一爆结束）：RoR 从峰值回落
-     * - SCs（二爆开始）：BT ≈ 220-225°C，RoR 再次上升
+     * 纯温度阈值 + 预热保护（KDoc 此前宣称的「RoR 变化识别、RoR 回升」逻辑并不存在，注释已改齐）：
+     * - PREHEAT：开始 30s 内
+     * - DRYING：BT < 150°C（干燥）
+     * - MAILLARD：150 ≤ BT < 195°C（美拉德/焦糖化）
+     * - DEVELOPMENT：BT ≥ 195°C（一爆后发展）
      */
     fun detectPhase(
         bt: Float,
@@ -182,9 +195,9 @@ object RoastMath {
         previousPhase: RoastPhase,
     ): RoastPhase {
         return when {
-            elapsedSeconds < 30f -> RoastPhase.PREHEAT
-            bt < 150f -> RoastPhase.DRYING
-            bt < 195f -> RoastPhase.MAILLARD
+            elapsedSeconds < PREHEAT_GUARD_SEC -> RoastPhase.PREHEAT
+            bt < DRY_END_TEMP -> RoastPhase.DRYING
+            bt < FC_START_TEMP -> RoastPhase.MAILLARD
             else -> RoastPhase.DEVELOPMENT
         }
     }
@@ -213,7 +226,9 @@ object RoastMath {
      */
     fun downsample(points: List<CurvePoint>, targetPoints: Int = 600): List<CurvePoint> {
         if (points.size <= targetPoints) return points
-        val step = points.size.toFloat() / targetPoints
+        // 均匀采样且保证含末点（出豆点）：step 取 (size-1)/(target-1)，首尾都命中
+        // （此前 floor(i*size/target) 永远取不到最后一点，导出丢尾点）
+        val step = (points.size - 1).toFloat() / (targetPoints - 1).coerceAtLeast(1)
         return (0 until targetPoints).map { i ->
             points[(i * step).toInt().coerceAtMost(points.lastIndex)]
         }

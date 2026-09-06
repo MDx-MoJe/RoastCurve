@@ -56,6 +56,15 @@ fun RoastChart(
     var isAutoScroll by remember { mutableStateOf(viewport.autoScroll) }
     val textMeasurer = rememberTextMeasurer()
 
+    // 动态 Y 轴下限随父级数据变化（室温起步可见低温段，升温后回到 50° 起点）：
+    // currentViewport 的 remember 无 key 只取首帧，父级后续新 tempMin 被忽略，
+    // 这里单独响应 tempMin 变化并保留时间轴手势状态（2026-09-06 修复）
+    LaunchedEffect(viewport.tempMin) {
+        if (viewport.tempMin != currentViewport.tempMin) {
+            currentViewport = currentViewport.copy(tempMin = viewport.tempMin)
+        }
+    }
+
     // 自动滚动
     LaunchedEffect(data.liveCurve.lastOrNull()?.timeSeconds) {
         if (isAutoScroll && data.isRunning) {

@@ -15,6 +15,23 @@ import com.roastcurve.shared.BackPressHook
 import com.roastcurve.shared.BackupBridge
 
 class MainActivity : ComponentActivity() {
+
+    // 运行时权限结果（androidx.activity 1.9 起 ComponentActivity 不再有 onRequestPermissionsResult 回调，
+    // 统一走 ActivityResult API；BLE 被拒时给一次性引导，避免静默不可用）
+    private var lastPermRequest = 0   // 1=通知 2=BLE
+    private val permLauncher =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            val denied = result.entries.any { !it.value }
+            if (denied && lastPermRequest == 2) {
+                android.widget.Toast.makeText(
+                    this,
+                    "蓝牙权限被拒绝：BLE 透传不可用，可到系统设置开启（WiFi 链路不受影响）",
+                    android.widget.Toast.LENGTH_LONG,
+                ).show()
+            }
+            lastPermRequest = 0
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         registerForExit()   // 供 Compose 层「不同意隐私政策→退出」使用
@@ -35,7 +52,8 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
+            permLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
+            lastPermRequest = 1
         }
 
         // 蓝牙权限（BLE 透传需要；拒绝不影响 WiFi 链路）
@@ -50,7 +68,8 @@ class MainActivity : ComponentActivity() {
                 blePerms.add(Manifest.permission.ACCESS_FINE_LOCATION)
         }
         if (blePerms.isNotEmpty()) {
-            requestPermissions(blePerms.toTypedArray(), 1002)
+            lastPermRequest = 2
+            permLauncher.launch(blePerms.toTypedArray())
         }
 
         // 恢复语言选择（在 UI 组合前应用，避免首帧语言闪变）

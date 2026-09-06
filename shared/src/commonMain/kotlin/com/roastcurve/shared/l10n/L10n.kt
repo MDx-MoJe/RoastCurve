@@ -72,7 +72,9 @@ object L10n {
     fun get(key: String): String {
         val s = _state.value
         s.pack?.strings?.get(key)?.let { return it }
-        if (s.pack == null && s.builtin == BuiltinLang.EN) {
+        // 语言包缺键时回退内置英文（再缺才回中文源串）；此前要求 pack==null 才查英文，
+        // 导致第三方语言包漏译的键直接露中文（与注释宣称的回退链不符，2026-09-06 修复）
+        if (s.builtin == BuiltinLang.EN) {
             BuiltinEn.strings[key]?.let { return it }
         }
         return ZhSource.strings[key] ?: key

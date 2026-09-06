@@ -46,7 +46,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.8.3";
+constexpr const char* FIRMWARE_VERSION = "1.9.0";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -216,10 +216,10 @@ bool saveCfg() {
 // ==================== v1.5 温控器抽象层（真机 / SIM 双后端）====================
 // 全部 Modbus 访问的唯一入口，天然满足"总线单事务"不变量 B
 struct HeaterState {
-  uint8_t  pv;        // 豆温（当前实际温度）
-  uint8_t  sv;        // 设定温度
-  bool     link;      // 温控器通信正常
-  uint32_t lastPoll;  // 最后成功轮询时刻
+  uint16_t pv;       // 豆温（当前实际温度）uint16：寄存器原生宽度，>255°C 不回绕
+  uint16_t sv;       // 设定温度
+  bool     link;     // 温控器通信正常
+  uint32_t lastPoll; // 最后成功轮询时刻
 };
 HeaterState heater = { 0, 0, false, 0 };
 
@@ -279,10 +279,12 @@ bool heaterRead(uint16_t reg, uint16_t& value) {
     value = (reg == cfg.regSv) ? (uint16_t)sim.sv : (uint16_t)sim.pv;
     return true;
   }
-  uint8_t pdu[4] = { 0x03, (uint8_t)(reg >> 8), (uint8_t)(reg & 0xFF), 0x00 };
+  // FC03 读保持寄存器请求 PDU：功能码1 + 地址2 + 数量2（数量低字节 0x01 此前缺失 → 帧差一字节，从站不应答）
+  uint8_t pdu[5] = { 0x03, (uint8_t)(reg >> 8), (uint8_t)(reg & 0xFF), 0x00, 0x01 };
   uint8_t rsp[64]; size_t rspLen = 0;
-  if (!modbusTransaction(pdu, 4, rsp, rspLen) || rspLen < 3) return false;
-  value = ((uint16_t)rsp[1] << 8) | rsp[2];
+  // 响应 PDU：功能码1 + byteCount1 + 数据2；rsp[1]=byteCount，数据从 rsp[2] 起
+  if (!modbusTransaction(pdu, 5, rsp, rspLen) || rspLen < 4) return false;
+  value = ((uint16_t)rsp[2] << 8) | rsp[3];
   return true;
 }
 
@@ -291,7 +293,7 @@ bool heaterWriteSv(uint16_t value) {
   if (cfg.simEnabled) { sim.sv = value; return true; }
   uint8_t pdu[5] = { 0x06, (uint8_t)(cfg.regSv >> 8), (uint8_t)(cfg.regSv & 0xFF), (uint8_t)(value >> 8), (uint8_t)(value & 0xFF) };
   uint8_t rsp[64]; size_t rspLen = 0;
-  return modbusTransaction(pdu, 4, rsp, rspLen) && rspLen >= 2;
+  return modbusTransaction(pdu, 5, rsp, rspLen) && rspLen >= 2;
 }
 
 // 每秒轮询：真机走总线（让路业务帧），SIM 走虚拟锅炉积分
@@ -308,8 +310,8 @@ void heaterPoll() {
     float step  = cfg.simRamp * dtMin;
     if (fabsf(delta) <= step) sim.pv = sim.sv;
     else                       sim.pv += (delta > 0 ? step : -step);
-    heater.pv = (uint8_t)(sim.pv + 0.5f);
-    heater.sv = (uint8_t)(sim.sv + 0.5f);
+    heater.pv = (uint16_t)(sim.pv + 0.5f);
+    heater.sv = (uint16_t)(sim.sv + 0.5f);
     heater.link = true;
     heater.lastPoll = now;
     return;
@@ -317,9 +319,9 @@ void heaterPoll() {
   uint32_t now = millis();
   if (now - lastPoll < 1000) return;
   uint16_t v;
-  if (heaterRead(cfg.regPv, v)) { heater.pv = v & 0xFF; lastPoll = now; failCount = 0; heater.link = true; heater.lastPoll = now; }
+  if (heaterRead(cfg.regPv, v)) { heater.pv = v; lastPoll = now; failCount = 0; heater.link = true; heater.lastPoll = now; }
   else if (++failCount >= 5) heater.link = false;
-  if (heaterRead(cfg.regSv, v)) heater.sv = v & 0xFF;
+  if (heaterRead(cfg.regSv, v)) heater.sv = v;
 }
 
 // ==================== v1.5 会话仲裁 ====================
@@ -350,30 +352,30 @@ constexpr uint32_t FOLLOW_HARD_MS    = 5000;  // 超限持续 5s 才中断（防
 // ==================== 事件日志 + 炉次记录器 ====================
 // 与 App 的 RoastEvent 枚举对齐：CHARGE/DRY/FCs/FCe/SCs/SCe/DROP
 constexpr uint8_t EV_MAX = 24;
-struct EvRecord { char ev[8]; uint32_t t; uint8_t pv; int32_t roastT; };  // t=uptime秒, roastT=跟随内秒(-1=非跟随)
+struct EvRecord { char ev[8]; uint32_t t; uint16_t pv; int32_t roastT; };  // t=uptime秒, roastT=跟随内秒(-1=非跟随)
 EvRecord evLog[EV_MAX];
 uint16_t evCount = 0;
 
 // 固件炉次记录器（v1.8：跟随期间固件自主采样，网页刷新不丢曲线）
-struct RoastSample { uint16_t t; uint8_t pv; uint8_t sv; uint8_t fan; };  // t=跟随 elapsed 秒
+struct RoastSample { uint16_t t; uint16_t pv; uint16_t sv; uint8_t fan; };  // t=跟随 elapsed 秒（pv/sv uint16：>255°C 不回绕）
 constexpr uint16_t ROAST_MAX = 1440;   // 120 分钟 @5s
 RoastSample roastPts[ROAST_MAX];
 uint16_t roastCount = 0;
 
 struct FollowEngine {
   bool     on;
-  uint8_t  pts[FOLLOW_MAX_POINTS];
+  uint16_t pts[FOLLOW_MAX_POINTS];   // uint16：目标最高 260，uint8 会回绕（256→0）
   uint16_t count;
   uint32_t t0;
   int16_t  lastWritten;
   uint32_t hardSince;   // PV 超硬上限的起始时刻（0=未超限）
-  bool     notifyDone;  // 走完/超限中断后待广播的一次性“已结束回落”标志
+  bool     notifyDone;  // 走完/超限中断后待广播的一次性"已结束回落"标志
 };
 FollowEngine follow = { false, {0}, 0, 0, -1, 0, false };
 
-void followStart(uint16_t count, const uint8_t* pts) {
+void followStart(uint16_t count, const uint16_t* pts) {
   if (count == 0 || count > FOLLOW_MAX_POINTS) return;
-  memcpy(follow.pts, pts, count);
+  memcpy(follow.pts, pts, count * sizeof(uint16_t));
   follow.count = count;
   follow.on = true;
   follow.t0 = millis();
@@ -445,7 +447,7 @@ void followTick() {
   } else {
     follow.hardSince = 0;
   }
-  uint8_t target = follow.pts[idx];
+  uint16_t target = follow.pts[idx];   // uint16：260 上限不回绕
   // 最小步长过滤：与上次写入差 ≥1° 才写（省总线流量，与 App 语义一致）
   if (follow.lastWritten < 0 || abs((int)target - (int)follow.lastWritten) >= 1) {
     if (heaterWriteSv(target)) follow.lastWritten = target;
@@ -472,6 +474,11 @@ void setHolder(Holder h) {
 }
 
 // 看门狗状态机推进（每 loop 调用）
+// ==================== 看门狗/仲裁辅助 ====================
+// App 主控活跃证明：收到任意完整 MBAP 请求即刷新；空闲超时 = 主控失联（半开 TCP 检测）
+uint32_t lastAppReqMs = 0;
+const uint32_t APP_IDLE_TIMEOUT_MS = 15000;   // App 1s 轮询，超时 15s = 确失联（容忍读超时/OEM 后台限流）
+
 void watchdogTick() {
   if (follow.on) return;  // 跟随运行中看门狗挂起（曲线自主执行，无需外部干预）
   if (!cfg.wdEnabled || holder != Holder::NONE) {
@@ -497,6 +504,9 @@ void watchdogTick() {
         ledcWrite(cfg.pinFan, (uint16_t)cfg.safeFan * 255 / 100);
         fanSpeed = cfg.safeFan;
         Serial.printf("[看门狗] 进入安全模式 SV=%u 风机=%u%%\n", cfg.safeSv, cfg.safeFan);
+        // 无二段熄火（safeOffEnabled=false）：保温即终态，回 ARMED 使状态机可复用——
+        // 下次再失联能重新走 COUNTDOWN（若留在 SAFE_MODE，triggerWatchdog 只认 ARMED，会卡死）。
+        // 保温值已写入不受影响；此处语义与头注释「粘性」的差异是有意设计（2026-09-06 注释校齐）
         if (!cfg.safeOffEnabled) { wdState = WdState::ARMED; }
         broadcastState();
       }
@@ -716,12 +726,15 @@ void apLoop() {
     if (kv1.startsWith("s=")) ssid = urlDecode(kv1.substring(2));
     if (kv2.startsWith("p=")) pass = urlDecode(kv2.substring(2));
     ssid.trim();
-    const char* okBody = "{\"ok\":true}";
-    char head[128];
+    // 先校验后响应：非法输入回失败，避免网页显示成功但配网未生效
+    bool ok = (ssid.length() > 0 && pass.length() >= 8);
+    const char* body = ok ? "{\"ok\":true}" : "{\"ok\":false,\"error\":\"ssid 或密码不合法（密码需 ≥8 位）\"}";
+    char head[160];
     snprintf(head, sizeof(head),
-      "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 12\r\nConnection: close\r\n\r\n");
-    sc.print(head); sc.print(okBody); sc.flush(); delay(5); sc.stop();
-    if (ssid.length() > 0 && pass.length() >= 8) {
+      "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %u\r\nConnection: close\r\n\r\n",
+      (unsigned)strlen(body));
+    sc.print(head); sc.print(body); sc.flush(); delay(5); sc.stop();
+    if (ok) {
       apSaveAndReboot(ssid, pass);
     }
     return;
@@ -849,9 +862,10 @@ void wsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
         if (!(wsHolder && wsHolderNum == num)) return;  // 主控专用
         JsonArray arr = doc["points"].as<JsonArray>();
         if (arr.isNull() || arr.size() == 0 || arr.size() > FOLLOW_MAX_POINTS) return;
-        uint8_t pts[FOLLOW_MAX_POINTS];
+        uint16_t pts[FOLLOW_MAX_POINTS];
         uint16_t n = 0;
-        for (uint8_t v : arr) { if (n >= FOLLOW_MAX_POINTS) break; pts[n++] = v; }
+        // uint16 读入：256-260 的目标不因 uint8 截断回绕（sv_set 上限 260 的同一语义）
+        for (uint16_t v : arr) { if (n >= FOLLOW_MAX_POINTS) break; pts[n++] = v; }
         followStart(n, pts);
         broadcastState();
       } else if (strcmp(type_, "follow_stop") == 0) {
@@ -1114,6 +1128,7 @@ void loadCreds() {
 
 // ==================== WiFi ====================
 void ensureWifi() {
+  if (apMode) return;   // AP 配网中：守护循环不得拆热点（否则 STA 重试与 AP 互搏）
   if (WiFi.status() == WL_CONNECTED) return;
   if (storedSsid.isEmpty()) { startBleConfig(); }  // 无凭据 → BLE 配网（App 路径，保留）
   if (storedSsid.isEmpty()) return;
@@ -1157,7 +1172,7 @@ void handleStatus() {
   }
   statReqCount++;
 
-  if (reqLine.indexOf("/reset") >= 0) {
+  if (reqLine.startsWith("GET /reset")) {
     sc.print("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n");
     sc.print("resetting");
     sc.flush(); delay(10); sc.stop();
@@ -1195,12 +1210,23 @@ void handleStatus() {
     return;
   }
 
-  if (reqLine.indexOf("/fan") >= 0) {
-    int sp = 0;
+  if (reqLine.startsWith("GET /fan") && (reqLine.length() == 7 || reqLine[7] == '?' || reqLine[7] == ' ')) {
     int eq = reqLine.indexOf("speed=");
-    if (eq >= 0) sp = atoi(reqLine.c_str() + eq + 6);
-    if (sp < 0) sp = 0;
+    if (eq < 0) {
+      // 无 speed 参数：返回当前值，不动作（此前无参会把风机关 0）
+      char body[96];
+      snprintf(body, sizeof(body), "{\"fan_speed\":%u,\"duty\":%u}",
+               (unsigned)fanSpeed, (unsigned)((uint16_t)fanSpeed * 255 / 100));
+      char head[128];
+      snprintf(head, sizeof(head),
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %u\r\nConnection: close\r\n\r\n",
+        (unsigned)strlen(body));
+      sc.print(head); sc.print(body); sc.flush(); delay(2); sc.stop();
+      return;
+    }
+    int sp = atoi(reqLine.c_str() + eq + 6);
     if (sp > 100) sp = 100;
+    if (sp < 0) sp = 0;
     fanSpeed = (uint8_t)sp;
     uint16_t duty = (uint16_t)fanSpeed * 255 / 100;
     if (duty < FAN_DUTY_FLOOR && fanSpeed > 0) duty = FAN_DUTY_FLOOR;
@@ -1398,9 +1424,12 @@ void loop() {
     setHolder(Holder::APP);  // 协议即身份：TCP 连接即主控（顶掉 WS 主控）
   }
 
-  // TCP 主控失联检测（App 断开 = 失联，触发看门狗）
-  if (holder == Holder::APP && !(client && client.connected())) {
-    Serial.println("[仲裁] App 连接断开，主控失联");
+  // TCP 主控失联检测：优雅断开（FIN/RST）或空闲超时（半开 TCP/进程被杀/断电）都算失联
+  bool tcpGone = !(client && client.connected());
+  bool tcpIdle = (holder == Holder::APP) && !tcpGone &&
+                 (millis() - lastAppReqMs > APP_IDLE_TIMEOUT_MS);
+  if ((tcpGone && holder == Holder::APP) || tcpIdle) {
+    Serial.println("[仲裁] App 主控失联（断开或空闲超时），触发看门狗");
     setHolder(Holder::NONE);
     triggerWatchdog();
   }
@@ -1423,6 +1452,10 @@ void loop() {
       if (mbapToRtu(tcpBuf, total)) {
         rtuToMbap(client, tcpBuf, RSP_FIRST_TIMEOUT_MS);
       }
+      // App 流量即活跃证明：刷新失联计时；且流量到达即重新认主
+      // （瞬断恢复后 App 沿用原 TCP 连接，无新连接事件，必须靠流量把 holder 拉回 APP）
+      lastAppReqMs = millis();
+      if (holder == Holder::NONE) setHolder(Holder::APP);
       size_t consumed = total;
       memmove(tcpBuf, tcpBuf + consumed, tcpLen - consumed);
       tcpLen -= consumed;

@@ -36,28 +36,18 @@ data class ChartData(
 )
 
 /**
- * 图表配置常量
+ * 图表配置常量（仅保留 RoastChart 实际消费的项；
+ * 温度窗口/RoR 范围等默认值由 ChartViewport 自带，阶段阈值统一引用 RoastMath——#39 死配置清理）
  */
 object ChartConfig {
-    /** 默认时间窗口：15 分钟 */
-    const val DEFAULT_TIME_WINDOW = 900f
-
-    /** 默认温度范围 */
-    const val DEFAULT_TEMP_MIN = 50f
-    const val DEFAULT_TEMP_MAX = 250f
-
-    /** 默认 RoR 范围 */
-    const val DEFAULT_ROR_MIN = -15f
-    const val DEFAULT_ROR_MAX = 35f
-
     /** 网格线间隔 */
     const val TIME_GRID_INTERVAL = 60f     // 每分钟
     const val TEMP_GRID_INTERVAL = 25f     // 每 25°C
     const val ROR_GRID_INTERVAL = 5f       // 每 5°C/min
 
-    /** 阶段阈值（可配置） */
-    const val DRY_END_TEMP = 150f
-    const val FC_START_TEMP = 195f
+    /** 阶段阈值：单一真相源在 RoastMath（此前此处重复定义且无人引用，误导调参） */
+    val DRY_END_TEMP get() = com.roastcurve.shared.math.RoastMath.DRY_END_TEMP
+    val FC_START_TEMP get() = com.roastcurve.shared.math.RoastMath.FC_START_TEMP
 
     /** 曲线线宽 */
     // 描边宽度单位为 dp（RoastChart 内部按屏幕密度换算像素）

@@ -67,13 +67,9 @@ fun ModbusConfigScreen(
                     step = 1, min = 0, max = 0xFFFF,
                     onChange = { v -> settings.copy(modbusSvReg = v) }, onUpdate = onUpdate,
                 )
-                ModbusRegRow(
-                    label = L10n.get("modbus.s5"),
-                    value = settings.modbusBaud,
-                    format = { it.toString() },
-                    step = 100, min = 300, max = 115200,
-                    onChange = { v -> settings.copy(modbusBaud = v) }, onUpdate = onUpdate,
-                )
+                // 波特率不在 App 设：固件 cfg.baud 是唯一真相源（App 无下发通道，
+                // 旧 modbusBaud 是“假开关”——改了不生效误导排查）。
+                // 需要改波特率请用桥接器 Web UI（Modbus 配置）。
                 ModbusRegRow(
                     label = L10n.get("modbus.s6"),
                     value = settings.modbusSlaveId,
@@ -99,7 +95,6 @@ fun ModbusConfigScreen(
                 val next = settings.copy(
                     modbusPvReg = 0x0000,
                     modbusSvReg = 0x0002,
-                    modbusBaud = 1200,
                     modbusSlaveId = 1,
                 )
                 onUpdate(next)
