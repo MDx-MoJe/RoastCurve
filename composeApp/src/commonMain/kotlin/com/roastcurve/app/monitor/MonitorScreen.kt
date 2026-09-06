@@ -258,6 +258,7 @@ fun MonitorScreen(
         persistSession()
         recording = false
         sessionId = null
+        timerOffsetSec = 0f   // 会话结束清偏移，防下炉残留（2026-09-06）
         clearSessionState()
     }
 
@@ -271,6 +272,7 @@ fun MonitorScreen(
             recording = false
             sessionId = null
             displayTimeSec = 0f
+            timerOffsetSec = 0f   // 同 stopRecording：会话结束清偏移（2026-09-06）
         }
         scope.launch { channel?.disconnect() }
         channel = null
@@ -699,6 +701,9 @@ fun MonitorScreen(
                         events.clear()
                         startTimeSec = 0f
                         displayTimeSec = 0f
+                        // 新炉必须清 timerOffsetSec：它只在「崩溃恢复的会话」里有意义，
+                        // 残留会让新炉时钟带偏移（如从 1 分钟起跳，2026-09-06 实况回归）
+                        timerOffsetSec = 0f
                         recording = true
                         // 开表即生成 sessionId：saveSessionState() 需要非空 id，
                         // 否则进程被杀恢复（st.recording && sid != null）对新会话是死代码
@@ -1484,6 +1489,8 @@ fun MonitorScreen(
                                 curvePoints.clear()
                                 events.clear()
                                 startTimeSec = 0f
+                                // 入豆重新锚定 0：清掉恢复会话可能残留的偏移（同开表，2026-09-06）
+                                timerOffsetSec = 0f
                                 // 入豆延续开表生成的 sessionId（同炉同档，persistSession 覆盖更新不重复建档）；
                                 // 若直接入豆未经开表则补生成
                                 if (sessionId == null) sessionId = RoastStore.newId(kotlinx.datetime.Clock.System.now().toEpochMilliseconds())
