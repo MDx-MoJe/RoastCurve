@@ -125,19 +125,67 @@ esptool.py --chip esp32s3 --port /dev/cu.usbmodemXXXX write_flash 0x0 roastbridg
 
 ## 烧录步骤（Arduino IDE）
 
+> ⚠️ **Flash Size 必须选 16MB，这是硬门槛不是建议。**
+> 本固件用 16MB custom 分区表（app 区 6.4MB），若漏选/错选成 4MB/8MB，
+> bootloader 会按错误容量启动，报 `partition invalid ... exceeds flash chip size 0x400000`
+> 并**开机死循环**（症状：状态灯常亮但不连 WiFi、串口反复打印 Failed to verify partition table）。
+> 详见下文「刷死（分区表错误）怎么救」。（2026-09-06 实踩：CLI 漏传 FlashSize 参数即触发）
+
 1. 装 Arduino IDE 2.x（arduino.cc 下载）
 2. 文件 → 首选项 → 附加开发板管理器网址，填：
    `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
 3. 工具 → 开发板 → 开发板管理器 → 搜索 `esp32`，装
    **esp32 by Espressif Systems**（3.x 版本）
 4. 打开 `roast_bridge.ino`，顶部可改 OTA 口令 `OTA_PASSWORD`（WiFi 不用改，见下方配网）
-5. 工具菜单选择：
+5. 工具菜单选择（**每一项都不能漏**）：
    - 开发板：ESP32S3 Dev Module
    - USB CDC On Boot: **Enabled**
-   - Flash Size: 16MB
+   - Flash Size: **16MB (128Mb)** ← 漏选/错选会刷死，见上警告
+   - Partition Scheme: **Custom**（自动采用 sketch 目录 partitions.csv）
    - PSRAM: OPI PSRAM
    - 端口：插上板子后出现的 COM 口
 6. 点左箭头上传；若提示按住 BOOT 键，按住板上 BOOT 直到开始传输
+
+## 刷写（arduino-cli 命令行）
+
+> ⚠️ **fqbn 必须带完整 `FlashSize=16M,PartitionScheme=custom`**，
+> 漏掉（如只写 `esp32:esp32:esp32s3`）会按默认 4MB 重写 bootloader，
+> 结果同上：启动死循环。（2026-09-06 实踩）
+
+```bash
+# 编译（必须完整 fqbn；custom 会自动采用 sketch 目录的 partitions.csv）
+arduino-cli compile --fqbn "esp32:esp32:esp32s3:FlashSize=16M,PartitionScheme=custom" roast_bridge
+
+# 上传（同样完整 fqbn；端口是板子 USB 口）
+arduino-cli upload --fqbn "esp32:esp32:esp32s3:FlashSize=16M,PartitionScheme=custom" \
+  -p /dev/cu.usbmodemXXXX roast_bridge
+```
+
+## 刷死（分区表错误）怎么救
+
+**症状**：刷完重启串口反复打印
+`partition N invalid - offset 0x10000 size 0x640000 exceeds flash chip size 0x400000` +
+`boot: Failed to verify partition table`，循环重启，不连 WiFi。
+
+**原因**：bootloader 被按错误 flash 容量（4MB）重写，与 16MB 分区表不匹配。
+
+**救法（esptool 强制重写 bootloader，显式声明 16MB）**：
+
+```bash
+# 1. 用 arduino-cli 完整 fqbn 重新编译，产物在 ~/Library/Caches/arduino/sketches/<hash>/ 或 build/ 下
+# 2. 直接 esptool 烧 4 区（关键：--flash-size 16MB 强制，不用 keep）
+esptool --port /dev/cu.usbmodemXXXX --baud 921600 write-flash \
+  --flash-mode dio --flash-freq 80m --flash-size 16MB \
+  0x0 roast_bridge.ino.bootloader.bin \
+  0x8000 roast_bridge.ino.partitions.bin \
+  0xe000 boot_app0.bin \
+  0x10000 roast_bridge.ino.bin
+```
+
+> ⚠️ 注意：带完整 fqbn 的 `arduino-cli upload` 因 flasher 用 `--flash-size keep` 模式，
+> 在 bootloader 内容已被错误覆盖时会「No changed sectors」跳过，**不会自动修复**；
+> 必须用上面 esptool 显式 `--flash-size 16MB` 强制重写。
+> 4 个 bin 从编译产物目录取（bootloader.bin / partitions.bin / boot_app0.bin / 主 .ino.bin）。
 
 ## 手机配网（推荐，无需电脑）
 

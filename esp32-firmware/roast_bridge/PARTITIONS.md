@@ -12,6 +12,12 @@
 fqbn: `esp32:esp32:esp32s3:FlashSize=16M,PartitionScheme=custom`
 sketch 目录的 `partitions.csv` 会被 platform.txt prebuild.3 自动采用。
 
+> ⚠️ **upload/compile 必须带完整 fqbn**（含 `FlashSize=16M,PartitionScheme=custom`）。
+> 只写 `esp32:esp32:esp32s3` 会按默认 4MB 重写 bootloader，与 16MB 分区表不匹配 →
+> 开机死循环（`partition invalid ... exceeds flash chip size 0x400000`）。
+> 若已踩：用 esptool 显式 `--flash-size 16MB` 强制重写 bootloader（勿用 arduino-cli upload，
+> 它 keep 模式会跳过不修）。完整救砖命令见 README「刷死（分区表错误）怎么救」。（2026-09-06 实踩）
+
 ## 8M 板（兼容）
 fqbn: `esp32:esp32:esp32s3:FlashSize=8M,PartitionScheme=default_8MB`
 ⚠️ 编译前把 sketch 目录的 `partitions.csv` 移走（否则 custom 表覆盖 8M 布局），
