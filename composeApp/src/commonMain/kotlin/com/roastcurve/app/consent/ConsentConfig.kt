@@ -11,7 +11,7 @@ object ConsentConfig {
     const val POLICY_VERSION = 1
 
     /** 外网分发渠道在线版地址（GitHub Pages），空 = 不显示该入口 */
-    const val PRIVACY_URL_EXTERNAL = ""
+    const val PRIVACY_URL_EXTERNAL = "https://mdx-moje.github.io/RoastCurve/privacy.html"
 
     /** 国内分发渠道在线版地址（Gitee Pages 等），空 = 不显示该入口 */
     const val PRIVACY_URL_CN = ""
