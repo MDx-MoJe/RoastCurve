@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex">
 <title>烤豆（RoastCurve）隐私政策</title>
 <style>
   :root { color-scheme: light dark; }
@@ -26,14 +25,18 @@
   }
   h1 { font-size: 24px; font-weight: 700; color: #241a14; margin-bottom: 6px; }
   .meta { font-size: 13px; color: #8a7a6c; margin-bottom: 28px; }
-  h2 { font-size: 17px; font-weight: 600; color: #241a14; margin: 24px 0 8px; }
+  h2 { font-size: 17px; font-weight: 600; color: #241a14; margin: 26px 0 8px; }
   p { font-size: 15px; margin-bottom: 10px; color: #4a3b32; }
+  ul { margin: 0 0 10px 20px; }
+  li { font-size: 15px; color: #4a3b32; margin-bottom: 6px; }
+  .perm { margin-bottom: 12px; }
+  .perm b { color: #241a14; }
   .footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid #eadfd3; font-size: 12px; color: #a29585; text-align: center; }
   @media (prefers-color-scheme: dark) {
     body { background: #16120e; color: #d8cdc2; }
     .card { background: #1f1915; border-color: #3a3026; box-shadow: none; }
-    h1, h2 { color: #f0e8de; }
-    p { color: #cdbfb2; }
+    h1, h2, .perm b { color: #f0e8de; }
+    p, li { color: #cdbfb2; }
     .meta, .footer { color: #8a7c6e; }
   }
 </style>
@@ -41,29 +44,51 @@
 <body>
 <div class="card">
   <h1>隐私政策</h1>
-  <div class="meta">更新日期：2026-08-27　政策版本：1</div>
+  <div class="meta">更新日期：2026-09-11　生效日期：2026-09-11　政策版本：2</div>
 
-  <p>欢迎使用烤豆（RoastCurve）。我们深知个人信息对您的重要性，本应用在设计上即遵循「数据不出设备」原则：</p>
+  <p>欢迎使用烤豆（RoastCurve）。我们深知个人信息对您的重要性，本应用在设计上即遵循「数据不出设备」原则：所有烘焙数据仅保存在您自己的手机上，我们既不收集，也无法访问。</p>
 
-  <h2>一、我们收集什么</h2>
-  <p>本应用不收集、不上传、不分享您的任何个人信息。无需注册账号，不申请通讯录、位置、麦克风等敏感权限。</p>
+  <h2>一、开发者信息</h2>
+  <p>开发者：<b>MDx</b></p>
+  <p>联系方式：<b>geminimoje@outlook.com</b></p>
+  <p>本应用为独立开发者作品，通过开源仓库（GitHub / Gitee：MDx-MoJe）发布。如有任何隐私相关问题、数据删除请求或投诉，请通过上述邮箱联系，我们将在 15 个工作日内答复。</p>
 
-  <h2>二、数据存储位置</h2>
-  <p>您的所有烘焙记录、模板曲线与设置仅保存在本机应用私有目录中。卸载应用即彻底删除。</p>
+  <h2>二、我们收集什么</h2>
+  <p>本应用不收集、不上传、不分发您的任何个人信息。</p>
+  <ul>
+    <li>无需注册账号，没有登录，没有用户画像；</li>
+    <li>没有广告 SDK，没有统计 SDK，没有崩溃上报 SDK；</li>
+    <li>应用内所有代码与依赖均随安装包提供，不连接任何开发者服务器。</li>
+  </ul>
 
-  <h2>三、网络使用说明</h2>
-  <p>仅在您主动连接局域网内的温控桥接设备（如 Modbus TCP 桥接器）时访问本地网络。本应用不连接任何外部服务器。</p>
+  <h2>三、权限使用说明</h2>
+  <p>本应用仅申请以下权限，且每项权限都只用于括号中说明的唯一目的。除此之外不申请通讯录、短信、相机、麦克风、日历、电话等任何权限。</p>
 
-  <h2>四、文件读写</h2>
-  <p>仅当您主动导出或导入备份文件时访问系统存储，文件保存在您指定的位置。备份文件由您自行保管，我们不持有副本。</p>
+  <div class="perm"><b>网络访问（INTERNET / 网络状态）</b>——用于连接您局域网内的温控桥接设备（Modbus TCP / WebSocket）。应用不访问任何互联网服务器。</div>
+  <div class="perm"><b>WiFi 状态与多播（WiFi 状态 / 多播接收）</b>——用于局域网内自动发现桥接器（mDNS）以及保持连接稳定。</div>
+  <div class="perm"><b>蓝牙（附近的设备 / 蓝牙连接）</b>——仅在您主动使用「蓝牙配网」功能时申请，用于把 WiFi 名称与密码发送给桥接器。使用前会先弹窗说明用途。已声明 neverForLocation（不用于推断位置）。</div>
+  <div class="perm"><b>位置信息（仅 Android 11 及以下）</b>——旧版安卓系统规定「扫描蓝牙设备」必须持有此权限，本应用因此仅在旧系统上请求，且仅用于发现桥接器。本应用从不读取、不存储、不上传任何位置数据，也没有任何定位功能。当该权限以「位置」名称出现在旧系统提示中时，它对应的实际用途是扫描蓝牙设备。</div>
+  <div class="perm"><b>通知（POST_NOTIFICATIONS）</b>——用于在烘焙进行中显示常驻提醒（进度与状态），可在系统设置中随时关闭。拒绝不影响烘焙功能。</div>
+  <div class="perm"><b>前台服务与唤醒锁（FOREGROUND_SERVICE / WAKE_LOCK）</b>——用于锁屏或切到后台时保持曲线采集不中断，避免烘焙记录丢失。</div>
+  <div class="perm"><b>文件读写（系统文件选择器 / 媒体库）</b>——仅在您主动导出或导入备份文件时访问。导出走系统媒体库写入「下载」目录；导入走系统文件选择器，由您选定文件。应用不申请任何存储权限。</div>
+  <div class="perm"><b>豆袋互联权限</b>——用于把烘焙记录发送给姐妹应用「豆袋」（CoffeeBeanTracker）扣减生豆库存。不涉及任何数据外传。</div>
 
-  <h2>五、未成年人保护</h2>
-  <p>本应用面向烘焙爱好者，不针对儿童收集任何信息。</p>
+  <h2>四、数据存储位置</h2>
+  <p>您的所有烘焙记录、模板曲线与设置仅保存在本机应用私有目录中。卸载应用即彻底删除。我们没有任何服务器存放您的数据，因此也无法代表您删除——但您可以用「设置 → 数据备份」自行导出留存。</p>
 
-  <h2>六、政策更新</h2>
-  <p>若未来应用引入任何新功能涉及数据处理，我们将更新本政策并通过应用内弹窗重新征求您的同意。</p>
+  <h2>五、第三方组件与共享</h2>
+  <p>本应用不集成任何第三方广告、统计或数据分析组件。我们不会向任何第三方出售、出租或以其他方式提供您的信息。若您主动点击应用内的 GitHub / Gitee / 爱发电链接，将跳转到系统浏览器，这些外部网站的数据处理适用其各自的隐私政策。</p>
 
-  <div class="footer">烤豆（RoastCurve）· 本页面由开源项目仓库托管</div>
+  <h2>六、您的权利</h2>
+  <p>由于我们不收集您的个人信息，通常不存在需要行使的查阅、更正或删除请求。若您认为我们持有您的信息，或对隐私处理有任何疑问，可通过第一节的邮箱联系我们，我们会如实核查并答复。</p>
+
+  <h2>七、未成年人保护</h2>
+  <p>本应用面向烘焙爱好者，不针对儿童设计，也不收集任何年龄信息或儿童个人信息。若监护人发现相关情况，可通过第一节邮箱联系我们。</p>
+
+  <h2>八、政策更新</h2>
+  <p>若未来应用引入任何涉及数据处理的新功能，我们将更新本政策，并在下次启动时通过应用内弹窗重新征求您的同意。历史版本政策可向第一节邮箱索取。</p>
+
+  <div class="footer">烤豆（RoastCurve）　开发者 MDx　geminimoje@outlook.com</div>
 </div>
 </body>
 </html>
