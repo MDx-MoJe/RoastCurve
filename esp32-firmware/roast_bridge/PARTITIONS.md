@@ -25,3 +25,12 @@ fqbn: `esp32:esp32:esp32s3:FlashSize=8M,PartitionScheme=default_8MB`
 
 ## 4M 板（遗留）
 v1.3.x 历史标签配合安卓 App 使用，AP 配网/Web UI/跟随等 v1.5+ 功能不可用。
+
+
+---
+
+## 许可
+
+Copyright 2026 MDx ｜ https://github.com/MDx-MoJe/RoastCurve
+
+本固件与配套工具脚本以 Apache License 2.0 授权发布，详见仓库根目录 LICENSE。

@@ -232,3 +232,12 @@ esptool --port /dev/cu.usbmodemXXXX --baud 921600 write-flash \
 
 - 直连热电偶测温（MAX6675/MAX31855），绕开温控器自成一体
 - 断电续传、烘焙会话缓存等 App 端配合的高级特性
+
+
+---
+
+## 许可
+
+Copyright 2026 MDx ｜ https://github.com/MDx-MoJe/RoastCurve
+
+本固件与配套工具脚本以 Apache License 2.0 授权发布，详见仓库根目录 LICENSE。
