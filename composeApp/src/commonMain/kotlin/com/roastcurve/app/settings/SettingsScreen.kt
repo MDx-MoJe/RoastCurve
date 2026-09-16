@@ -1,3 +1,21 @@
+/*
+ * RoastCurve（烤豆）—— 咖啡烘焙曲线记录与控制
+ * Copyright 2026 MDx
+ * https://github.com/MDx-MoJe/RoastCurve
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.roastcurve.app.settings
 
 import com.roastcurve.shared.l10n.L10n
@@ -37,6 +55,7 @@ fun SettingsScreen(
     onOpenBleConfig: () -> Unit = {},
     onOpenModbusConfig: () -> Unit = {},
     onOpenGpioConfig: () -> Unit = {},
+    onOpenPrivacy: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -623,6 +642,27 @@ fun SettingsScreen(
                 Text(L10n.get("settings.s41"), style = MaterialTheme.typography.bodyLarge)
                 Text(
                     L10n.get("settings.s42"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        // 隐私政策：应用内常驻入口（应用商店合规要求：随时可达）
+        Spacer(Modifier.height(16.dp))
+        Text(L10n.get("settings.s43"), style = MaterialTheme.typography.labelMedium,
+             color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(4.dp))
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 2.dp,
+            onClick = onOpenPrivacy,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Text(L10n.get("privacy.settings_entry"), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    L10n.get("privacy.settings_desc"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

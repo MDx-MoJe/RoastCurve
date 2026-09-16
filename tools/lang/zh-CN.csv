@@ -38,7 +38,9 @@ ble.s20,配网失败，请重试（确认桥接器在配网模式）,Setup faile
 ble.s21,配网中…,Setting up…,BleConfigScreen.kt,186
 ble.s22,配网,WiFi Setup,BleConfigScreen.kt,186
 consent.s1,欢迎使用烤豆 RoastCurve,Welcome to RoastCurve,ConsentDialog.kt,48
-consent.s2,在线完整版（外部渠道）：{externalUrl}\n,Full policy (intl): {externalUrl}\n,ConsentDialog.kt,72
+consent.s2,"在线完整版（外部渠道）：{externalUrl}
+","Full policy (intl): {externalUrl}
+",ConsentDialog.kt,72
 consent.s3,在线完整版（国内渠道）：{cnUrl},Full policy (China): {cnUrl},ConsentDialog.kt,73
 consent.s4,不同意,Decline,ConsentDialog.kt,87
 consent.s5,同意并继续,Agree & Continue,ConsentDialog.kt,92
@@ -48,9 +50,13 @@ consent.s8,需要同意《隐私政策》才能使用本应用。确定退出吗
 consent.s9,退出应用,Exit App,ConsentDialog.kt,111
 consent.s10,再看看,Stay,ConsentDialog.kt,114
 history.s1,删除这条记录？,Delete this record?,HistoryScreen.kt,42
-history.s2,{id}\n删除后无法恢复,{id}\nCannot be undone,HistoryScreen.kt,43
+history.s2,"{id}
+删除后无法恢复","{id}
+Cannot be undone",HistoryScreen.kt,43
 history.s3,烘焙记录,Roast Records,HistoryScreen.kt,65
-history.s4,还没有烘焙记录\n连接温控器烘一炉试试,No roasts yet\nConnect and roast!,HistoryScreen.kt,77
+history.s4,"还没有烘焙记录
+连接温控器烘一炉试试","No roasts yet
+Connect and roast!",HistoryScreen.kt,77
 history.s5,未命名,Unnamed,HistoryScreen.kt,113
 history.s6,{m}分{s}秒 · ,{m}m{s}s ·,HistoryScreen.kt,114
 history.s7,{size}点,{size} pts,HistoryScreen.kt,115
@@ -168,7 +174,9 @@ monitor.s43,模板,Profile,MonitorScreen.kt,865
 monitor.s44,导入 Artisan 曲线,Import Artisan Curve,MonitorScreen.kt,932
 monitor.s45,将从 .alog 文件读取温度曲线，生成可跟随的模板。,Reads the temperature curve from an .alog file to create a followable profile.,MonitorScreen.kt,935
 monitor.s46,✓ 会导入,✓ What gets imported,MonitorScreen.kt,938
-monitor.s47,· 温度曲线（时间 + 豆温）\n· 入豆 / 出豆 时间锚点,· Temp curve (time+BT)\n· Charge/Drop anchors,MonitorScreen.kt,940
+monitor.s47,"· 温度曲线（时间 + 豆温）
+· 入豆 / 出豆 时间锚点","· Temp curve (time+BT)
+· Charge/Drop anchors",MonitorScreen.kt,940
 monitor.s48,✓ 自动识别事件节点,✓ Auto-detected events,MonitorScreen.kt,944
 monitor.s49,若 .alog 自带 computed 事件（入豆/脱水/一爆/出豆的时间与温度），导入时直接读取为锚点；缺失时回退为温度阈值推导。,"If the .alog file has computed events (charge / dry / FCs / drop times and temps), they are imported as anchors. If absent, it falls back to temperature-threshold inference.",MonitorScreen.kt,946
 monitor.s50,选择文件,Choose File,MonitorScreen.kt,955
@@ -184,14 +192,18 @@ monitor.s59,+ 新建,+ New,MonitorScreen.kt,1047
 monitor.s60,同步到豆袋,Sync to BeanBag,MonitorScreen.kt,1087
 monitor.s61,读取豆袋生豆批次…,Loading BeanBag green batches…,MonitorScreen.kt,1090
 monitor.s62,未读到豆袋生豆批次。请确认：,No green bean batches found in BeanBag. Please verify:,MonitorScreen.kt,1092
-monitor.s63,· 豆袋已安装且为 3.0.13 或以上版本\n· 豆袋里有生豆批次记录,· BeanBag 3.0.13+ installed\n· Has green batches,MonitorScreen.kt,1094
+monitor.s63,"· 豆袋已安装且为 3.0.13 或以上版本
+· 豆袋里有生豆批次记录","· BeanBag 3.0.13+ installed
+· Has green batches",MonitorScreen.kt,1094
 monitor.s64,选批次扣生豆，同时按熟豆名入库熟豆（同名累加）。重复推送不会重复扣/入。,Select a batch to deduct green beans and add roasted beans by name (merged if same name). Repeat pushes are idempotent.,MonitorScreen.kt,1099
 monitor.s65,剩余 {remainingGrams}g,{remainingGrams}g left,MonitorScreen.kt,1118
 monitor.s66,生豆消耗克重（入豆重）,Green bean weight used (charge weight),MonitorScreen.kt,1129
 monitor.s67,熟豆名称（同名累加库存）,Roasted bean name (stock merges by name),MonitorScreen.kt,1138
 monitor.s68,熟豆克重（出豆重，入库量）,"Roasted bean weight (drop weight, stock added)",MonitorScreen.kt,1147
 monitor.s69,完成,Done,MonitorScreen.kt,1165
-monitor.s70,\n⚠ 熟豆入库失败：{message}（可用历史页补录）,\n⚠ Roasted add failed: {message} (backfill from history page),MonitorScreen.kt,1191
+monitor.s70,"
+⚠ 熟豆入库失败：{message}（可用历史页补录）","
+⚠ Roasted add failed: {message} (backfill from history page)",MonitorScreen.kt,1191
 monitor.s71,扣减失败：{message},Deduct failed: {message},MonitorScreen.kt,1195
 monitor.s72,推送中…,Syncing…,MonitorScreen.kt,1199
 monitor.s73,确认扣减,Confirm Deduct,MonitorScreen.kt,1199
@@ -314,7 +326,7 @@ settings.export_current,导出当前,Export current,LanguageCard.kt,74
 settings.export_zip,导出 zip,Export zip,SettingsScreen.kt,115
 settings.import_pack,导入语言包,Import language pack,LanguageCard.kt,65
 settings.language_section,语言 / Language,Language,SettingsScreen.kt,208
-settings.s43,自动风速下限,Auto Fan Floor,,
+settings.s43,法律与隐私,Legal & Privacy,,
 settings.s44,自动模式下风速不低于此值，保证豆子翻滚（流化）。过低会积热局部焦化，按设备实测调（7~60%）,In auto mode fan never drops below this,,
 monitor.fan_manual,手动 {value}%,Manual {value}%,MonitorScreen.kt,944
 monitor.fan_target,目标 {value}%,Target {value}%,MonitorScreen.kt,944
@@ -344,7 +356,7 @@ modbus.s7,⚠ 改动需重新连接后生效。寄存器地址填错时温控器
 modbus.s8,恢复默认,Reset to Default (TC4S),ModbusConfigScreen.kt,1
 modbus.s9,一键恢复：PV=0x0000 SV=0x0002 波特率=1200 从站=1。,One-tap: PV=0x0000 SV=0x0002 baud=1200 slave=1.,ModbusConfigScreen.kt,1
 settings.s45,跟随结束回落,Follow-End Settle,SettingsScreen.kt,413
-settings.s46,曲线走完自动将温度/风速降到下面的值（不再停在终点干烧）,After the profile finishes, SV/fan settle to these values (no more idling at the end point).,SettingsScreen.kt,414
+settings.s46,曲线走完自动将温度/风速降到下面的值（不再停在终点干烧）,After the profile finishes, SV/fan settle to these values (no more idling at the end point).,SettingsScreen.kt
 settings.s47,回落温度 (°C),Settle SV (°C),SettingsScreen.kt,424
 settings.s48,回落风速 (%),Settle fan (%),SettingsScreen.kt,444
 monitor.s88,曲线已走完，已回落 {sv}°C,Profile finished — settled to {sv}°C,MonitorScreen.kt,516
@@ -357,7 +369,7 @@ gpio.tx,RS485 TX (发送),RS485 TX (transmit),GpioConfigScreen.kt,1
 gpio.rx,RS485 RX (接收),RS485 RX (receive),GpioConfigScreen.kt,1
 gpio.fan,风机 PWM,Fan PWM,GpioConfigScreen.kt,1
 gpio.save,保存并提示重启,Save & prompt reboot,GpioConfigScreen.kt,1
-gpio.note,可用池已排除硬件禁区（flash 26-32 / PSRAM 33-37 / USB 19-20 / 争议脚 1,3,45,46）。三脚互斥；改错失联时长按 BOOT 键 3 秒恢复默认 17/18/2。,Pool excludes reserved pins (flash 26-32 / PSRAM 33-37 / USB 19-20 / strapping 1,3,45,46). Pins are mutually exclusive; if you lose connection, hold BOOT for 3s to reset to 17/18/2.,GpioConfigScreen.kt,1
+gpio.note,可用池已排除硬件禁区（flash 26-32 / PSRAM 33-37 / USB 19-20 / 争议脚 1,3,45,46）。三脚互斥；改错失联时长按 BOOT 键 3 秒恢复默认 17/18/2。
 gpio.saved,✓ 已保存。重启桥接器后生效。,✓ Saved. Takes effect after rebooting the bridge.,GpioConfigScreen.kt,1
 gpio.retry,重试,Retry,GpioConfigScreen.kt,1
 gpio.err_host,未找到桥接器地址。请先在监控页连接桥接器。,No bridge address. Connect to the bridge from Monitor first.,GpioConfigScreen.kt,1
@@ -376,3 +388,53 @@ manual.setting_gpio,桥接器 GPIO 引脚,Bridge GPIO pins,ManualScreen.kt,95
 manual.setting_gpio_desc,RS485 TX/RX 与风机换脚（换板不换线）,RS485 TX/RX & fan pin swap,ManualScreen.kt,95
 manual.full_entry,📖 查看完整用户指导手册,📖 Full User Manual,ManualScreen.kt,124
 manual.full_hint,全链路详解：架构 / 硬件接线 / Web UI / 跟随 / 安全 / 排障（内置离线版）,Full guide: architecture / wiring / Web UI / follow / safety / troubleshooting (offline),ManualScreen.kt,126
+privacy.title,隐私政策,Privacy Policy,PrivacyPolicy.kt,0
+privacy.updated,更新日期：2026-09-11　生效日期：2026-09-11　政策版本：2,Last updated: 2026-09-11  Effective: 2026-09-11  Version: 2,PrivacyPolicy.kt,0
+privacy.intro,欢迎使用烤豆（RoastCurve）。我们深知个人信息对您的重要性，本应用在设计上即遵循「数据不出设备」原则：所有烘焙数据仅保存在您自己的手机上，我们既不收集，也无法访问。,"Welcome to RoastCurve. We take your privacy seriously. This app is built on a ""data never leaves your device"" principle: all roasting data stays on your phone. We neither collect nor can access it.",PrivacyPolicy.kt,0
+privacy.h1,一、开发者信息,1. Developer Information,PrivacyPolicy.kt,0
+privacy.p1,"开发者：MDx
+联系方式：geminimoje@outlook.com
+本应用为独立开发者作品，通过开源仓库（GitHub / Gitee：MDx-MoJe）发布。如有任何隐私相关问题、数据删除请求或投诉，请通过上述邮箱联系，我们将在 15 个工作日内答复。","Developer: MDx
+Contact: geminimoje@outlook.com
+This app is an independent developer project", published via the open-source repositories (GitHub / Gitee: MDx-MoJe). For any privacy question, data-deletion request
+privacy.h2,二、我们收集什么,2. What We Collect,PrivacyPolicy.kt,0
+privacy.p2,"本应用不收集、不上传、不分发您的任何个人信息。
+• 无需注册账号，没有登录，没有用户画像；
+• 没有广告 SDK，没有统计 SDK，没有崩溃上报 SDK；
+• 应用内所有代码与依赖均随安装包提供，不连接任何开发者服务器。",This app does not collect, upload, or share any of your personal information.\n• No account registration
+privacy.h3,三、权限使用说明,3. Permission Usage,PrivacyPolicy.kt,0
+privacy.perms_intro,本应用仅申请以下权限，且每项权限都只用于括号中说明的唯一目的。除此之外不申请通讯录、短信、相机、麦克风、日历、电话等任何权限。,The app requests only the permissions listed below, each used solely for the stated purpose. It does not request contacts, SMS
+privacy.perm_net,网络访问（INTERNET / 网络状态）——用于连接您局域网内的温控桥接设备（Modbus TCP / WebSocket）。应用不访问任何互联网服务器。,Network access (INTERNET / network state) — used to connect to your local temperature-controller bridge (Modbus TCP / WebSocket). The app does not access any internet server.,PrivacyPolicy.kt,0
+privacy.perm_wifi,WiFi 状态与多播（WiFi 状态 / 多播接收）——用于局域网内自动发现桥接器（mDNS）以及保持连接稳定。,WiFi state & multicast — used to auto-discover the bridge on your LAN (mDNS) and keep the connection stable.,PrivacyPolicy.kt,0
+privacy.perm_ble,蓝牙（附近的设备 / 蓝牙连接）——仅在您主动使用「蓝牙配网」功能时申请，用于把 WiFi 名称与密码发送给桥接器。使用前会先弹窗说明用途。已声明 neverForLocation（不用于推断位置）。,"Bluetooth (nearby devices / connect) — requested only when you actively use ""Bluetooth Setup"" to send WiFi credentials to the bridge. A purpose dialog appears first. Declared neverForLocation (never used to infer location).",PrivacyPolicy.kt,0
+privacy.perm_loc,位置信息（仅 Android 11 及以下）——旧版安卓系统规定「扫描蓝牙设备」必须持有此权限，本应用因此仅在旧系统上请求，且仅用于发现桥接器。本应用从不读取、不存储、不上传任何位置数据，也没有任何定位功能。当该权限以「位置」名称出现在旧系统提示中时，它对应的实际用途是扫描蓝牙设备。,Location (Android 11 and below only) — older Android versions require this permission for Bluetooth scanning. The app requests it on such systems solely to find the bridge. It never reads, stores," or uploads location data and has no location feature. If you see a ""Location"" prompt on an older device"
+privacy.perm_notif,通知（POST_NOTIFICATIONS）——用于在烘焙进行中显示常驻提醒（进度与状态），可在系统设置中随时关闭。拒绝不影响烘焙功能。,Notifications (POST_NOTIFICATIONS) — shows a persistent status notification during roasting. Can be turned off anytime in system settings; declining does not affect roasting.,PrivacyPolicy.kt,0
+privacy.perm_fg,前台服务与唤醒锁（FOREGROUND_SERVICE / WAKE_LOCK）——用于锁屏或切到后台时保持曲线采集不中断，避免烘焙记录丢失。,Foreground service & wake lock — keeps curve sampling alive when the screen is off or the app is backgrounded, so a roast is never lost.,PrivacyPolicy.kt
+privacy.perm_storage,文件读写（系统文件选择器 / 媒体库）——仅在您主动导出或导入备份文件时访问。导出走系统媒体库写入「下载」目录；导入走系统文件选择器，由您选定文件。应用不申请任何存储权限。,File access (system picker / media store) — used only when you export or import a backup. Export writes to Downloads via the system media store; import uses the system file picker. No storage permission is requested.,PrivacyPolicy.kt,0
+privacy.perm_bridge,豆袋互联权限——用于把烘焙记录发送给姐妹应用「豆袋」（CoffeeBeanTracker）扣减生豆库存。不涉及任何数据外传。,Bean-bag bridge permission — sends roast records to the sister app CoffeeBeanTracker to deduct green-bean stock. No data leaves your device.,PrivacyPolicy.kt,0
+privacy.h4,四、数据存储位置,4. Where Data Is Stored,PrivacyPolicy.kt,0
+privacy.p4,您的所有烘焙记录、模板曲线与设置仅保存在本机应用私有目录中。卸载应用即彻底删除。我们没有任何服务器存放您的数据，因此也无法代表您删除——但您可以用「设置 → 数据备份」自行导出留存。,All roasting records, profiles, and settings are stored only in the app's private directory on your phone. Uninstalling the app deletes them permanently. We have no server holding your data
+privacy.h5,五、第三方组件与共享,5. Third Parties & Sharing,PrivacyPolicy.kt,0
+privacy.p5,本应用不集成任何第三方广告、统计或数据分析组件。我们不会向任何第三方出售、出租或以其他方式提供您的信息。若您主动点击应用内的 GitHub / Gitee / 爱发电链接，将跳转到系统浏览器，这些外部网站的数据处理适用其各自的隐私政策。,This app embeds no third-party ads, analytics, or data-processing components. We never sell
+privacy.h6,六、您的权利,6. Your Rights,PrivacyPolicy.kt,0
+privacy.p6,由于我们不收集您的个人信息，通常不存在需要行使的查阅、更正或删除请求。若您认为我们持有您的信息，或对隐私处理有任何疑问，可通过第一节的邮箱联系我们，我们会如实核查并答复。,Because we do not collect your personal information, there is normally nothing to access, correct
+privacy.h7,七、未成年人保护,7. Minors,PrivacyPolicy.kt,0
+privacy.p7,本应用面向烘焙爱好者，不针对儿童设计，也不收集任何年龄信息或儿童个人信息。若监护人发现相关情况，可通过第一节邮箱联系我们。,This app targets coffee-roasting enthusiasts, is not designed for children, and collects no age or child information. Guardians who become aware of any such issue may contact us via the email in Section 1.
+privacy.h8,八、政策更新,8. Policy Updates,PrivacyPolicy.kt,0
+privacy.p8,若未来应用引入任何涉及数据处理的新功能，我们将更新本政策，并在下次启动时通过应用内弹窗重新征求您的同意。历史版本政策可向第一节邮箱索取。,If future features involve data processing, we will update this policy and ask for your consent again via an in-app dialog on next launch. Past policy versions are available on request via the email in Section 1.,PrivacyPolicy.kt
+privacy.view_full,查看完整《隐私政策》,View Full Privacy Policy,PrivacyPolicyPage.kt,0
+privacy.open_online,在浏览器中查看在线版本,View online version,PrivacyPolicyPage.kt,0
+privacy.settings_entry,隐私政策,Privacy Policy,SettingsScreen.kt,0
+privacy.settings_desc,查看本应用的隐私政策全文与权限说明,Read the full privacy policy and permission details,SettingsScreen.kt,0
+ble.perm.title,需要扫描附近的设备,Scan Permission Required,BleConfigScreen.kt,0
+ble.perm.body,"搜索桥接器需要扫描附近的蓝牙设备。
+
+• Android 12 及以上：系统提示为「附近的设备」；
+• Android 11 及以下：旧系统要求此操作必须持有「位置信息」权限，提示可能显示为位置。
+
+本应用只用它来发现您的桥接器，不读取、不存储、不上传任何位置信息。","Scanning for the bridge requires the nearby-devices permission.
+
+• Android 12+: shown as ""Nearby devices"";
+• Android 11 and below: the old system requires ""Location"" for this operation", so the prompt may say Location.\n\nWe use it only to find your bridge. No location data is read, stored
+ble.perm.allow,继续并授权,Continue,SettingsScreen.kt,0
+ble.perm.deny,暂不,Not Now,SettingsScreen.kt,0

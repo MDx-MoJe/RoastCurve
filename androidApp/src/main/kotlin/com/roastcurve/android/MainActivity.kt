@@ -1,3 +1,21 @@
+/*
+ * RoastCurve（烤豆）—— 咖啡烘焙曲线记录与控制
+ * Copyright 2026 MDx
+ * https://github.com/MDx-MoJe/RoastCurve
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.roastcurve.android
 
 import android.Manifest
@@ -8,6 +26,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.roastcurve.app.App
+import com.roastcurve.app.platform.BlePermissionBridge
 import com.roastcurve.app.platform.registerForExit
 import com.roastcurve.app.platform.RoastKeepService
 import com.roastcurve.shared.AppDirs
@@ -25,16 +44,20 @@ class MainActivity : ComponentActivity() {
             if (denied && lastPermRequest == 2) {
                 android.widget.Toast.makeText(
                     this,
-                    "蓝牙权限被拒绝：BLE 透传不可用，可到系统设置开启（WiFi 链路不受影响）",
+                    "蓝牙权限被拒绝：无法扫描配网设备。可到系统设置开启，或改用桥接器 IP 直连（WiFi 链路不受影响）",
                     android.widget.Toast.LENGTH_LONG,
                 ).show()
             }
+            BlePermissionBridge.onResult?.invoke(!denied)
             lastPermRequest = 0
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         registerForExit()   // 供 Compose 层「不同意隐私政策→退出」使用
+        // 蓝牙权限桥：配网页在用户主动点击时才会申请（不在启动时弹）
+        BlePermissionBridge.request = { requestBluetoothPermissions() }
+        BlePermissionBridge.granted = { hasBluetoothPermissions() }
         AppDirs.init(filesDir.absolutePath, applicationContext)   // 存储根目录注入
         com.roastcurve.shared.bridge.appContextBridge = applicationContext   // 豆袋互联桥上下文注入
         AppDirs.appVersion = try {
@@ -56,21 +79,9 @@ class MainActivity : ComponentActivity() {
             lastPermRequest = 1
         }
 
-        // 蓝牙权限（BLE 透传需要；拒绝不影响 WiFi 链路）
-        val blePerms = mutableListOf<String>()
-        if (Build.VERSION.SDK_INT >= 31) {
-            if (checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED)
-                blePerms.add(Manifest.permission.BLUETOOTH_SCAN)
-            if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED)
-                blePerms.add(Manifest.permission.BLUETOOTH_CONNECT)
-        } else if (Build.VERSION.SDK_INT >= 23) {
-            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
-                blePerms.add(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-        if (blePerms.isNotEmpty()) {
-            lastPermRequest = 2
-            permLauncher.launch(blePerms.toTypedArray())
-        }
+        // 蓝牙权限不再在启动时索取：改为用户主动进入蓝牙配网页时申请（见 requestBluetoothPermissions）。
+        // 上一个版本在 onCreate 里无条件申请，导致 Android 11 及以下每次启动都弹定位授权，
+        // 已在 1.3.29 修正。
 
         // 恢复语言选择（在 UI 组合前应用，避免首帧语言闪变）
         runCatching {
@@ -106,6 +117,32 @@ class MainActivity : ComponentActivity() {
         BackPressHook.handler?.let { it(); return }
         if (RoastKeepService.isRunning) return
         super.onBackPressed()
+    }
+
+    /**
+     * 申请蓝牙权限，供 UI 在用户主动进入蓝牙配网页时调用。
+     * 用法说明：
+     * - Android 12+ 需 BLUETOOTH_SCAN / BLUETOOTH_CONNECT；本应用已在清单中声明
+     *   neverForLocation，因此系统不会把它当定位权限，也不会索要位置授权。
+     * - Android 11 及以下的蓝牙扫描在系统层面绑定到定位权限（系统机制，无法绕过）。
+     *   只有在旧系统上主动发起蓝牙扫描时才会询问，并且在询问前由 UI 说明用途。
+     * - 定位权限仅用于蓝牙扫描，应用不读取、不存储、不上传任何位置信息。
+     */
+    fun requestBluetoothPermissions() {
+        val perms = mutableListOf<String>()
+        if (Build.VERSION.SDK_INT >= 31) {
+            if (checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED)
+                perms.add(Manifest.permission.BLUETOOTH_SCAN)
+            if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED)
+                perms.add(Manifest.permission.BLUETOOTH_CONNECT)
+        } else if (Build.VERSION.SDK_INT >= 23) {
+            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+                perms.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        if (perms.isNotEmpty()) {
+            lastPermRequest = 2
+            permLauncher.launch(perms.toTypedArray())
+        }
     }
 
     /** 文件选择器结果：读出字节与文件名交给调用方（备份导入 / Artisan 导入 / 语言包导入） */
@@ -147,6 +184,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
             com.roastcurve.app.settings.handleLangPickResult(langBytes)
+        }
+    }
+
+    /** 权限是否齐备（不申请，仅查询），供 UI 判断要不要先弹用途说明 */
+    fun hasBluetoothPermissions(): Boolean {
+        return if (Build.VERSION.SDK_INT >= 31) {
+            checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+                checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+        } else {
+            checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         }
     }
 

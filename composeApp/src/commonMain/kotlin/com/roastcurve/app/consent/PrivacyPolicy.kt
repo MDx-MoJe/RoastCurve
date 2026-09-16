@@ -1,33 +1,68 @@
+/*
+ * RoastCurve（烤豆）—— 咖啡烘焙曲线记录与控制
+ * Copyright 2026 MDx
+ * https://github.com/MDx-MoJe/RoastCurve
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.roastcurve.app.consent
 
 import com.roastcurve.shared.l10n.L10n
+
 /**
- * 《隐私政策》内置全文（Markdown 纯文本渲染为段落）
+ * 《隐私政策》内置全文（离线，不依赖网络）。
  *
- * 说明：本应用为纯本地应用，不收集任何个人信息；
- * 政策版本随 ConsentConfig.POLICY_VERSION 联动，改动条款时同步更新此处。
+ * 由各分节键在运行时拼装：这样正文也能跟随语言包切换，
+ * 而不是写死一整段中文。分节键定义在 tools/lang/zh-CN.csv。
+ *
+ * 上架/合规要求：本节内容必须包含开发者名称、联系方式、生效日期，
+ * 以及权限逐项用途说明（与 AndroidManifest 声明的权限一一对应）。
+ * 改动权限声明时必须同步更新 privacy.perm_* 各条。
  */
-internal const val PRIVACY_POLICY_TEXT = """《隐私政策》
+/** 权限说明键（顺序即展示顺序，阅读页与弹窗共用） */
+internal val PERMISSION_KEYS = listOf(
+    "privacy.perm_net",
+    "privacy.perm_wifi",
+    "privacy.perm_ble",
+    "privacy.perm_loc",
+    "privacy.perm_notif",
+    "privacy.perm_fg",
+    "privacy.perm_storage",
+    "privacy.perm_bridge",
+)
 
-更新日期：2026-08-27　政策版本：1
+/**
+ * 弹窗用的纯文本摘要版全文（无 Markdown 标记）。
+ * 阅读页用结构化渲染（见 PrivacyPolicyPage.Section），不走这里。
+ */
+internal val PRIVACY_POLICY_TEXT: String
+    get() = buildString {
+        fun section(titleKey: String, vararg bodyKeys: String) {
+            appendLine(L10n.get(titleKey))
+            bodyKeys.forEach { appendLine(L10n.get(it)) }
+            appendLine()
+        }
 
-欢迎使用烤豆（RoastCurve）。我们深知个人信息对您的重要性，本应用在设计上即遵循数据不出设备原则：
+        appendLine(L10n.get("privacy.intro"))
+        appendLine()
 
-一、我们收集什么
-本应用不收集、不上传、不分享您的任何个人信息。无需注册账号，不申请通讯录、位置、麦克风等敏感权限。
-
-二、数据存储位置
-您的所有烘焙记录、模板曲线与设置仅保存在本机应用私有目录中。卸载应用即彻底删除。
-
-三、网络使用说明
-仅在您主动连接局域网内的温控桥接设备（如 Modbus TCP 桥接器）时访问本地网络。本应用不连接任何外部服务器。
-
-四、文件读写
-仅当您主动导出或导入备份文件时访问系统存储，文件保存在您指定的位置。备份文件由您自行保管，我们不持有副本。
-
-五、未成年人保护
-本应用面向烘焙爱好者，不针对儿童收集任何信息。
-
-六、政策更新
-若未来应用引入任何新功能涉及数据处理，我们将更新本政策并通过应用内弹窗重新征求您的同意。
-"""
+        section("privacy.h1", "privacy.p1")
+        section("privacy.h2", "privacy.p2")
+        section("privacy.h3", "privacy.perms_intro", *PERMISSION_KEYS.toTypedArray())
+        section("privacy.h4", "privacy.p4")
+        section("privacy.h5", "privacy.p5")
+        section("privacy.h6", "privacy.p6")
+        section("privacy.h7", "privacy.p7")
+        section("privacy.h8", "privacy.p8")
+    }

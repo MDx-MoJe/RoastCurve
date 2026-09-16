@@ -15,14 +15,19 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- 蓝牙 BLE：neverForLocation 声明不通过 BLE 定位，避免要求定位权限 -->
+    <!-- 蓝牙 BLE（可选链路，仅用户主动进入配网页时申请）
+         neverForLocation 明确声明不通过 BLE 推断位置，因此不需要任何定位权限。
+         Android 11 及以下按系统要求仍以 ACCESS_FINE_LOCATION 作为 BLE 扫描的运行时权限，
+         但那属于旧系统机制；本应用不读取、不存储、不上传任何位置信息。 -->
     <uses-permission
         android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <!-- Android 11 及以下：BLE 连接/扫描所需（12+ 自动忽略） -->
+    <!-- Android 11 及以下才生效（12+ 系统自动忽略） -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <!-- 仅 Android 11 及以下作为 BLE 扫描的必要权限（系统机制），12+ 完全不声明。
+         用途仅为发现烘焙桥接器，不用于获取位置。 -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
 
     <!-- USB 串口（预留直连路径） -->

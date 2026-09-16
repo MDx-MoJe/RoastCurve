@@ -16,13 +16,14 @@
  * limitations under the License.
  */
 
-package com.roastcurve.shared
+package com.roastcurve.app.platform
 
 /**
- * iOS 侧 AppDirs（iosMain 提供 actual 行为）
+ * iOS 实现：蓝牙配网功能尚未在 iOS 端实现，
+ * 恒认为「已授权」，不弹任何系统权限框。
  */
-object IosAppDirs {
-    fun init(documentsDir: String) {
-        AppDirs.init(documentsDir)
-    }
+actual object BlePermissionBridge {
+    actual var request: (() -> Unit)? = null
+    actual var granted: (() -> Boolean)? = null
+    actual var onResult: ((Boolean) -> Unit)? = null
 }

@@ -1,3 +1,21 @@
+/*
+ * RoastCurve（烤豆）—— 咖啡烘焙曲线记录与控制
+ * Copyright 2026 MDx
+ * https://github.com/MDx-MoJe/RoastCurve
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.roastcurve.app
 
 import androidx.compose.material3.Surface
@@ -5,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.roastcurve.app.consent.ConsentConfig
 import com.roastcurve.app.consent.ConsentDialog
+import com.roastcurve.app.consent.PrivacyPolicyPage
 import com.roastcurve.app.history.HistoryScreen
 import com.roastcurve.app.history.RoastDetailScreen
 import com.roastcurve.app.monitor.MonitorScreen
@@ -33,6 +52,7 @@ sealed interface Screen {
     data object BleConfig : Screen
     data object ModbusConfig : Screen
     data object GpioConfig : Screen
+    data object PrivacyPolicy : Screen
     data class Detail(val record: RoastRecord) : Screen
     data class Editor(val profile: com.roastcurve.shared.model.RoastProfile?) : Screen
 }
@@ -68,6 +88,7 @@ fun App() {
                     Screen.BleConfig -> ({ screen = Screen.Settings })
                     Screen.ModbusConfig -> ({ screen = Screen.Settings })
                     Screen.GpioConfig -> ({ screen = Screen.Settings })
+                    Screen.PrivacyPolicy -> ({ screen = Screen.Settings })
                     else -> ({ screen = Screen.Monitor })
                 }
                 onDispose { }
@@ -95,6 +116,7 @@ fun App() {
                             }
                         },
                         onDeclineForever = { exitApplication() },
+                        onViewFullPolicy = { screen = Screen.PrivacyPolicy },
                     )
                 }
 
@@ -116,6 +138,7 @@ fun App() {
                                 onOpenBleConfig = { screen = Screen.BleConfig },
                                 onOpenModbusConfig = { screen = Screen.ModbusConfig },
                                 onOpenGpioConfig = { screen = Screen.GpioConfig },
+                                onOpenPrivacy = { screen = Screen.PrivacyPolicy },
                                 onBack = { screen = Screen.Monitor },
                             )
                             is Screen.Manual -> ManualScreen(
@@ -139,6 +162,9 @@ fun App() {
                             )
                             is Screen.GpioConfig -> GpioConfigScreen(
                                 settings = settings,
+                                onBack = { screen = Screen.Settings },
+                            )
+                            is Screen.PrivacyPolicy -> PrivacyPolicyPage(
                                 onBack = { screen = Screen.Settings },
                             )
                             is Screen.Editor -> AnchorEditorScreen(

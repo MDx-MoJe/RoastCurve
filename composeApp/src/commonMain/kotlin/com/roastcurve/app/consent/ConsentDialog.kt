@@ -1,9 +1,26 @@
+/*
+ * RoastCurve（烤豆）—— 咖啡烘焙曲线记录与控制
+ * Copyright 2026 MDx
+ * https://github.com/MDx-MoJe/RoastCurve
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.roastcurve.app.consent
 
 import com.roastcurve.shared.l10n.L10n
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -27,6 +44,7 @@ import androidx.compose.ui.unit.sp
 fun ConsentDialog(
     onAccept: () -> Unit,
     onDeclineForever: () -> Unit,
+    onViewFullPolicy: () -> Unit = {},
 ) {
     var showDeclineConfirm by remember { mutableStateOf(false) }
 
@@ -70,14 +88,23 @@ fun ConsentDialog(
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 buildString {
-                                    if (externalUrl.isNotEmpty()) append(L10n.get("consent.s2", "externalUrl" to ""))
-                                    if (cnUrl.isNotEmpty()) append(L10n.get("consent.s3", "cnUrl" to ""))
+                                    if (externalUrl.isNotEmpty())
+                                        append(L10n.get("consent.s2", "externalUrl" to externalUrl))
+                                    if (cnUrl.isNotEmpty())
+                                        append(L10n.get("consent.s3", "cnUrl" to cnUrl))
                                 },
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
+
+                    Spacer(Modifier.height(8.dp))
+                    // 常驻入口：应用内阅读页（离线全文），不依赖网络
+                    TextButton(
+                        onClick = onViewFullPolicy,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    ) { Text(L10n.get("privacy.view_full"), fontSize = 13.sp) }
 
                     Spacer(Modifier.height(16.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -1,3 +1,21 @@
+/*
+ * RoastCurve（烤豆）—— 咖啡烘焙曲线记录与控制
+ * Copyright 2026 MDx
+ * https://github.com/MDx-MoJe/RoastCurve
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.roastcurve.app.settings
 
 import com.roastcurve.shared.l10n.L10n
@@ -8,6 +26,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.roastcurve.app.platform.BlePermissionBridge
 import com.roastcurve.shared.protocol.BleConfigDevice
 import com.roastcurve.shared.protocol.bleConfigure
 import com.roastcurve.shared.protocol.bleScanConfigDevices
@@ -34,6 +53,9 @@ fun BleConfigScreen(onBack: () -> Unit) {
     var configuring by remember { mutableStateOf(false) }
     var resetting by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    // 蓝牙权限：先弹用途说明，用户点「允许」后再走系统授权
+    var showPermRationale by remember { mutableStateOf(false) }
+    var pendingScan by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)
@@ -87,17 +109,32 @@ fun BleConfigScreen(onBack: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         Button(
             onClick = {
-                scanning = true
                 devices = emptyList()
                 selected = null
                 message = null
-                scope.launch {
-                    val found = bleScanConfigDevices(8000)
-                    devices = found
-                    scanning = false
-                    if (found.isEmpty()) {
-                        message = L10n.get("ble.s9")
+
+                // 权限前置告知：蓝牙配网需要扫描附近设备。
+                // Android 12+ 为「附近的设备」，11 及以下系统机制上显示为「位置信息」——
+                // 本应用仅用其发现桥接器，不读取、不存储、不上传位置。
+                val doScan: () -> Unit = {
+                    scanning = true
+                    scope.launch {
+                        val found = bleScanConfigDevices(8000)
+                        devices = found
+                        scanning = false
+                        if (found.isEmpty()) {
+                            message = L10n.get("ble.s9")
+                        }
                     }
+                    Unit
+                }
+
+                val alreadyGranted = BlePermissionBridge.granted?.invoke() ?: true
+                if (alreadyGranted) {
+                    doScan()
+                } else {
+                    showPermRationale = true
+                    pendingScan = doScan
                 }
             },
             enabled = !scanning,
@@ -192,5 +229,29 @@ fun BleConfigScreen(onBack: () -> Unit) {
             Text(it, style = MaterialTheme.typography.bodySmall,
                  color = MaterialTheme.colorScheme.primary)
         }
+    }
+
+    // 权限用途告知：申请前先把「为什么需要、用来干什么」讲清楚
+    if (showPermRationale) {
+        AlertDialog(
+            onDismissRequest = { showPermRationale = false; pendingScan = null },
+            title = { Text(L10n.get("ble.perm.title")) },
+            text = { Text(L10n.get("ble.perm.body")) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showPermRationale = false
+                    val scan = pendingScan
+                    pendingScan = null
+                    BlePermissionBridge.onResult = null
+                    BlePermissionBridge.request?.invoke()
+                    BlePermissionBridge.onResult = { ok -> if (ok) scan?.invoke() }
+                }) { Text(L10n.get("ble.perm.allow")) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPermRationale = false; pendingScan = null }) {
+                    Text(L10n.get("ble.perm.deny"))
+                }
+            },
+        )
     }
 }
