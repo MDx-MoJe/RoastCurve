@@ -31,8 +31,6 @@ xcuserdata/
 # ===== ESP32 固件构建产物 =====
 esp32-firmware/**/build/
 esp32-firmware/**/build_v*/
-*.bin
-!esp32-firmware/**/flashed/*.bin
 
 # ===== 发布产物目录（APK/固件走 Releases 附件，不进 git）=====
 /release-*/
