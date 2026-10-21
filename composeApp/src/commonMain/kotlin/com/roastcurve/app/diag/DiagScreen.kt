@@ -264,18 +264,20 @@ fun DiagScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
-            Surface(shape = MaterialTheme.shapes.small, tonalElevation = 1.dp) {
-                Column(Modifier.fillMaxWidth().padding(8.dp)) {
+            Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 1.dp) {
+                Column(Modifier.fillMaxWidth().padding(10.dp)) {
                     entries.reversed().forEach { e ->
                         Text(
                             "${e.level.tag} ${e.scope} ${e.message}",
                             style = MaterialTheme.typography.bodySmall,
                             fontFamily = FontFamily.Monospace,
+                            softWrap = true,
                             color = when (e.level) {
                                 DiagLog.Level.ERROR -> MaterialTheme.colorScheme.error
                                 DiagLog.Level.WARN -> MaterialTheme.colorScheme.tertiary
                                 else -> MaterialTheme.colorScheme.onSurfaceVariant
                             },
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
                         )
                     }
                 }
@@ -294,7 +296,7 @@ private fun StepRow(step: DiagStep, expanded: Boolean, onToggle: () -> Unit) {
         DiagStatus.SKIP -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     Surface(
-        shape = MaterialTheme.shapes.small,
+        shape = MaterialTheme.shapes.medium,   // 注意：主题里 small=胶囊（50%），不能当容器用
         tonalElevation = 1.dp,
         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp).clickable { onToggle() },
     ) {

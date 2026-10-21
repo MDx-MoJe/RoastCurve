@@ -128,6 +128,7 @@ object EnBuilt {
         "diag.d2_ok" to "Firmware {ver}, signal {rssi} dBm, uptime {uptime}s",
         "diag.d2b_found" to "Discovery found the bridge at {newHost}, but the app uses {oldHost}",
         "diag.d2b_same" to "Discovery matches the configured address: {host}",
+        "diag.d3_busy" to "Self-test port did not respond (firmware {ver} supports it; the bridge may be busy). Try again.",
         "diag.d3_fail" to "Bridge cannot reach the controller either: {reason}",
         "diag.d3_mismatch" to "Firmware settings differ from the app: {diff}",
         "diag.d3_ok" to "Bridge read the controller directly: {pv}°C in {rtt} ms",

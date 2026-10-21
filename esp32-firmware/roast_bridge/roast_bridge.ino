@@ -731,7 +731,7 @@ void rtuToMbap(WiFiClient& out, const uint8_t* reqHeader, uint16_t waitMs) {
 //   失败且 fail="exception" = 从站回异常码（寄存器地址越界、功能不支持）
 DiagProbeResult diagProbePv() {
   DiagProbeResult r;
-  if (cfg.simEnabled) return r;   // SIM 模式没总线可测
+  if (cfg.simEnabled) { r.fail = "sim"; return r; }   // SIM 模式没总线可测
 
   uint8_t rtu[8];
   rtu[0] = cfg.slaveId;

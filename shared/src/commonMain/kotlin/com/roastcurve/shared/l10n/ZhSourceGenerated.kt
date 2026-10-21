@@ -128,6 +128,7 @@ object ZhSourceGenerated {
         "diag.d2_ok" to "固件 {ver}，信号 {rssi} dBm，已运行 {uptime} 秒",
         "diag.d2b_found" to "自动发现找到桥接器在 {newHost}，和填写的 {oldHost} 不一致",
         "diag.d2b_same" to "自动发现与填写的地址一致：{host}",
+        "diag.d3_busy" to "自检口没有响应（固件 {ver} 支持自检，可能桥接器正忙），请再试一次",
         "diag.d3_fail" to "桥接器自己也读不到温控器：{reason}",
         "diag.d3_mismatch" to "固件实际生效参数与应用设置不一致：{diff}",
         "diag.d3_ok" to "桥接器现场读到温控器：{pv}°C，耗时 {rtt} ms",

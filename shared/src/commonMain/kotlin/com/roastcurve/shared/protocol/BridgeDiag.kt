@@ -18,6 +18,7 @@
 
 package com.roastcurve.shared.protocol
 
+import com.roastcurve.shared.diag.DiagLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -82,23 +83,40 @@ data class BridgeDiag(
 /**
  * 读取桥接器自检报告（8898 /diag）。不可达/不支持返回 null。
  *
- * 注意：固件在该请求里会阻塞一次 RS485 事务（最长 800ms），
- * 因此调用方应在「未烘焙」或「用户手动诊断」时使用，不要放进轮询。
+ * 【2026-10-21 实测坑】固件在 /diag 里会先同步跑一次 RS485 探针（正常 260ms，
+ * 总线不通则打满 800ms），加上主循环排空其他任务，首字节可能 1 秒后才到。
+ * 早期实现用 1.2s 读超时逐字节读，结果在首字节前就超时，把“没读到”
+ * 误判成“固件不支持自检”。现在：头 5s 读超时、整体 15s，且先解析头里的
+ * Content-Length 再整块读体。
  */
-suspend fun fetchBridgeDiag(host: String, timeoutMs: Long = 4000L): BridgeDiag? =
+suspend fun fetchBridgeDiag(host: String, timeoutMs: Long = 15_000L): BridgeDiag? =
     withContext(Dispatchers.IO) {
-        val t = TcpByteTransport(host = host, port = 8898, readTimeoutMs = 1200L)
+        val t = TcpByteTransport(host = host, port = 8898, readTimeoutMs = 5_000L)
         withTimeoutOrNull(timeoutMs) {
             try {
                 t.open()
                 t.write("GET /diag HTTP/1.0\r\nHost: $host\r\n\r\n".encodeToByteArray())
-                val buf = StringBuilder()
-                while (buf.length < 4096) {
+                // 逐字节读 HTTP 头（不能预设长度，固件要先跑完探针才会回）
+                val head = StringBuilder()
+                while (head.length < 1024) {
                     val one = t.readExact(1) ?: break
-                    buf.append(one[0].toInt().toChar())
+                    head.append(one[0].toInt().toChar())
+                    if (head.endsWith("\r\n\r\n")) break
                 }
-                parseDiag(buf.toString())
-            } catch (_: Exception) {
+                if (!head.endsWith("\r\n\r\n")) {
+                    DiagLog.warn("DIAG", "/diag 无响应头（已收 ${head.length} 字节），桥接器可能正忙")
+                    return@withTimeoutOrNull null
+                }
+                val len = Regex("(?i)content-length:\\s*(\\d+)")
+                    .find(head.toString())?.groupValues?.get(1)?.toIntOrNull() ?: 900
+                val body = t.readExact(len.coerceIn(1, 4096))
+                if (body == null) {
+                    DiagLog.warn("DIAG", "/diag 响应体不完整（预期 $len 字节）")
+                    return@withTimeoutOrNull null
+                }
+                parseDiag(body.decodeToString())
+            } catch (e: Exception) {
+                DiagLog.warn("DIAG", "/diag 请求异常：${e.message}")
                 null
             } finally {
                 try { t.close() } catch (_: Exception) {}

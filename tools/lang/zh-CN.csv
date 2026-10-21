@@ -510,3 +510,4 @@ app.s14,{host} 拒绡了 8899 连接：固件可能不是烤豆桥接固件，�
 app.s15,连接 {host} 超时：手机与桥接器可能不在同一网络，或 WiFi 信号太弱,"Timeout connecting to {host}: phone and bridge may be on different networks, or WiFi is too weak",DiagScreen.kt,0
 app.s16,到 {host} 没有路由：请确认手机连的是同一个 WiFi（别用移动数据）,No route to {host}: make sure the phone is on the same WiFi (not mobile data),DiagScreen.kt,0
 app.s17,解析不了地址 {host}：请填 IP（如 192.168.1.50），不要填主机名,"Cannot resolve {host}: enter an IP address (e.g. 192.168.1.50), not a hostname",DiagScreen.kt,0
+diag.d3_busy,自检口没有响应（固件 {ver} 支持自检，可能桥接器正忙），请再试一次,Self-test port did not respond (firmware {ver} supports it; the bridge may be busy). Try again.,DiagScreen.kt,0

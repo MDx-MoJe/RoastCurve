@@ -28,7 +28,7 @@ struct DiagProbeResult {
   uint32_t rttMs = 0;
   uint8_t  txLen = 0, rxLen = 0;
   uint8_t  tx[16], rx[16];
-  const char* fail = "sim";
+  const char* fail = "";  // 成功时为空串，避免报告里出现“fail=sim”这种脏字段
 };
 
 extern DiagProbeResult diagProbe;

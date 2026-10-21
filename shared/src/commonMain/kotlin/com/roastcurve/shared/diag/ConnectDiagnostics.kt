@@ -182,13 +182,17 @@ suspend fun runConnectDiagnostics(
     val bd: BridgeDiag? = fetchBridgeDiag(host)
     var busOk: Boolean? = null       // 总线到温控器是否通（固件视角）
     if (bd == null) {
+        // 读不到自检口有两种截然不同的原因，不能一律归成“固件不支持”（2026-10-21 踩过：
+        // /diag 要先跑完 RS485 探针，旧实现在首字节前就超时，把“读失败”误报成“不支持”）
+        val modernFw = verAtLeast(status.ver, "1.9.5")
         emit(
             DiagStep(
                 id = "FW_DIAG",
                 title = L10n.get("diag.s3"),
-                detail = L10n.get("diag.d3_old", "ver" to (status.ver ?: "?")),
+                detail = if (modernFw) L10n.get("diag.d3_busy", "ver" to (status.ver ?: "?"))
+                else L10n.get("diag.d3_old", "ver" to (status.ver ?: "?")),
                 status = DiagStatus.SKIP,
-                raw = L10n.get("diag.raw_none"),
+                raw = "/diag 未返回可解析内容（固件 ${status.ver ?: "?"}）",
                 elapsedMs = nowMs() - s3Start,
             )
         )
@@ -374,6 +378,21 @@ private fun failText(fail: String?): String = when (fail) {
 private fun hex4(v: Int): String {
     val s = v.toString(16).uppercase()
     return s.padStart(4, '0')
+}
+
+/** 固件版本比较：verAtLeast("1.9.5", "1.9.5") = true；解析不了当不支持 */
+private fun verAtLeast(ver: String?, min: String): Boolean {
+    if (ver.isNullOrBlank()) return false
+    fun parts(v: String) = v.trim().removePrefix("v").split('.')
+        .map { p -> p.takeWhile { it.isDigit() }.toIntOrNull() ?: 0 }
+    val a = parts(ver)
+    val b = parts(min)
+    for (i in 0 until maxOf(a.size, b.size)) {
+        val x = a.getOrElse(i) { 0 }
+        val y = b.getOrElse(i) { 0 }
+        if (x != y) return x > y
+    }
+    return true
 }
 
 private fun nowMs(): Long = Clock.System.now().toEpochMilliseconds()

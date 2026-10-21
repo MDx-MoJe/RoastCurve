@@ -58,6 +58,7 @@ ROWS = [
     ('diag.d3_ok', '桥接器现场读到温控器：{pv}°C，耗时 {rtt} ms', 'Bridge read the controller directly: {pv}°C in {rtt} ms'),
     ('diag.d3_fail', '桥接器自己也读不到温控器：{reason}', 'Bridge cannot reach the controller either: {reason}'),
     ('diag.d3_old', '固件 {ver} 不支持自检，建议升级到 1.9.5 以上再诊断', 'Firmware {ver} has no self-test; update to 1.9.5+ for a precise diagnosis'),
+    ('diag.d3_busy', '自检口没有响应（固件 {ver} 支持自检，可能桥接器正忙），请再试一次', 'Self-test port did not respond (firmware {ver} supports it; the bridge may be busy). Try again.'),
     ('diag.d3_mismatch', '固件实际生效参数与应用设置不一致：{diff}', 'Firmware settings differ from the app: {diff}'),
     ('diag.d3_sim', '桥接器处于模拟模式（SIM），未接真实温控器', 'Bridge is in simulation mode (SIM), no real controller attached'),
     ('diag.d4_ok', '8899 端口可以建立连接', 'Port 8899 accepts connections'),
