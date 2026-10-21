@@ -438,3 +438,75 @@ ble.perm.body,"搜索桥接器需要扫描附近的蓝牙设备。
 • Android 11 and below: the old system requires ""Location"" for this operation", so the prompt may say Location.\n\nWe use it only to find your bridge. No location data is read, stored
 ble.perm.allow,继续并授权,Continue,SettingsScreen.kt,0
 ble.perm.deny,暂不,Not Now,SettingsScreen.kt,0
+diag.title,连接诊断,Connection Diagnostics,DiagScreen.kt,0
+diag.run,开始诊断,Run Diagnostics,DiagScreen.kt,0
+diag.running,诊断中…,Diagnosing…,DiagScreen.kt,0
+diag.rerun,重新诊断,Run Again,DiagScreen.kt,0
+diag.verdict,结论,Verdict,DiagScreen.kt,0
+diag.advice,建议,What to do,DiagScreen.kt,0
+diag.detail_toggle,原始数据,Raw data,DiagScreen.kt,0
+diag.export,导出诊断包,Export Report,DiagScreen.kt,0
+diag.export_ok,已保存：{path},Saved: {path},DiagScreen.kt,0
+diag.export_fail,导出失败,Export failed,DiagScreen.kt,0
+diag.log,连接日志,Connection Log,DiagScreen.kt,0
+diag.log_empty,暂无日志,No entries yet,DiagScreen.kt,0
+diag.clear,清空日志,Clear Log,DiagScreen.kt,0
+diag.clear_done,已清空,Cleared,DiagScreen.kt,0
+diag.warn_active,诊断会短暂断开当前连接。烘焙中请先停下。,Diagnostics briefly interrupt the current connection. Stop roasting first.,DiagScreen.kt,0
+diag.raw_none,无,none,DiagScreen.kt,0
+diag.s1,① 桥接器地址,1. Bridge address,DiagScreen.kt,0
+diag.s2,② 桥接器状态口（8898）,2. Bridge status port (8898),DiagScreen.kt,0
+diag.s2b,自动发现对照,Auto-discovery check,DiagScreen.kt,0
+diag.s3,③ 桥接器自检（总线侧）,3. Bridge self-test (bus side),DiagScreen.kt,0
+diag.s4,④ 主控端口（8899）,4. Control port (8899),DiagScreen.kt,0
+diag.s5,⑤ 端到端读取温度,5. End-to-end temperature read,DiagScreen.kt,0
+diag.s6,⑥ 读数合理性,6. Reading sanity,DiagScreen.kt,0
+diag.d1_empty,没有填写桥接器地址,Bridge address is empty,DiagScreen.kt,0
+diag.d1_bad,地址格式不对：{host},Invalid address format: {host},DiagScreen.kt,0
+diag.d1_ok,地址 {host},Address {host},DiagScreen.kt,0
+diag.d2_ok,固件 {ver}，信号 {rssi} dBm，已运行 {uptime} 秒,"Firmware {ver}, signal {rssi} dBm, uptime {uptime}s",DiagScreen.kt,0
+diag.d2_fail,状态口打不开：手机和桥接器不在同一网络，或 IP 已变,"Status port unreachable: phone and bridge are not on the same network, or the IP changed",DiagScreen.kt,0
+diag.d2b_found,自动发现找到桥接器在 {newHost}，和填写的 {oldHost} 不一致,"Discovery found the bridge at {newHost}, but the app uses {oldHost}",DiagScreen.kt,0
+diag.d2b_same,自动发现与填写的地址一致：{host},Discovery matches the configured address: {host},DiagScreen.kt,0
+diag.d3_ok,桥接器现场读到温控器：{pv}°C，耗时 {rtt} ms,Bridge read the controller directly: {pv}°C in {rtt} ms,DiagScreen.kt,0
+diag.d3_fail,桥接器自己也读不到温控器：{reason},Bridge cannot reach the controller either: {reason},DiagScreen.kt,0
+diag.d3_old,固件 {ver} 不支持自检，建议升级到 1.9.5 以上再诊断,Firmware {ver} has no self-test; update to 1.9.5+ for a precise diagnosis,DiagScreen.kt,0
+diag.d3_mismatch,固件实际生效参数与应用设置不一致：{diff},Firmware settings differ from the app: {diff},DiagScreen.kt,0
+diag.d3_sim,桥接器处于模拟模式（SIM），未接真实温控器,"Bridge is in simulation mode (SIM), no real controller attached",DiagScreen.kt,0
+diag.d4_ok,8899 端口可以建立连接,Port 8899 accepts connections,DiagScreen.kt,0
+diag.d4_fail,8899 端口连不上,Port 8899 refuses connections,DiagScreen.kt,0
+diag.d5_ok,端到端读取成功：{pv}°C,End-to-end read succeeded: {pv}°C,DiagScreen.kt,0
+diag.d5_fail,请求已发出，但没读到温度：{err},Request sent but no temperature came back: {err},DiagScreen.kt,0
+diag.d6_ok,读数正常：{pv}°C,Reading looks sane: {pv}°C,DiagScreen.kt,0
+diag.d6_bad,读数异常：{pv}，寄存器地址可能不对,"Reading is out of range: {pv}, register address may be wrong",DiagScreen.kt,0
+diag.f_timeout,完全没有任何回话,no reply at all,DiagScreen.kt,0
+diag.f_crc,回话了但校验对不上,reply received but the checksum does not match,DiagScreen.kt,0
+diag.f_short,回包太短,reply too short,DiagScreen.kt,0
+diag.f_slaveid,应答的从站地址不符,reply came from a different slave address,DiagScreen.kt,0
+diag.f_exception,温控器回了异常码,controller returned an exception code,DiagScreen.kt,0
+diag.f_sim,模拟模式未测总线,"simulation mode, bus not tested",DiagScreen.kt,0
+diag.f_unknown,未知原因,unknown reason,DiagScreen.kt,0
+diag.v0,整条链路是通的，可以开始烘焙,The whole chain works. Ready to roast.,DiagScreen.kt,0
+diag.a0,如果 App 仍然连不上，把诊断包发出来，里面有逐层证据。,"If the app still fails, send the exported report: it holds per-layer evidence.",DiagScreen.kt,0
+diag.v1,桥接器地址没填或格式不对,Bridge address is missing or malformed,DiagScreen.kt,0
+diag.a1,在连接设置里填入桥接器 IP。路由器后台找名为 roastbridge 的设备，或用蓝牙配网。,"Enter the bridge IP in connection settings. Look for ""roastbridge"" in your router, or use Bluetooth setup.",DiagScreen.kt,0
+diag.v2,手机连不上桥接器的状态口,The phone cannot reach the bridge at all,DiagScreen.kt,0
+diag.a2,确认手机连的是 2.4G 频段的 WiFi、和桥接器同一网段、没有挂 VPN；桥接器状态灯是否绿色常亮。,"Check that the phone is on the 2.4 GHz network, on the same subnet, with no VPN; is the bridge LED solid green?",DiagScreen.kt,0
+diag.v3,总线这一侧不通：桥接器与温控器之间说不上话,The bus side is down: the bridge cannot talk to the controller,DiagScreen.kt,0
+diag.a3,看原因分别排查：无回话查接线视角（TXD 接模块输入、RXD 接模块输出）、从站地址、温控器电源；校验错查波特率和校验位，改完必须断电重启温控器；异常码查 PV/SV 寄存器地址。,"By cause: no reply → check wiring orientation (TXD to module input, RXD to module output), slave address, controller power. Checksum error → check baud rate and parity, then power-cycle the controller. Exception → check PV/SV register addresses.",DiagScreen.kt,0
+diag.v4,8899 端口不通,Port 8899 is not reachable,DiagScreen.kt,0
+diag.a4,桥接器可能没刷烤豆固件，或 8899 被其他程序占用。重启桥接器后再试。,"The bridge may not run RoastCurve firmware, or 8899 is occupied. Reboot the bridge and retry.",DiagScreen.kt,0
+diag.v5,桥接器本身正常，问题出在 8899 通道或会话上,The bridge is healthy; the problem is the 8899 channel or session,DiagScreen.kt,0
+diag.a5,桥接器读得到温控器，App 读不到：关掉其他正在连接的程序（含其他手机、网页控制台），重启桥接器后再连。,"The bridge can read the controller but the app cannot: close other clients (other phones, the web console), reboot the bridge, then reconnect.",DiagScreen.kt,0
+diag.v6,能读到温度，但数值不合理,"Temperature reads, but the value is out of range",DiagScreen.kt,0
+diag.a6,温控器型号可能不兼容，检查 PV 寄存器地址是否正确。,The controller model may be incompatible. Check the PV register address.,DiagScreen.kt,0
+diag.v7,App 读不到，但桥接器固件太旧，无法对照判断,"The app cannot read, and the firmware is too old to compare against",DiagScreen.kt,0
+diag.a7,把桥接器固件升级到 1.9.5 以上再诊断一次，就能直接指出是哪一环断的。,Update the bridge firmware to 1.9.5+ and run diagnostics again: it will point at the exact broken link.,DiagScreen.kt,0
+diag.host,桥接器 IP,Bridge IP,DiagScreen.kt,0
+settings.diag1,连接诊断,Connection Diagnostics,DiagScreen.kt,0
+settings.diag2,连不上时先跑一次，直接指出断在哪一环,"When it will not connect, run this first: it points at the broken link",DiagScreen.kt,0
+app.s13,连不上桥接器 {host}：8899 端口无响应。确认 IP 正确、桥接器已通电,Cannot reach bridge {host}: port 8899 does not respond. Check the IP and that the bridge is powered,DiagScreen.kt,0
+app.s14,{host} 拒绡了 8899 连接：固件可能不是烤豆桥接固件，或端口被别的程序占用,"{host} refused port 8899: the firmware may not be RoastCurve bridge firmware, or the port is taken",DiagScreen.kt,0
+app.s15,连接 {host} 超时：手机与桥接器可能不在同一网络，或 WiFi 信号太弱,"Timeout connecting to {host}: phone and bridge may be on different networks, or WiFi is too weak",DiagScreen.kt,0
+app.s16,到 {host} 没有路由：请确认手机连的是同一个 WiFi（别用移动数据）,No route to {host}: make sure the phone is on the same WiFi (not mobile data),DiagScreen.kt,0
+app.s17,解析不了地址 {host}：请填 IP（如 192.168.1.50），不要填主机名,"Cannot resolve {host}: enter an IP address (e.g. 192.168.1.50), not a hostname",DiagScreen.kt,0

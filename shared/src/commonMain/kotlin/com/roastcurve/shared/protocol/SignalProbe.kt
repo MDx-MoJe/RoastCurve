@@ -33,6 +33,17 @@ data class BridgeStatus(
     val sv: Int? = null,           // 固件缓存的当前 SV 设定
     val fanSpeed: Int? = null,
     val ver: String? = null,
+    val uptimeSec: Long? = null,
+    // ==== v1.9.5 诊断字段（老固件不上报 → null，调用方降级）====
+    val client: Int? = null,       // 8899 上有无客户端连接
+    val holder: String? = null,    // 当前主控：app / web / none
+    val link: Boolean? = null,     // 固件自己轮询温控器是否正常
+    val pv: Int? = null,           // 固件轮询到的温度
+    val appTx: Long? = null,       // App 透传下发帧数
+    val appRx: Long? = null,       // App 透传成功应答数
+    val appTimeout: Long? = null,
+    val appBad: Long? = null,
+    val pollOkAgeMs: Long? = null, // 距上次轮询成功的毫秒数（0xFFFFFFFF = 从未成功）
 )
 
 object SignalProbe {
@@ -71,12 +82,23 @@ object SignalProbe {
             return if (c == '"') rest.drop(1).takeWhile { it != '"' }
             else rest.takeWhile { it.isDigit() || it == '-' }
         }
+        fun num(name: String): Long? = field(name)?.toLongOrNull()
         return BridgeStatus(
             rssi = field("rssi")?.toIntOrNull(),
             safe = field("safe")?.let { it == "1" || it == "true" },
             sv = field("sv")?.toIntOrNull(),
             fanSpeed = field("fan_speed")?.toIntOrNull(),
             ver = field("ver"),
+            uptimeSec = num("uptime"),
+            client = num("client")?.toInt(),
+            holder = field("holder"),
+            link = field("link")?.let { it == "1" || it == "true" },
+            pv = num("pv")?.toInt(),
+            appTx = num("app_tx"),
+            appRx = num("app_rx"),
+            appTimeout = num("app_to"),
+            appBad = num("app_bad"),
+            pollOkAgeMs = num("poll_ok"),
         )
     }
 

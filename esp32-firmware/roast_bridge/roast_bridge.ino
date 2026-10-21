@@ -51,6 +51,7 @@
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
 #include "webui_gzip.h"   // Web UI gzip 体（webui/index.html 生成）
+#include "diag_probe.h"     // 现场 RS485 探针结果（v1.9.5 诊断）
 #include <ArduinoOTA.h>
 #include <esp_task_wdt.h>   // OTA 烧写期间喂任务看门狗（#10707）
 #include <BLEDevice.h>
@@ -65,7 +66,7 @@
 constexpr const char* OTA_PASSWORD = "roastota";
 
 // ==================== 版本 ====================
-constexpr const char* FIRMWARE_VERSION = "1.9.4";
+constexpr const char* FIRMWARE_VERSION = "1.9.5";
 
 // ==================== 用户配置区（未改动）====================
 constexpr uint16_t TCP_PORT       = 8899;   // App Modbus TCP
@@ -232,6 +233,44 @@ bool saveCfg() {
   return true;
 }
 
+// ==================== 诊断计数器（v1.9.5，App 侧定位故障环用）====================
+// 关键洞察：总线有两条互不相干的消费者——App 透传（8899）与内部轮询器（每秒读 PV/SV）。
+// 两者共用同一条 RS485，各自的成败组合可直接定位故障环：
+//   两边都失败 = 总线/温控器侧（接线、波特率、从站地址、温控器没电）
+//   仅 App 失败 = 8899 通道侧（TCP/会话），温控器其实是好的
+//   CRC 错多 = 电气问题（波特率/校验位不符、干扰、终端电阻）
+//   CRC 错零但超时多 = 帧根本没回来（线序视角错、从站地址不符、温控器未上电）
+struct DiagCounters {
+  // 8899 App 透传路径（App 实际体验的那条）
+  uint32_t appTx      = 0;   // 下发的 RTU 帧数
+  uint32_t appRx      = 0;   // 收到合法应答数
+  uint32_t appTimeout = 0;   // 完全无字节
+  uint32_t appBad     = 0;   // 有字节但短帧/CRC 错/从站号不符/异常应答
+  uint32_t appLastReqMs = 0; // 最近一次 App 请求时刻
+  uint32_t appLastRttMs = 0; // 最近一次成功应答耗时
+  // 内部轮询器路径（固件自己每秒读 PV/SV，与 App 无关）
+  uint32_t pollTx      = 0;
+  uint32_t pollRx      = 0;
+  uint32_t pollTimeout = 0;
+  uint32_t pollBad     = 0;
+  uint32_t pollLastOkMs = 0; // 最近一次轮询成功时刻
+  // 最近原始帧（App 路径，各留 16 字节，导出诊断包用）
+  uint8_t  lastTx[16];  uint8_t lastTxLen = 0;
+  uint8_t  lastRx[16];  uint8_t lastRxLen = 0;
+};
+DiagCounters diag;
+// 探针结果实例（结构体定义在 diag_probe.h，避开 Arduino 原型插入位置问题）
+DiagProbeResult diagProbe;
+
+/** 把字节数组转成 "01 03 00 00" 形式（诊断 JSON 用） */
+void bytesToHex(const uint8_t* buf, uint8_t len, char* out, size_t outLen) {
+  out[0] = 0;
+  size_t p = 0;
+  for (uint8_t i = 0; i < len && p + 4 < outLen; i++) {
+    p += snprintf(out + p, outLen - p, i ? " %02X" : "%02X", buf[i]);
+  }
+}
+
 // ==================== v1.5 温控器抽象层（真机 / SIM 双后端）====================
 // 全部 Modbus 访问的唯一入口，天然满足"总线单事务"不变量 B
 struct HeaterState {
@@ -265,6 +304,7 @@ bool modbusTransaction(const uint8_t* pdu, size_t pduLen, uint8_t* rspPdu, size_
   rs485.write(rtu, pduLen + 3);
   rs485.flush();
 
+  diag.pollTx++;
   uint8_t rsp[260];
   size_t n = 0;
   uint32_t start = millis();
@@ -280,12 +320,15 @@ bool modbusTransaction(const uint8_t* pdu, size_t pduLen, uint8_t* rspPdu, size_
     yield();
   }
 
-  if (!gotFirst || n < 4) { rspLen = 0; return false; }
+  if (!gotFirst) { diag.pollTimeout++; rspLen = 0; return false; }
+  if (n < 4) { diag.pollBad++; rspLen = 0; return false; }
   uint16_t expect = crc16(rsp, n - 2);
   uint16_t actual = rsp[n - 2] | (rsp[n - 1] << 8);
-  if (expect != actual || rsp[0] != rtu[0]) { rspLen = 0; return false; }
+  if (expect != actual || rsp[0] != rtu[0]) { diag.pollBad++; rspLen = 0; return false; }
   // 异常应答（功能码最高位置位）
-  if (rsp[1] & 0x80) { rspLen = 0; return false; }
+  if (rsp[1] & 0x80) { diag.pollBad++; rspLen = 0; return false; }
+  diag.pollRx++;
+  diag.pollLastOkMs = millis();
   memcpy(rspPdu, rsp + 1, n - 3);
   rspLen = n - 3;
   return true;
@@ -611,6 +654,11 @@ bool mbapToRtu(const uint8_t* frame, size_t frameLen) {
   while (rs485.available()) rs485.read();
   rs485.write(rtu, length + 2);
   rs485.flush();
+  // 诊断：记录 App 路径下发帧（截断 16 字节）
+  diag.appTx++;
+  diag.appLastReqMs = millis();
+  diag.lastTxLen = (length + 2 > 16) ? 16 : (uint8_t)(length + 2);
+  memcpy(diag.lastTx, rtu, diag.lastTxLen);
   return true;
 }
 
@@ -639,6 +687,20 @@ void rtuToMbap(WiFiClient& out, const uint8_t* reqHeader, uint16_t waitMs) {
     crcOk = (expect == actual);
   }
 
+  // 诊断：App 路径应答分类
+  if (gotFirst) {
+    diag.lastRxLen = (n > 16) ? 16 : (uint8_t)n;
+    memcpy(diag.lastRx, rsp, diag.lastRxLen);
+  }
+  if (!gotFirst) {
+    diag.appTimeout++;
+  } else if (!crcOk || n < 4) {
+    diag.appBad++;
+  } else {
+    diag.appRx++;
+    diag.appLastRttMs = millis() - start;
+  }
+
   if (!gotFirst || !crcOk) {
     uint8_t ex[9];
     ex[0] = reqHeader[0]; ex[1] = reqHeader[1];
@@ -659,6 +721,65 @@ void rtuToMbap(WiFiClient& out, const uint8_t* reqHeader, uint16_t waitMs) {
   mbap[6] = rsp[0];
   out.write(mbap, MBAP_HEADER_LEN);
   out.write(rsp + 1, n - 3);
+}
+
+// ==================== 诊断自检：固件现场读一次 PV（v1.9.5）====================
+// 与 App 透传/轮询器都无关的独立探针，专用于 /diag：
+//   成功 = 总线到温控器这一段是通的（那问题必在 App 侧或 8899 通道）
+//   失败且 fail="timeout" = 帧发出去一个字节都没回来（接线视角/从站地址/温控器没上电）
+//   失败且 fail="crc"     = 回来了但校验不对（波特率/校验位不符、干扰、终端电阻）
+//   失败且 fail="exception" = 从站回异常码（寄存器地址越界、功能不支持）
+DiagProbeResult diagProbePv() {
+  DiagProbeResult r;
+  if (cfg.simEnabled) return r;   // SIM 模式没总线可测
+
+  uint8_t rtu[8];
+  rtu[0] = cfg.slaveId;
+  rtu[1] = 0x03;                                  // FC03 读保持寄存器
+  rtu[2] = (uint8_t)(cfg.regPv >> 8);
+  rtu[3] = (uint8_t)(cfg.regPv & 0xFF);
+  rtu[4] = 0x00;
+  rtu[5] = 0x01;                                  // 数量 1
+  uint16_t crc = crc16(rtu, 6);
+  rtu[6] = crc & 0xFF;
+  rtu[7] = crc >> 8;
+
+  while (rs485.available()) rs485.read();
+  rs485.write(rtu, 8);
+  rs485.flush();
+  r.txLen = 8;
+  memcpy(r.tx, rtu, 8);
+
+  uint8_t rsp[64];
+  size_t n = 0;
+  uint32_t t0 = millis();
+  uint32_t lastByte = t0;
+  bool gotFirst = false;
+  while (millis() - t0 < RSP_FIRST_TIMEOUT_MS) {
+    if (rs485.available()) {
+      if (n >= sizeof(rsp)) break;
+      rsp[n++] = rs485.read();
+      gotFirst = true;
+      lastByte = millis();
+    } else if (gotFirst && millis() - lastByte >= RSP_GAP_TIMEOUT_MS) break;
+    yield();
+  }
+  r.rttMs = millis() - t0;
+  if (gotFirst) {
+    r.rxLen = (n > 16) ? 16 : (uint8_t)n;
+    memcpy(r.rx, rsp, r.rxLen);
+  }
+
+  if (!gotFirst)          { r.ok = 0; r.fail = "timeout";   return r; }
+  if (n < 5)              { r.ok = 0; r.fail = "short";     return r; }
+  uint16_t expect = crc16(rsp, n - 2);
+  uint16_t actual = rsp[n - 2] | (rsp[n - 1] << 8);
+  if (expect != actual)   { r.ok = 0; r.fail = "crc";       return r; }
+  if (rsp[0] != cfg.slaveId) { r.ok = 0; r.fail = "slaveid"; return r; }
+  if (rsp[1] & 0x80)      { r.ok = 0; r.fail = "exception"; return r; }
+  r.ok = 1;
+  r.pv = ((uint16_t)rsp[3] << 8) | rsp[4];
+  return r;
 }
 
 // ==================== AP 配网模式（iOS 主路径，无需 App）====================
@@ -1311,17 +1432,66 @@ void handleStatus() {
     return;
   }
 
+  // ==================== 诊断自检口（v1.9.5）====================
+  // 现场跑一次真实 RS485 事务，把 App 侧根本看不到的“总线真话”吐出来。
+  // 注意：会短暂占用总线（最长 RSP_FIRST_TIMEOUT_MS=800ms），仅手动触发。
+  if (reqLine.startsWith("GET /diag")) {
+    diagProbe = diagProbePv();
+    char txHex[56], rxHex[56];
+    bytesToHex(diagProbe.tx, diagProbe.txLen, txHex, sizeof(txHex));
+    bytesToHex(diagProbe.rx, diagProbe.rxLen, rxHex, sizeof(rxHex));
+    uint32_t pollAge = diag.pollLastOkMs ? (millis() - diag.pollLastOkMs) : 0xFFFFFFFF;
+    uint32_t appAge  = diag.appLastReqMs ? (millis() - diag.appLastReqMs) : 0xFFFFFFFF;
+    char body[768];
+    snprintf(body, sizeof(body),
+      "{\"ver\":\"%s\",\"uptime\":%lu,\"ip\":\"%s\",\"rssi\":%ld,\"sim\":%d,"
+      "\"tcp\":{\"client\":%d,\"holder\":\"%s\",\"lastReqAgeMs\":%lu},"
+      "\"uart\":{\"baud\":%lu,\"slave\":%u,\"pvReg\":%u,\"svReg\":%u,\"pinTx\":%d,\"pinRx\":%d,"
+      "\"appTx\":%lu,\"appRx\":%lu,\"appTimeout\":%lu,\"appBad\":%lu,\"appRttMs\":%lu,"
+      "\"pollTx\":%lu,\"pollRx\":%lu,\"pollTimeout\":%lu,\"pollBad\":%lu,\"pollAgeMs\":%lu,"
+      "\"link\":%d,\"pv\":%u,\"sv\":%u},"
+      "\"probe\":{\"ok\":%d,\"pv\":%u,\"rttMs\":%lu,\"fail\":\"%s\",\"tx\":\"%s\",\"rx\":\"%s\"}}",
+      FIRMWARE_VERSION, (unsigned long)((millis() - bootMs) / 1000),
+      WiFi.localIP().toString().c_str(), (long)WiFi.RSSI(), cfg.simEnabled ? 1 : 0,
+      (client && client.connected()) ? 1 : 0,
+      holder == Holder::APP ? "app" : holder == Holder::WEB ? "web" : "none",
+      (unsigned long)appAge,
+      (unsigned long)cfg.baud, (unsigned)cfg.slaveId, (unsigned)cfg.regPv, (unsigned)cfg.regSv,
+      (int)cfg.pinTx, (int)cfg.pinRx,
+      (unsigned long)diag.appTx, (unsigned long)diag.appRx, (unsigned long)diag.appTimeout,
+      (unsigned long)diag.appBad, (unsigned long)diag.appLastRttMs,
+      (unsigned long)diag.pollTx, (unsigned long)diag.pollRx, (unsigned long)diag.pollTimeout,
+      (unsigned long)diag.pollBad, (unsigned long)pollAge,
+      heater.link ? 1 : 0, (unsigned)heater.pv, (unsigned)heater.sv,
+      (int)diagProbe.ok, (unsigned)diagProbe.pv, (unsigned long)diagProbe.rttMs, diagProbe.fail, txHex, rxHex);
+    char dhead[128];
+    snprintf(dhead, sizeof(dhead),
+      "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %u\r\nConnection: close\r\n\r\n",
+      (unsigned)strlen(body));
+    sc.print(dhead); sc.print(body); sc.flush(); delay(2); sc.stop();
+    return;
+  }
+
   int32_t rssi = WiFi.RSSI();
   uint32_t upS = (millis() - bootMs) / 1000;
-  char body[256];
+  char body[512];
+  // 2026-10-21 诊断字段（App 连接失败时定位故障环用）：
+  //   link/pv/sv      = 固件自己轮询到的最新值（为空说明总线侧就不通）
+  //   app_tx/app_rx   = App 透传路径的收发计数（有 tx 无 rx = 发出去没回来）
+  //   poll_ok         = 距上次轮询成功的毫秒数（大数字 = 轮询早就断了）
+  uint32_t pollAge = diag.pollLastOkMs ? (millis() - diag.pollLastOkMs) : 0xFFFFFFFF;
   snprintf(body, sizeof(body),
-    "{\"rssi\":%ld,\"uptime\":%lu,\"client\":%d,\"req\":%lu,\"fan_speed\":%u,\"ver\":\"%s\",\"sim\":%d,\"holder\":\"%s\",\"safe\":%d,\"ws_ev\":%lu,\"ws_text\":%lu,\"ws_conn\":%lu,\"ws_last\":\"%s\"}",
+    "{\"rssi\":%ld,\"uptime\":%lu,\"client\":%d,\"req\":%lu,\"fan_speed\":%u,\"ver\":\"%s\",\"sim\":%d,\"holder\":\"%s\",\"safe\":%d,\"ws_ev\":%lu,\"ws_text\":%lu,\"ws_conn\":%lu,\"ws_last\":\"%s\","
+    "\"link\":%d,\"pv\":%u,\"sv\":%u,\"app_tx\":%lu,\"app_rx\":%lu,\"app_to\":%lu,\"app_bad\":%lu,\"poll_ok\":%lu}",
     (long)rssi, (unsigned long)upS,
     (client && client.connected()) ? 1 : 0, (unsigned long)statReqCount,
     (unsigned)fanSpeed, FIRMWARE_VERSION, cfg.simEnabled ? 1 : 0,
     holder == Holder::APP ? "app" : holder == Holder::WEB ? "web" : "none",
     (wdState == WdState::SAFE_MODE || wdState == WdState::OFF_COUNTDOWN) ? 1 : 0,
-    (unsigned long)diagWsEvents, (unsigned long)diagWsText, (unsigned long)diagWsConn, diagLastType);
+    (unsigned long)diagWsEvents, (unsigned long)diagWsText, (unsigned long)diagWsConn, diagLastType,
+    heater.link ? 1 : 0, (unsigned)heater.pv, (unsigned)heater.sv,
+    (unsigned long)diag.appTx, (unsigned long)diag.appRx, (unsigned long)diag.appTimeout,
+    (unsigned long)diag.appBad, (unsigned long)pollAge);
   char head[128];
   snprintf(head, sizeof(head),
     "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %u\r\nConnection: close\r\n\r\n",

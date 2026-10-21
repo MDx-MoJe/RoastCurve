@@ -117,6 +117,7 @@ fun MonitorScreen(
     onOpenSettings: () -> Unit = {},
     onCreateProfile: () -> Unit = {},
     onEditProfile: (RoastProfile) -> Unit = {},
+    onOpenDiag: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val curvePoints = remember { mutableStateListOf<CurvePoint>() }
@@ -807,6 +808,11 @@ fun MonitorScreen(
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.weight(1f),
                 )
+                // 连不上时直接给出路：不用只能看着“连接失败”发呆
+                TextButton(
+                    onClick = { onOpenDiag() },
+                    contentPadding = PaddingValues(horizontal = 4.dp),
+                ) { Text(L10n.get("monitor.diag"), style = MaterialTheme.typography.labelSmall) }
                 TextButton(
                     onClick = { connectionError = null },
                     contentPadding = PaddingValues(horizontal = 4.dp),

@@ -18,6 +18,7 @@
 
 package com.roastcurve.shared.protocol
 
+import com.roastcurve.shared.diag.DiagLog
 import com.roastcurve.shared.l10n.L10n
 import com.roastcurve.shared.model.CurvePoint
 import com.roastcurve.shared.model.EventMarker
@@ -83,7 +84,17 @@ class ModbusTcpChannel(
 
     override suspend fun connect(): Unit = withContext(Dispatchers.IO) {
         if (isConnected) return@withContext
-        openTransport()
+        DiagLog.info("CONNECT", "开始连接 $host:$port slave=$slaveId pvReg=0x${pvRegister.toString(16)} svReg=0x${svRegister.toString(16)}")
+        // 打开 TCP：失败形态决定用户该查什么，不能一律“连接失败”
+        try {
+            openTransport()
+        } catch (e: Exception) {
+            val raw = e.message ?: ""
+            val hint = classifyOpenError(raw, host)
+            DiagLog.error("CONNECT", "TCP 打开失败: ${e::class.simpleName}($raw) → $hint")
+            throw ModbusConnectionException(hint)
+        }
+        DiagLog.info("CONNECT", "TCP 已建立，验证 Modbus 事务")
 
         // 连接验证：耐心重试（首次连接时串口子系统可能未就绪）
         var verified = false
@@ -92,6 +103,7 @@ class ModbusTcpChannel(
             delay(1200)
         }
         if (!verified) {
+            DiagLog.error("CONNECT", "TCP 通了但 Modbus 五次验证全无应答（桥接器在线，总线侧或会话侧有问题）")
             runCatching { socket?.close() }
             socket = null; input = null; output = null
             throw ModbusConnectionException(
@@ -101,6 +113,7 @@ class ModbusTcpChannel(
 
         isConnected = true
         startMark = kotlin.time.TimeSource.Monotonic.markNow()
+        DiagLog.info("CONNECT", "连接成功，开始轮询（${pollIntervalMs}ms/次）")
 
         // 注意：必须用独立 CoroutineScope 启动轮询循环。
         // 若用 withContext 内的 launch，无限循环会让 withContext 永不返回，
@@ -121,10 +134,12 @@ class ModbusTcpChannel(
                     false
                 }
                 if (ok) {
+                    if (consecutiveFailures > 0) DiagLog.info("POLL", "轮询恢复（此前连续 $consecutiveFailures 次失败）")
                     consecutiveFailures = 0
                 } else {
                     consecutiveFailures++
                     if (consecutiveFailures >= AUTO_RECONNECT_THRESHOLD) {
+                        DiagLog.warn("POLL", "连续 $AUTO_RECONNECT_THRESHOLD 次无应答，重建 TCP")
                         reconnectTransport()
                         consecutiveFailures = 0
                     }
@@ -168,6 +183,18 @@ class ModbusTcpChannel(
         }
         input = socket!!.openReadChannel()
         output = socket!!.openWriteChannel(autoFlush = true)
+    }
+
+    /** 把底层 socket 异常翻成用户能行动的一句话 */
+    private fun classifyOpenError(msg: String, host: String): String {
+        val m = msg.lowercase()
+        return when {
+            "refus" in m -> L10n.get("app.s14", "host" to host)
+            "timeout" in m || "timed out" in m || "time out" in m -> L10n.get("app.s15", "host" to host)
+            "unreachable" in m || "no route" in m -> L10n.get("app.s16", "host" to host)
+            "resolve" in m || "unknown host" in m -> L10n.get("app.s17", "host" to host)
+            else -> L10n.get("app.s13", "host" to host)
+        }
     }
 
     private suspend fun reconnectTransport() {

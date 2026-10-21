@@ -246,6 +246,13 @@ footer{display:none}
         <button id="svSend" onclick="applySv()" disabled>下发</button>
       </div>
     </div>
+    <!-- ===== 链路诊断（v1.9.5）：网页能打开时，直接看总线侧真话 ===== -->
+    <div class="card" id="diagCard">
+      <div class="lbl">链路诊断 · 桥接器 ↔ 温控器</div>
+      <div id="diagSummary" style="font-size:12px;color:var(--tx2);margin:6px 0">点「运行自检」现场读一次温控器</div>
+      <button onclick="runDiag()" id="diagBtn" style="font-size:12px;padding:6px 14px;border-radius:20px;border:1px solid var(--line);background:var(--card2);color:var(--tx2)">运行自检</button>
+      <pre id="diagOut" style="display:none;font-size:10px;line-height:1.5;color:var(--tx2);background:var(--card2);padding:8px;border-radius:8px;margin-top:8px;overflow-x:auto;white-space:pre-wrap"></pre>
+    </div>
     <div id="fanCard" class="hidden">
       <div class="lbl">风机转速</div>
       <div id="fanRow">
@@ -371,6 +378,51 @@ function connect(){
   ws.onerror = function(){ try{ ws.close(); }catch(e){} };
 }
 function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
+
+// ===== 链路诊断（v1.9.5）：打 /diag，固件现场跑一次 RS485 事务 =====
+// 用途：网页能打开说明网络这层是好的，那问题要么在 8899 会话，要么在总线上。
+// 这个按钮直接给出总线侧的答案，不用猜。
+var DIAG_FAIL = {timeout:"完全无回话（接线视角/从站地址/温控器未通电）",
+                 crc:"校验错（波特率或校验位不符/干扰）",
+                 short:"回包过短",
+                 slaveid:"应答的从站地址不符",
+                 exception:"温控器回了异常码（寄存器地址）",
+                 sim:"模拟模式，未测总线"};
+function runDiag(){
+  var sum = $("diagSummary"), out = $("diagOut"), btn = $("diagBtn");
+  if (btn) btn.disabled = true;
+  sum.style.color = "var(--tx2)";
+  sum.textContent = "自检中…（最多 1 秒）";
+  var url = "http://" + location.hostname + ":8898/diag";
+  fetch(url).then(function(r){ return r.json(); }).then(function(d){
+    var p = d.probe || {}, u = d.uart || {};
+    var msg, col;
+    if (p.ok === 1){
+      msg = "✓ 温控器应答正常：" + fmt(p.pv) + "°C，往返 " + (p.rttMs||0) + " ms";
+      col = "var(--ok)";
+    } else if (p.ok === 0){
+      msg = "✗ 温控器无有效应答：" + (DIAG_FAIL[p.fail] || p.fail);
+      col = "var(--err)";
+    } else {
+      msg = "— 模拟模式（SIM），未接真实温控器";
+      col = "var(--warn)";
+    }
+    sum.textContent = msg;
+    sum.style.color = col;
+    out.style.display = "block";
+    out.textContent =
+      "固件 " + d.ver + " · IP " + d.ip + " · 信号 " + d.rssi + " dBm\n" +
+      "串口 baud=" + u.baud + " slave=" + u.slave + " pvReg=" + u.pvReg + " svReg=" + u.svReg + "\n" +
+      "轮询  tx=" + u.pollTx + " rx=" + u.pollRx + " 超时=" + u.pollTimeout + " 校验错=" + u.pollBad +
+        " 上次成功=" + u.pollAgeMs + "ms 前 · link=" + u.link + "\n" +
+      "App   tx=" + u.appTx + " rx=" + u.appRx + " 超时=" + u.appTimeout + " 坏帧=" + u.appBad +
+        " RTT=" + u.appRttMs + "ms\n" +
+      "探针  tx=" + (p.tx||"-") + "\n      rx=" + (p.rx||"-");
+  }).catch(function(e){
+    sum.style.color = "var(--err)";
+    sum.textContent = "✗ 自检口不可用：固件低于 1.9.5，或网络中断";
+  }).finally(function(){ if (btn) btn.disabled = false; });
+}
 
 /* ================== 会话录制 ================== */
 function recStart(){

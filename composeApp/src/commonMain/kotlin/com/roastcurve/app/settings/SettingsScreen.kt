@@ -55,6 +55,7 @@ fun SettingsScreen(
     onOpenBleConfig: () -> Unit = {},
     onOpenModbusConfig: () -> Unit = {},
     onOpenGpioConfig: () -> Unit = {},
+    onOpenDiag: () -> Unit = {},
     onOpenPrivacy: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -311,6 +312,35 @@ fun SettingsScreen(
                     Text(L10n.get("settings.g1"), style = MaterialTheme.typography.bodyLarge)
                     Text(
                         L10n.get("settings.g2"),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(
+                    "›",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        // ===== 连接诊断入口（连不上时先查这里，而不是只看到“连接失败”）=====
+        Spacer(Modifier.height(8.dp))
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 2.dp,
+            onClick = onOpenDiag,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(L10n.get("settings.diag1"), style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        L10n.get("settings.diag2"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

@@ -34,6 +34,7 @@ import com.roastcurve.app.platform.exitApplication
 import com.roastcurve.app.settings.SettingsScreen
 import com.roastcurve.app.settings.BleConfigScreen
 import com.roastcurve.app.settings.ModbusConfigScreen
+import com.roastcurve.app.diag.DiagScreen
 import com.roastcurve.app.settings.GpioConfigScreen
 import com.roastcurve.design.RoastCurveTheme
 import com.roastcurve.shared.model.RoastRecord
@@ -52,6 +53,7 @@ sealed interface Screen {
     data object BleConfig : Screen
     data object ModbusConfig : Screen
     data object GpioConfig : Screen
+    data object Diag : Screen
     data object PrivacyPolicy : Screen
     data class Detail(val record: RoastRecord) : Screen
     data class Editor(val profile: com.roastcurve.shared.model.RoastProfile?) : Screen
@@ -88,6 +90,7 @@ fun App() {
                     Screen.BleConfig -> ({ screen = Screen.Settings })
                     Screen.ModbusConfig -> ({ screen = Screen.Settings })
                     Screen.GpioConfig -> ({ screen = Screen.Settings })
+                    Screen.Diag -> ({ screen = Screen.Settings })
                     Screen.PrivacyPolicy -> ({ screen = Screen.Settings })
                     else -> ({ screen = Screen.Monitor })
                 }
@@ -104,6 +107,7 @@ fun App() {
                     onOpenSettings = { screen = Screen.Settings },
                     onCreateProfile = { screen = Screen.Editor(null) },
                     onEditProfile = { p -> screen = Screen.Editor(p) },
+                    onOpenDiag = { screen = Screen.Diag },
                 )
 
                 if (!consentAccepted) {
@@ -138,6 +142,7 @@ fun App() {
                                 onOpenBleConfig = { screen = Screen.BleConfig },
                                 onOpenModbusConfig = { screen = Screen.ModbusConfig },
                                 onOpenGpioConfig = { screen = Screen.GpioConfig },
+                                onOpenDiag = { screen = Screen.Diag },
                                 onOpenPrivacy = { screen = Screen.PrivacyPolicy },
                                 onBack = { screen = Screen.Monitor },
                             )
@@ -161,6 +166,10 @@ fun App() {
                                 onBack = { screen = Screen.Settings },
                             )
                             is Screen.GpioConfig -> GpioConfigScreen(
+                                settings = settings,
+                                onBack = { screen = Screen.Settings },
+                            )
+                            is Screen.Diag -> DiagScreen(
                                 settings = settings,
                                 onBack = { screen = Screen.Settings },
                             )
